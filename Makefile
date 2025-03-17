@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I$(INCLUDES_DIR)
 
 #color
 BLUE = \033[34m
@@ -11,19 +11,21 @@ SRCS_DIR = ./srcs
 INCLUDES_DIR = ./includes
 
 #cpp files
-SRCS_FILE = Request.cpp Client.cpp Webserver.cpp main.cpp
-SRCS = $(addprefix $(SRCS_DIR)/,$(SRCS_FILE))
+SRCS = $(SRCS_DIR)/client/Client.cpp \
+       $(SRCS_DIR)/request/Request.cpp \
+       $(SRCS_DIR)/Webserv/Webserv.cpp \
+       $(SRCS_DIR)/config/Config.cpp \
+       $(SRCS_DIR)/main.cpp
 
 #.o files
-OBJS_SRCS = $(patsubst $(SRCS_DIR)/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
-OBJS = $(OBJS_SRCS)
+OBJS = $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
 NAME = webserver
 
 all: $(NAME)
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
-	@mkdir -p $(OBJS_DIR) 
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(NAME): $(OBJS)
