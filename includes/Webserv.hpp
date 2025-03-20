@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/19 16:46:34 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/20 21:13:20 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,13 +25,18 @@
 
 #define DEFAULT_PORT 8080
 
+struct t_serveur
+{
+    pollfd fd;
+};
+
 class Webserv
 {
     private:
         int                    sockfd;
         sockaddr_in            adress;
         socklen_t              adrLen;
-        std::vector<pollfd>    fds;
+        std::vector<t_serveur>    fds;
         std::map<int, Client>  clients;
 
     public:
