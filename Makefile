@@ -6,35 +6,36 @@ BLUE = \033[34m
 WHITE = \033[37m
 
 #Directory
-OBJS_DIR = ./objs
+OBJS_DIR = .objs
 SRCS_DIR = ./srcs
 INCLUDES_DIR = ./includes
+INC = -I $(INCLUDES_DIR)
 
 #cpp files
-SRCS_FILE = Request.cpp Client.cpp Webserver.cpp main.cpp
+SRCS_FILE = Request.cpp Response.cpp Webserv.cpp main.cpp
 SRCS = $(addprefix $(SRCS_DIR)/,$(SRCS_FILE))
 
 #.o files
 OBJS_SRCS = $(patsubst $(SRCS_DIR)/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
 OBJS = $(OBJS_SRCS)
 
-NAME = webserver
+NAME = webser
 
 all: $(NAME)
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	@mkdir -p $(OBJS_DIR) 
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
-	@make banner
+	@make --silent banner
 
 clean:
-	rm -rf $(OBJS_DIR)
+	@rm -rf $(OBJS_DIR)
 
 fclean: clean
-	rm -f $(NAME)
+	@rm -f $(NAME)
 
 re : fclean all
 
