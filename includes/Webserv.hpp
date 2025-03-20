@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/20 21:13:20 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/20 21:26:06 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,11 +33,12 @@ struct t_serveur
 class Webserv
 {
     private:
-        int                    sockfd;
-        sockaddr_in            adress;
-        socklen_t              adrLen;
-        std::vector<t_serveur>    fds;
-        std::map<int, Client>  clients;
+        int                     sockfd;
+        sockaddr_in             adress;
+        socklen_t               adrLen;
+        std::vector<pollfd>     fds;
+        std::map<int, t_serveur>  serveurs;
+        std::map<int, Client>   clients;
 
     public:
         Webserv();

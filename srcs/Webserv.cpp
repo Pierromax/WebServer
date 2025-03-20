@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/20 20:20:02 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/20 21:23:58 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,6 @@ void    Webserv::acceptNewClient()
     newfd.fd = client_fd;
     newfd.events = POLLIN;
 
-    fds.push_back(newfd);
+    newfd.push_back(newfd);
     clients[client_fd] = newclient;
 }
