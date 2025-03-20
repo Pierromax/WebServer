@@ -11,10 +11,8 @@ SRCS_DIR = ./srcs
 INCLUDES_DIR = ./includes
 
 #cpp files
-SRCS = $(SRCS_DIR)/client/Client.cpp \
-       $(SRCS_DIR)/request/Request.cpp \
-       $(SRCS_DIR)/Webserv/Webserv.cpp \
-       $(SRCS_DIR)/config/Config.cpp \
+SRCS = $(SRCS_DIR)/Webserv/Webserv.cpp \
+       $(SRCS_DIR)/Webserv/Server.cpp \
        $(SRCS_DIR)/main.cpp
 
 #.o files

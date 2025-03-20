@@ -1,23 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Config.hpp                                         :+:      :+:    :+:   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/03/17 23:00:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/03/17 23:01:40 by cviegas          ###   ########.fr       */
+/*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
+/*   Updated: 2025/03/20 23:08:08 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
 #include <string>
 #include <vector>
 #include <map>
+#include <cstddef> // for size_t
+#include <poll.h>  // for pollfd
 
-struct Route
+// Forward declare any classes from Webserv.hpp that might be needed
+// class Webserv;
+
+struct t_Route
 {
 	std::vector<std::string> allowedMethods;
 	std::string redirect;
@@ -29,32 +34,22 @@ struct Route
 	std::string uploadDirectory;
 };
 
-struct Server
+class Server
 {
+public:
+	Server();
+	Server(const Server &other);
+	Server &operator=(const Server &other);
+	~Server();
+
+	pollfd fd;
 	std::string host;
 	int port;
 	std::vector<std::string> serverNames;
 	bool isDefault;
 	std::map<int, std::string> errorPages;
 	size_t maxBodySize;
-	std::map<std::string, Route> routes;
+	std::map<std::string, t_Route> routes;
 };
 
-class Config
-{
-public:
-	Config();
-	Config(const Config &other);
-	Config &operator=(const Config &other);
-	~Config();
-
-	bool loadFromFile(const std::string &filename);
-
-	// Getters
-	const std::vector<Server> &getServers() const;
-
-private:
-	std::vector<Server> _servers;
-};
-
-#endif // CONFIG_HPP
+#endif // SERVER_HPP
