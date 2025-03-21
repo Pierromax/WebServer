@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:03:07 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/20 23:24:52 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/03/21 03:06:45 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,12 @@
 #define RESET "\033[0m"
 #define B "\033[1m"
 
+/**
+ * @brief Point d'entrée principal du programme
+ * @param ac Nombre d'arguments
+ * @param av Tableau d'arguments
+ * @return Code de sortie
+ */
 int main(int ac, char **av)
 {
 	try
@@ -28,13 +34,10 @@ int main(int ac, char **av)
 			return (1);
 		}
 
-		Webserv webserver;
-		if (ac == 2)
-			webserver = Webserv(av[1]);
-
-		std::cout << B GREEN "Webserver initialized successfully." RESET << std::endl;
-
-		// Future server running code will go here
+		{
+			Webserv webserver(av[1]);
+			std::cout << B GREEN "Webserver initialized successfully." RESET << std::endl;
+		}
 	}
 	catch (const std::exception &e)
 	{

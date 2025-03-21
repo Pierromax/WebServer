@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/05 19:04:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/21 00:44:43 by cviegas          ###   ########.fr       */
+/*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
+/*   Updated: 2025/03/21 02:45:05 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,9 @@
 
 #define DEFAULT_PORT 8080
 
-// Types de tokens possibles
+/**
+ * @brief Types de tokens pour le parseur
+ */
 enum TokenType
 {
     TOKEN_KEYWORD, // server, location, listen, etc.
@@ -36,16 +38,17 @@ enum TokenType
     TOKEN_STRING   // chaînes entre guillemets
 };
 
-// Structure représentant un token avec sa valeur, son type et son numéro de ligne
+/**
+ * @brief Structure représentant un token avec valeur, type et ligne
+ */
 struct Token
 {
     std::string value;
     TokenType type;
-    std::size_t line; // Numéro de ligne où le token apparaît
+    std::size_t line;
 
     Token(const std::string &val, TokenType t, std::size_t ln) : value(val), type(t), line(ln) {}
 
-    // Méthode pour afficher le token (utile pour le débogage)
     void display() const
     {
         std::string typeStr;
@@ -71,6 +74,32 @@ struct Token
     }
 };
 
+/**
+ * @brief Structure représentant un nœud dans l'arbre de configuration
+ */
+struct ConfigNode
+{
+    std::string type;
+    std::string value;
+    ConfigNode *parent;
+    std::vector<ConfigNode *> children;
+    std::map<std::string, std::vector<std::string> > directives;
+
+    ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL)
+        : type(t), value(v), parent(p) {}
+
+    ~ConfigNode()
+    {
+        for (size_t i = 0; i < children.size(); ++i)
+        {
+            delete children[i];
+        }
+    }
+};
+
+/**
+ * @brief Classe principale du serveur web
+ */
 class Webserv
 {
 private:
@@ -79,13 +108,14 @@ private:
     socklen_t adrLen;
     std::vector<pollfd> fds;
     std::map<int, Server> serveurs;
+    ConfigNode *rootConfig;
 
-    // Fonction pour tokenizer une ligne
+    bool isKeyword(const std::string &str) const;
     void tokenizeLine(const std::string &line, std::size_t lineNum, std::vector<Token> &tokens,
                       bool &inQuoteSingle, bool &inQuoteDouble, std::string &pendingToken);
-
-    // Vérifie si un token est un mot-clé
-    bool isKeyword(const std::string &str) const;
+    ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
+    bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
+    void buildServers(ConfigNode *config);
 
 public:
     Webserv();
@@ -96,6 +126,7 @@ public:
 
     void storeServers(std::string &filename);
     void acceptNewClient();
+    void displayConfig(ConfigNode *node, int depth = 0);
 };
 
 #endif
