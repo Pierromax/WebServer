@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/23 21:36:31 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/23 21:38:46 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,7 @@ void	Request::parseBody(const std::string &raw_body)
 	this->body = raw_body.substr(0, body_lenght);
 }
 
-std::string	trimString(std::string &str, std::string charset)
+std::string	trimString(std::string &str, std::string &charset)
 {
 	size_t start;
 	size_t end;
@@ -126,3 +126,4 @@ std::string	trimString(std::string &str, std::string charset)
 
 	return (str.substr(start, end - start + 1));
 }
+

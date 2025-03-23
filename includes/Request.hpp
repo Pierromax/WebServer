@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/23 21:36:44 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/23 21:39:05 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@
 #define GOOD_REQUEST "200 OK"
 #define BAD_REQUEST "400 Bad Request"
 #define METHOD_NOT_ALLOWED "405 Method Not Allowed"
-
 
 class Request
 {
@@ -53,6 +52,6 @@ class Request
         std::string getHeader(const std::string &name) const;
 };
 
-std::string    trimString(std::string &str);
+std::string    trimString(std::string &str, std::string &charset);
 
 #endif
