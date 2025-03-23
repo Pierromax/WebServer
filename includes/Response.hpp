@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/07 10:48:30 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/03/23 18:06:15 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ class Response
         Response(const Response &cpy);
         Response &operator=(const Response &rhs);
         ~Response();
+
+        
 };
 
 #endif

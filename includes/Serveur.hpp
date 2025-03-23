@@ -1,41 +1,45 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
+/*   Serveur.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/21 00:08:01 by ple-guya         ###   ########.fr       */
+/*   Created: 2025/03/20 23:48:12 by ple-guya          #+#    #+#             */
+/*   Updated: 2025/03/23 18:08:30 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CLIENT_HPP
-#define CLIENT_HPP
+#ifndef SERVEUR_HPP
+#define SERVEUR_HPP
 
-#include "Request.hpp"
-#include "Response.hpp"
+#include <unistd.h>
 #include <iostream>
 #include <string>
+#include <fstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string>
+#include <map>
+#include <vector>
+#include <poll.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <cstring>
 
-class Client
+#define DEFAULT_PORT 8080
+
+class Serveur
 {
     private:
-        int         fd;
-        sockaddr_in address;
-
+        int				fd;
+        sockaddr_in		adress;
+        socklen_t		adrLen;
+        
     public:
-        Client();
-        Client(int &clientFD);
-        Client(const Client &cpy);
-        Client &operator=(const Client &rhs);
-        ~Client();
+        Serveur();
+        ~Serveur();
+        Serveur(const Serveur &src); 
+        
+        int 		getfd() const;
+        sockaddr_in getAddress() const;
 };
 
 #endif

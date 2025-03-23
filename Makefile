@@ -12,14 +12,14 @@ INCLUDES_DIR = ./includes
 INC = -I $(INCLUDES_DIR)
 
 #cpp files
-SRCS_FILE = Request.cpp Response.cpp Webserv.cpp main.cpp
+SRCS_FILE = Request.cpp Response.cpp Webserv.cpp main.cpp Serveur.cpp Client.cpp
 SRCS = $(addprefix $(SRCS_DIR)/,$(SRCS_FILE))
 
 #.o files
 OBJS_SRCS = $(patsubst $(SRCS_DIR)/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
 OBJS = $(OBJS_SRCS)
 
-NAME = webser
+NAME = webserv
 
 all: $(NAME)
 
