@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/21 03:03:31 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/04/04 15:54:40 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,8 +108,9 @@ Webserv::~Webserv()
  * @param inQuoteDouble État des guillemets doubles
  * @param pendingToken Token en cours de construction
  */
-void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum, std::vector<Token> &tokens,
-                           bool &inQuoteSingle, bool &inQuoteDouble, std::string &pendingToken)
+void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum,
+                          std::vector<Token> &tokens, bool &inQuoteSingle,
+                          bool &inQuoteDouble, std::string &pendingToken)
 {
     for (std::size_t i = 0; i < line.length(); ++i)
     {
@@ -192,44 +193,47 @@ void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum, std::ve
  * @param parent Noeud parent dans l'arborescence
  * @return Pointeur vers le nouveau noeud créé
  */
-ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent)
+ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
+                                    ConfigNode *parent)
 {
     if (index >= tokens.size())
         throw std::runtime_error("Unexpected end of configuration file");
-
     if (tokens[index].type != TOKEN_KEYWORD)
     {
         std::stringstream err;
-        err << "Expected keyword at line " << tokens[index].line << ", got " << tokens[index].value;
+        err << "Expected keyword in " << tokens[index].filename << ":" 
+            << tokens[index].line << ", got " << tokens[index].value;
         throw std::runtime_error(err.str());
     }
-
-    ConfigNode *node = new ConfigNode(tokens[index].value, "", parent);
+    std::size_t lineNumber = tokens[index].line;
+    std::string keyword = tokens[index].value;
+    ConfigNode *node = new ConfigNode(tokens[index].value, "", parent, lineNumber);
     index++;
-
-    try // Add try block to ensure node is properly deleted on exception
+    
+    try
     {
         if (node->type == "location")
         {
             if (index >= tokens.size() || tokens[index].type != TOKEN_ID)
             {
                 std::stringstream err;
-                err << "Expected path after 'location' at line " << tokens[index - 1].line;
+                err << "Expected path after 'location' in " 
+                    << tokens[index].filename << ":" 
+                    << tokens[index - 1].line;
                 throw std::runtime_error(err.str());
             }
             node->value = tokens[index].value;
             index++;
         }
-
-        if (index >= tokens.size() || tokens[index].type != TOKEN_SYMBOL || tokens[index].value != "{")
+        if (index >= tokens.size() || tokens[index].type != TOKEN_SYMBOL || 
+            tokens[index].value != "{")
         {
             std::stringstream err;
-            err << "Expected '{' at line " << (index < tokens.size() ? tokens[index].line : tokens[index - 1].line);
+            err << "directive \"" << keyword << "\" has no opening \"{\" in " 
+                << tokens[index].filename << ":" << lineNumber;
             throw std::runtime_error(err.str());
         }
-
         index++;
-
         while (index < tokens.size())
         {
             if (tokens[index].type == TOKEN_SYMBOL && tokens[index].value == "}")
@@ -237,10 +241,22 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
                 index++;
                 return node;
             }
-
             if (tokens[index].type == TOKEN_KEYWORD)
             {
-                if (tokens[index].value == "server" || tokens[index].value == "location")
+                if (tokens[index].value == "server")
+                {
+                    if (parent != rootConfig)
+                    {
+                        std::stringstream err;
+                        err << "\"server\" directive is not allowed here in " 
+                            << tokens[index].filename << ":" << tokens[index].line;
+                        throw std::runtime_error(err.str());
+                    }
+                    ConfigNode *child = parseConfigBlock(tokens, index, node);
+                    if (child)
+                        node->children.push_back(child);
+                }
+                else if (tokens[index].value == "location")
                 {
                     ConfigNode *child = parseConfigBlock(tokens, index, node);
                     if (child)
@@ -255,7 +271,8 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
             else
             {
                 std::stringstream err;
-                err << "Unknown directive '" << tokens[index].value << "' at line " << tokens[index].line;
+                err << "Unknown directive '" << tokens[index].value << "' in " 
+                    << tokens[index].filename << ":" << tokens[index].line;
                 throw std::runtime_error(err.str());
             }
         }
@@ -263,12 +280,9 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
     }
     catch (const std::exception &e)
     {
-        // Cleanup on exception
         delete node;
-        throw; // Re-throw the exception
+        throw;
     }
-
-    // This code won't be reached due to the throw above, but added for completeness
     delete node;
     return NULL;
 }
@@ -280,11 +294,13 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
  * @param currentNode Noeud où stocker la directive
  * @return true si parsing réussi, false sinon
  */
-bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode)
+bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index,
+                           ConfigNode *currentNode)
 {
     std::string key = tokens[index].value;
     index++;
     std::vector<std::string> values;
+
     while (index < tokens.size() &&
            !(tokens[index].type == TOKEN_SYMBOL && tokens[index].value == ";"))
     {
@@ -292,10 +308,12 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
         {
             values.push_back(tokens[index].value);
         }
-        else if (tokens[index].type == TOKEN_SYMBOL && tokens[index].value == "{")
+        else if (tokens[index].type == TOKEN_SYMBOL && 
+                tokens[index].value == "{")
         {
             std::stringstream err;
-            err << "Unexpected '{' in directive at line " << tokens[index].line;
+            err << "Unexpected '{' in directive in " << tokens[index].filename 
+                << ":" << tokens[index].line;
             throw std::runtime_error(err.str());
         }
         index++;
@@ -303,8 +321,12 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
     if (index >= tokens.size() || tokens[index].value != ";")
     {
         std::stringstream err;
-        err << "Missing semicolon ';' for directive '" << key << "' at line "
-            << (index < tokens.size() ? tokens[index].line : tokens[index - 1].line);
+        std::string file = index < tokens.size() ? 
+            tokens[index].filename : tokens[index-1].filename;
+        std::size_t line = index < tokens.size() ? 
+            tokens[index].line : tokens[index-1].line;
+        err << "Missing semicolon ';' for directive '" << key << "' in " 
+            << file << ":" << line;
         throw std::runtime_error(err.str());
     }
     index++;
@@ -328,8 +350,8 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
         std::cout << " " << node->value;
     }
     std::cout << " {" << std::endl;
-    for (std::map<std::string, std::vector<std::string> >::const_iterator it = node->directives.begin();
-         it != node->directives.end(); ++it)
+    for (std::map<std::string, std::vector<std::string> >::const_iterator it = 
+        node->directives.begin(); it != node->directives.end(); ++it)
     {
         std::cout << indent << "    " << it->first << " ";
         const std::vector<std::string> &values = it->second;
@@ -347,18 +369,99 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
 }
 
 /**
+ * @brief Affiche les tokens trouvés dans le fichier de configuration
+ * @param tokens Liste des tokens à afficher
+ */
+void Webserv::displayTokens(const std::vector<Token> &tokens)
+{
+    std::cout << "Tokens found: " << tokens.size() << std::endl;
+    for (std::size_t i = 0; i < tokens.size(); ++i)
+    {
+        std::cout << "Token " << i << ": ";
+        tokens[i].display();
+    }
+}
+
+/**
+ * @brief Vérifie qu'il n'y a pas de locations dupliquées dans le même noeud parent
+ * @param node Noeud à vérifier
+ * @param filename Nom du fichier de configuration
+ * @throw std::runtime_error si des duplications sont détectées
+ */
+void Webserv::validateNoDuplicateLocations(ConfigNode *node,
+                                          const std::string &filename)
+{
+    if (!node)
+        return;
+    std::map<std::string, size_t> locationPaths;
+    
+    for (size_t i = 0; i < node->children.size(); ++i)
+    {
+        ConfigNode *child = node->children[i];
+        if (child->type == "location")
+        {
+            std::string path = child->value;
+            std::map<std::string, size_t>::iterator it = locationPaths.find(path);
+            
+            if (it != locationPaths.end())
+            {
+                std::stringstream err;
+                err << "duplicate location \"" << path << "\" in " << filename 
+                    << ":" << child->line;
+                throw std::runtime_error(err.str());
+            }
+            
+            locationPaths[path] = child->line;
+        }
+        validateNoDuplicateLocations(child, filename);
+    }
+}
+
+/**
+ * @brief Vérifie qu'il n'y a pas de servers dans d'autres servers
+ * @param node Noeud à vérifier
+ * @param filename Nom du fichier de configuration
+ * @throw std::runtime_error si des servers sont imbriqués
+ */
+void Webserv::validateNoNestedServers(ConfigNode *node, const std::string &filename)
+{
+    if (!node)
+        return;
+    
+    if (node->type == "server")
+    {
+        for (size_t i = 0; i < node->children.size(); ++i)
+        {
+            if (node->children[i]->type == "server")
+            {
+                std::stringstream err;
+                err << "\"server\" directive is not allowed here in " 
+                    << filename << ":" << node->children[i]->line;
+                throw std::runtime_error(err.str());
+            }
+            validateNoNestedServers(node->children[i], filename);
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < node->children.size(); ++i)
+        {
+            validateNoNestedServers(node->children[i], filename);
+        }
+    }
+}
+
+/**
  * @brief Charge la configuration depuis un fichier et crée les serveurs
  * @param filename Chemin vers le fichier de configuration
  */
 void Webserv::storeServers(std::string &filename)
 {
-    // Cleanup previous config if it exists
     if (rootConfig)
     {
         delete rootConfig;
         rootConfig = NULL;
     }
-
     std::ifstream file(filename.c_str());
     if (!file.is_open())
         throw std::runtime_error("Could not open config file");
@@ -367,12 +470,13 @@ void Webserv::storeServers(std::string &filename)
     std::string pendingToken;
     bool inQuoteSingle = false;
     bool inQuoteDouble = false;
-    std::size_t lineNum = 0;
+    std::size_t lineNum = 1;
 
     while (std::getline(file, line))
     {
+        tokenizeLine(line, lineNum, tokens, inQuoteSingle, inQuoteDouble, 
+                    pendingToken);
         lineNum++;
-        tokenizeLine(line, lineNum, tokens, inQuoteSingle, inQuoteDouble, pendingToken);
     }
     file.close();
     if (!pendingToken.empty())
@@ -384,18 +488,13 @@ void Webserv::storeServers(std::string &filename)
     {
         throw std::runtime_error("Unterminated quoted string at end of file");
     }
-    std::cout << "Tokens found: " << tokens.size() << std::endl;
-    for (std::size_t i = 0; i < tokens.size(); ++i)
-    {
-        std::cout << "Token " << i << ": ";
-        tokens[i].display();
-    }
     std::vector<Token> filteredTokens;
     for (std::size_t i = 0; i < tokens.size(); ++i)
     {
         if (tokens[i].type != TOKEN_STRING)
         {
             filteredTokens.push_back(tokens[i]);
+            filteredTokens.back().filename = filename;
         }
     }
     if (filteredTokens.empty())
@@ -404,24 +503,26 @@ void Webserv::storeServers(std::string &filename)
     }
     rootConfig = new ConfigNode("root");
     size_t index = 0;
-
     try
     {
         while (index < filteredTokens.size())
         {
-            if (filteredTokens[index].type != TOKEN_KEYWORD || filteredTokens[index].value != "server")
+            if (filteredTokens[index].type != TOKEN_KEYWORD || 
+                filteredTokens[index].value != "server")
             {
                 if (filteredTokens[index].type == TOKEN_ID)
                 {
                     std::stringstream err;
                     err << "unknown directive \"" << filteredTokens[index].value
-                        << "\" in " << filename << ":" << filteredTokens[index].line;
+                        << "\" in " << filename << ":" 
+                        << filteredTokens[index].line;
                     throw std::runtime_error(err.str());
                 }
                 index++;
                 continue;
             }
-            ConfigNode *serverNode = parseConfigBlock(filteredTokens, index, rootConfig);
+            ConfigNode *serverNode = parseConfigBlock(filteredTokens, index, 
+                                                     rootConfig);
             if (serverNode)
             {
                 rootConfig->children.push_back(serverNode);
@@ -431,19 +532,19 @@ void Webserv::storeServers(std::string &filename)
         {
             throw std::runtime_error("No server config found");
         }
+        validateNoDuplicateLocations(rootConfig, filename);
+        validateNoNestedServers(rootConfig, filename);
         std::cout << "\nParsed Configuration:" << std::endl;
         displayConfig(rootConfig);
         buildServers(rootConfig);
     }
     catch (const std::exception &e)
     {
-        // Make sure to clean up rootConfig when an exception is thrown
         if (rootConfig)
         {
             delete rootConfig;
             rootConfig = NULL;
         }
-        // Re-throw with original message
         throw std::runtime_error(e.what());
     }
 }
@@ -464,7 +565,7 @@ void Webserv::buildServers(ConfigNode *config)
             throw std::runtime_error("Expected 'server' block");
         }
         Server server;
-        std::map<std::string, std::vector<std::string> >::const_iterator it;
+        std::map<std::string, std::vector<std::string> >::const_iterator it; 
 
         it = serverNode->directives.find("listen");
         if (it != serverNode->directives.end() && !it->second.empty())
@@ -472,9 +573,14 @@ void Webserv::buildServers(ConfigNode *config)
             std::stringstream portStream(it->second[0]);
             if (!(portStream >> server.port))
             {
+                std::cout << "Warning: Invalid port value, using default port " 
+                          << DEFAULT_PORT << std::endl;
                 server.port = DEFAULT_PORT;
-                std::cout << "Warning: Invalid port value, using default port " << DEFAULT_PORT << std::endl;
             }
+        }
+        else
+        {
+            server.port = DEFAULT_PORT;
         }
         it = serverNode->directives.find("server_name");
         if (it != serverNode->directives.end())
@@ -485,11 +591,12 @@ void Webserv::buildServers(ConfigNode *config)
         {
             ConfigNode *locationNode = serverNode->children[j];
             if (locationNode->type != "location")
+            {
                 continue;
+            }
             t_Route route;
             route.directoryListing = false;
             route.allowUploads = false;
-
             it = locationNode->directives.find("root");
             if (it != locationNode->directives.end() && !it->second.empty())
             {
@@ -502,8 +609,8 @@ void Webserv::buildServers(ConfigNode *config)
             }
             server.routes[locationNode->value] = route;
         }
-        serveurs[server.port] = server;
-        std::cout << "Added server on port " << server.port << " with "
+        std::cout << "Added server on port " << server.port << " with " 
                   << server.routes.size() << " locations" << std::endl;
+        serveurs[server.port] = server;
     }
 }

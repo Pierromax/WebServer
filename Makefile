@@ -31,7 +31,7 @@ $(NAME): $(OBJS)
 	@make banner
 
 clean:
-	rm -rf $(OBJS_DIR)
+	rm -rf $(OBJS_DIR) logs
 
 fclean: clean
 	rm -f $(NAME)

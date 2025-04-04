@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/03/21 02:45:05 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/04/04 14:44:03 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,10 @@ struct Token
     std::string value;
     TokenType type;
     std::size_t line;
+    std::string filename; // Add filename for error reporting
 
-    Token(const std::string &val, TokenType t, std::size_t ln) : value(val), type(t), line(ln) {}
+    Token(const std::string &val, TokenType t, std::size_t ln) 
+        : value(val), type(t), line(ln), filename("") {}
 
     void display() const
     {
@@ -84,9 +86,10 @@ struct ConfigNode
     ConfigNode *parent;
     std::vector<ConfigNode *> children;
     std::map<std::string, std::vector<std::string> > directives;
+    std::size_t line; // Add line number information
 
-    ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL)
-        : type(t), value(v), parent(p) {}
+    ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
+        : type(t), value(v), parent(p), line(ln) {}
 
     ~ConfigNode()
     {
@@ -116,6 +119,9 @@ private:
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
     void buildServers(ConfigNode *config);
+    void displayTokens(const std::vector<Token> &tokens);
+    void validateNoDuplicateLocations(ConfigNode *node, const std::string &filename);
+    void validateNoNestedServers(ConfigNode *node, const std::string &filename);
 
 public:
     Webserv();
