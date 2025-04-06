@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -Wall -Wextra -std=c++98
+CXXFLAGS = -Wall -Wextra -std=c++98 -gdwarf-2
 
 #color
 BLUE = \033[34m
@@ -12,19 +12,25 @@ INCLUDES_DIR = ./includes
 INC = -I $(INCLUDES_DIR)
 
 #cpp files
-SRCS_FILE = Request.cpp Response.cpp Webserv.cpp main.cpp Serveur.cpp Client.cpp
-SRCS = $(addprefix $(SRCS_DIR)/,$(SRCS_FILE))
+SRCS = $(SRCS_DIR)/Webserv.cpp \
+       $(SRCS_DIR)/Serveur.cpp \
+       $(SRCS_DIR)/Request.cpp \
+       $(SRCS_DIR)/Response.cpp \
+       $(SRCS_DIR)/Client.cpp \
+       $(SRCS_DIR)/config/Tokenizer.cpp \
+       $(SRCS_DIR)/config/Parser.cpp \
+       $(SRCS_DIR)/config/ConfigValidator.cpp \
+       $(SRCS_DIR)/main.cpp
 
 #.o files
-OBJS_SRCS = $(patsubst $(SRCS_DIR)/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
-OBJS = $(OBJS_SRCS)
+OBJS = $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
 NAME = webserv
 
 all: $(NAME)
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
-	@mkdir -p $(OBJS_DIR) 
+	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 $(NAME): $(OBJS)
@@ -32,7 +38,7 @@ $(NAME): $(OBJS)
 	@make --silent banner
 
 clean:
-	@rm -rf $(OBJS_DIR)
+	rm -rf $(OBJS_DIR) logs
 
 fclean: clean
 	@rm -f $(NAME)

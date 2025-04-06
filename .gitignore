@@ -2,3 +2,5 @@ webserv
 ./.objs
 .vscode
 *.o
+logs/
+objs/

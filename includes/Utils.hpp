@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
+/*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,32 +10,24 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CLIENT_HPP
-#define CLIENT_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
-#include "Request.hpp"
-#include "Response.hpp"
-#include <iostream>
 #include <string>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstring>
 
-class Client
+/**
+ * @brief Supprime un pointeur et le met à NULL
+ * @tparam T Type du pointeur
+ * @param ptr Référence vers le pointeur à supprimer
+ */
+template<typename T>
+void deleteAndNull(T*& ptr)
 {
-    private:
-        int         fd;
-        sockaddr_in address;
-
-    public:
-        Client();
-        Client(int &clientFD);
-        Client(const Client &cpy);
-        Client &operator=(const Client &rhs);
-        ~Client();
-};
+    if (ptr)
+    {
+        delete ptr;
+        ptr = NULL;
+    }
+}
 
 #endif
