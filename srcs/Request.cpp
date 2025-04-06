@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/23 21:38:46 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/06 19:02:49 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,7 @@ void	Request::parseBody(const std::string &raw_body)
 	this->body = raw_body.substr(0, body_lenght);
 }
 
-std::string	trimString(std::string &str, std::string &charset)
+std::string	trimString(std::string &str, const std::string &charset)
 {
 	size_t start;
 	size_t end;
