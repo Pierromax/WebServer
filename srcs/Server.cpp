@@ -6,11 +6,11 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/06 20:09:06 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/06 22:45:59 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../includes/Server.hpp"
+#include "Server.hpp"
 
 Server::Server() : port(80), isDefault(false), maxBodySize(15000000)
 {

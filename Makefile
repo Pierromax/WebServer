@@ -11,11 +11,13 @@ SRCS_DIR = ./srcs
 INCLUDES_DIR = ./includes
 
 #cpp files
-SRCS = $(SRCS_DIR)/Webserv/Webserv.cpp \
-       $(SRCS_DIR)/Webserv/Server.cpp \
-       $(SRCS_DIR)/Webserv/config_parsing/Tokenizer.cpp \
-       $(SRCS_DIR)/Webserv/config_parsing/Parser.cpp \
-       $(SRCS_DIR)/Webserv/config_parsing/ConfigValidator.cpp \
+SRCS = $(SRCS_DIR)/Webserv.cpp \
+       $(SRCS_DIR)/Server.cpp \
+       $(SRCS_DIR)/Request.cpp \
+       $(SRCS_DIR)/Client.cpp \
+       $(SRCS_DIR)/config/Tokenizer.cpp \
+       $(SRCS_DIR)/config/Parser.cpp \
+       $(SRCS_DIR)/config/ConfigValidator.cpp \
        $(SRCS_DIR)/main.cpp
 
 #.o files
