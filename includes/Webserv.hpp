@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/04 14:44:03 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/06 20:26:36 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,12 +116,25 @@ private:
     bool isKeyword(const std::string &str) const;
     void tokenizeLine(const std::string &line, std::size_t lineNum, std::vector<Token> &tokens,
                       bool &inQuoteSingle, bool &inQuoteDouble, std::string &pendingToken);
+    
+    std::vector<Token> tokenizeConfigFile(const std::string &filename);
+    std::vector<Token> filterTokens(const std::vector<Token> &tokens, const std::string &filename);
+    ConfigNode* parseTokens(std::vector<Token> &tokens, const std::string &filename);
+    void validateAndBuildServers(ConfigNode *root, const std::string &filename);
+    
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
     void buildServers(ConfigNode *config);
     void displayTokens(const std::vector<Token> &tokens);
     void validateNoDuplicateLocations(ConfigNode *node, const std::string &filename);
     void validateNoNestedServers(ConfigNode *node, const std::string &filename);
+
+    ConfigNode* initConfigNode(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
+    void handleLocationDirective(ConfigNode *node, std::vector<Token> &tokens, size_t &index);
+    void checkOpeningBrace(std::vector<Token> &tokens, size_t &index, 
+                           const std::string &keyword, std::size_t lineNumber);
+    bool handleServerDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
+    bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
 
 public:
     Webserv();

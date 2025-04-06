@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:03:07 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/03/21 03:06:45 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/04/06 20:09:06 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,5 @@ int main(int ac, char **av)
 		std::cerr << B RED "Error: " RESET RED << e.what() << RESET << std::endl;
 		return (1);
 	}
-
 	return (0);
 }

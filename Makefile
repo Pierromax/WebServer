@@ -13,6 +13,9 @@ INCLUDES_DIR = ./includes
 #cpp files
 SRCS = $(SRCS_DIR)/Webserv/Webserv.cpp \
        $(SRCS_DIR)/Webserv/Server.cpp \
+       $(SRCS_DIR)/Webserv/config_parsing/Tokenizer.cpp \
+       $(SRCS_DIR)/Webserv/config_parsing/Parser.cpp \
+       $(SRCS_DIR)/Webserv/config_parsing/ConfigValidator.cpp \
        $(SRCS_DIR)/main.cpp
 
 #.o files

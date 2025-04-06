@@ -25,12 +25,19 @@ et améliorer la lisibilité du code.
 
 ### 3. Espacement
 - Entre deux fonctions, il doit y avoir exactement une ligne vide.
-- À l'intérieur des fonctions, aucune ligne vide n'est autorisée, sauf après 
-  la liste de déclarations de variables en début de fonction.
+- À l'intérieur des fonctions:
+  - Aucune ligne vide n'est autorisée, sauf:
+    - Une seule ligne vide après la liste de déclarations de variables en début de fonction.
+    - Une seule ligne vide au-dessus d'une déclaration d'itérateur ou de variable temporaire 
+      qui n'est pas déclarée au début de la fonction.
+  - Ne jamais ajouter de ligne vide après une déclaration d'itérateur ou de variable temporaire.
 
 ### 4. Structure
 - Les déclarations de variables doivent être regroupées au début de la fonction.
+- Les itérateurs ou variables temporaires peuvent être déclarés là où ils sont nécessaires.
 - Une fonction doit idéalement accomplir une seule tâche clairement définie.
+- Si une instruction (boucle ou condition) contient une seule ligne, on peut omettre 
+  les accolades {} et placer l'instruction sur la même ligne.
 
 ### 5. Nommage
 - Les noms de variables et de fonctions doivent être en camelCase et en anglais.
@@ -81,14 +88,18 @@ MathUtils::MathUtils(double precision) {
  */
 double MathUtils::computeAverage(const std::vector<double>& values) {
     double sum = 0.0;
-    int count = values.size();  // Variables are declared at the beginning
-                                // Only one empty line allowed here
-    if (count == 0) {
-        return 0.0;
-    }
-    for (int i = 0; i < count; i++) {
+    int count = values.size();
+    
+    if (count == 0) return 0.0;
+    
+    for (int i = 0; i < count; i++)
         sum += values[i];
-    }
+    
+    // Itérateur déclaré plus loin dans le code nécessite une ligne vide au-dessus
+    std::vector<double>::const_iterator it;
+    for (it = values.begin(); it != values.end(); ++it)
+        if (*it < 0) sum -= *it * 2; // Double correction for negative values
+    
     return sum / count;
 }
 ```
