@@ -5,13 +5,12 @@ WEB_SERVER="./webserv"
 LOGS_DIR="./logs"
 LOG_FILE="$LOGS_DIR/results.log"
 
-make
+make tester 2>/dev/null
 # Check if the web server binary exists
 if [ ! -f "$WEB_SERVER" ]; then
     echo "Error: Web server binary not found at $WEB_SERVER."
     exit 1
 fi
-
 
 # Create logs directory if it doesn't exist
 mkdir -p "$LOGS_DIR"

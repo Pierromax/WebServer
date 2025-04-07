@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 18:00:43 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 18:14:07 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,6 +113,7 @@ void Webserv::acceptNewClient(const Server &server)
  */
 void Webserv::run()
 {
+#if CONFIG_TESTER == 0
     while (true)
     {
         int ret = poll(fds.data(), fds.size(), -1);
@@ -184,6 +185,10 @@ void Webserv::run()
             }
         }
     }
+#else
+    std::cout << "Configuration loaded successfully. Running in tester mode." << std::endl;
+    // En mode testeur, on n'exécute pas la boucle principale
+#endif
 }
 
 /**

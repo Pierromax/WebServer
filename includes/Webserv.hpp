@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/07 18:02:05 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 18:14:07 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,10 @@
 #include <set>
 #include <cstring>
 #include <fcntl.h>
+
+#ifndef CONFIG_TESTER
+# define CONFIG_TESTER 0
+#endif
 
 #define DEFAULT_PORT 8080
 
