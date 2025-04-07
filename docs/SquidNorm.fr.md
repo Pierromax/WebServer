@@ -10,8 +10,8 @@ et améliorer la lisibilité du code.
 - Limitez les lignes à 80 caractères.
 
 ### 2. Commentaires
-- Aucun commentaire à l'intérieur des fonctions, sauf potentiellement des 
-  commentaires brefs de fin de ligne pour expliquer des détails complexes.
+- Absolument aucun commentaire à l'intérieur des fonctions, sauf exceptionnellement très très rarement des 
+  commentaires brefs de fin de ligne (à ne pas mettre sur une ligne vide) pour expliquer des détails complexes.
 - Tous les commentaires doivent être écrits en anglais.
 - **Placement des commentaires**:
   - Documentez les classes avec un bloc de commentaire Doxygen avant la 
@@ -26,7 +26,7 @@ et améliorer la lisibilité du code.
 ### 3. Espacement
 - Entre deux fonctions, il doit y avoir exactement une ligne vide.
 - À l'intérieur des fonctions:
-  - Aucune ligne vide n'est autorisée, sauf:
+  - Aucune absolument aucune ligne vide n'est autorisée, sauf:
     - Une seule ligne vide après la liste de déclarations de variables en début de fonction.
     - Une seule ligne vide au-dessus d'une déclaration d'itérateur ou de variable temporaire 
       qui n'est pas déclarée au début de la fonction.
@@ -90,16 +90,15 @@ double MathUtils::computeAverage(const std::vector<double>& values) {
     double sum = 0.0;
     int count = values.size();
     
-    if (count == 0) return 0.0;
-    
+    if (count == 0)
+        return 0.0;
     for (int i = 0; i < count; i++)
         sum += values[i];
     
-    // Itérateur déclaré plus loin dans le code nécessite une ligne vide au-dessus
-    std::vector<double>::const_iterator it;
+    std::vector<double>::const_iterator it; // One line before iterator declaration
     for (it = values.begin(); it != values.end(); ++it)
-        if (*it < 0) sum -= *it * 2; // Double correction for negative values
-    
+        if (*it < 0)
+            sum -= *it * 2;
     return sum / count;
 }
 ```

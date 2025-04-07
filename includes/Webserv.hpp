@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/06 23:39:42 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 18:14:07 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 #define WEBSERV_HPP
 
 #include "Server.hpp"
-#include "Serveur.hpp"
 #include "Client.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
@@ -27,11 +26,15 @@
 #include <netinet/in.h>
 #include <map>
 #include <vector>
-#include <poll.h>
+#include <poll.h> 
 #include <unistd.h>
 #include <set>
 #include <cstring>
 #include <fcntl.h>
+
+#ifndef CONFIG_TESTER
+# define CONFIG_TESTER 0
+#endif
 
 #define DEFAULT_PORT 8080
 
@@ -118,7 +121,7 @@ private:
     sockaddr_in adress;
     socklen_t adrLen;
     std::vector<pollfd> fds;
-    std::map<int, Serveur*> serveurs;
+    std::map<int, Server*> serveurs;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;
 
@@ -133,7 +136,6 @@ private:
     
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
-    void buildServers(ConfigNode *config);
     void displayTokens(const std::vector<Token> &tokens);
     void validateNoDuplicateLocations(ConfigNode *node, const std::string &filename);
     void validateNoNestedServers(ConfigNode *node, const std::string &filename);
@@ -152,7 +154,7 @@ public:
     Webserv &operator=(const Webserv &rhs);
     ~Webserv();
 
-    void acceptNewClient(const Serveur &server);
+    void acceptNewClient(const Server &server);
     void run();
     void storeServers(std::string &filename);
     void launchServers();

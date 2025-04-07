@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/06 23:54:59 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 18:00:43 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,16 @@
 
 Request::Request(int client_fd) : fd(client_fd), statuscode(GOOD_REQUEST), body("")
 {
-	char buffer[1024];
-	recv(client_fd, buffer, sizeof(buffer), 0);
-	Request::parseRequest(buffer);
+    char buffer[1025] = {0};
+    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    
+    if (bytes_received > 0)
+    {
+        buffer[bytes_received] = '\0';
+        Request::parseRequest(buffer);
+    }
+    else
+        statuscode = BAD_REQUEST;
 }
 
 Request::Request(const Request &cpy) : headers(cpy.headers)
@@ -50,36 +57,56 @@ std::string Request::getHeader(const std::string &name) const
 
 void	Request::parseRequest(const std::string &buffer)
 {
-	std::istringstream raw_request(buffer);
-	std::string line;
+    std::istringstream raw_request(buffer);
+    std::string line;
 
-	std::getline(raw_request, line, '\r');
-	Request::parseFirstline(line);
-	if (raw_request.peek() == '\n')
-		raw_request.ignore(1);
-	while (std::getline(raw_request, line, '\r'))
-	{
-		if (raw_request.peek() == '\n')
-			raw_request.ignore(1);
-		if (line.empty())
-			break;
-		Request::parseHeader(line);
-	}
-	std::streampos bodystart = raw_request.tellg();
-	if (headers.count("content-length") && method != "GET")
-		Request::parseBody(buffer.substr(bodystart));
+    std::getline(raw_request, line, '\r');
+    Request::parseFirstline(line);
+    
+    if (raw_request.peek() == '\n')
+        raw_request.ignore(1);
+        
+    while (std::getline(raw_request, line, '\r'))
+    {
+        if (raw_request.peek() == '\n')
+            raw_request.ignore(1);
+        if (line.empty())
+            break;
+        Request::parseHeader(line);
+    }
+    
+    std::streampos bodystart = raw_request.tellg();
+    if (headers.count("content-length") && method != "GET")
+    {
+        Request::parseBody(buffer.substr(bodystart));
+    }
 }
 
+/**
+ * @brief Analyse la première ligne de la requête HTTP
+ * @param line Première ligne à analyser
+ */
 void	Request::parseFirstline(const std::string &line)
 {
 	std::istringstream firstline(line);
 
-	if (!(firstline >> method >> path >> version))
+	// Initialiser avec des valeurs par défaut pour éviter les pointeurs non initialisés
+	method = "";
+	path = "";
+	version = "";
+
+	if (line.empty() || !(firstline >> method >> path >> version))
+	{
 		statuscode = BAD_REQUEST;
+		return;
+	}
+	
 	if (method != "GET" && method != "POST" && method != "DELETE")
 		statuscode = METHOD_NOT_ALLOWED;
-	if (path[0] != '/')
+	
+	if (path.empty() || path[0] != '/')
 		statuscode = BAD_REQUEST;
+	
 	if (version != "HTTP/1.1")
 		statuscode = BAD_REQUEST;
 }
@@ -105,25 +132,47 @@ void	Request::parseHeader(const std::string &line)
 }
 
 //a faire en separant si la requete est POST ou DELETE
-void	Request::parseBody(const std::string &raw_body)
+void Request::parseBody(const std::string &raw_body)
 {
+	// Vérifier si le contenu est valide
+	if (raw_body.empty() || !headers.count("content-length"))
+	{
+		this->body = "";
+		return;
+	}
+
 	std::istringstream iss(headers["content-length"]);
-	int body_lenght;
-	iss >> body_lenght;
+	int body_length = 0;
 	
-	this->body = raw_body.substr(0, body_lenght);
+	// S'assurer que la conversion est réussie
+	if (!(iss >> body_length) || body_length < 0)
+	{
+		this->body = "";
+		return;
+	}
+	
+	// Vérifier que le raw_body est assez long
+	if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
+		this->body = raw_body.substr(0, body_length);
+	else
+		this->body = raw_body; // Prendre tout ce qui est disponible
 }
 
-std::string	trimString(std::string &str, const std::string &charset)
+std::string trimString(std::string &str, const std::string &charset)
 {
-	size_t start;
-	size_t end;
+    if (str.empty())
+        return "";
+        
+    size_t start;
+    size_t end;
 
-	start = str.find_first_not_of(charset);
-	if (start == std::string::npos)
-		start = 0;
-	end = str.find_last_not_of(charset);
-
-	return (str.substr(start, end - start + 1));
+    start = str.find_first_not_of(charset);
+    if (start == std::string::npos)
+        return ""; // La chaîne ne contient que des caractères à supprimer
+        
+    end = str.find_last_not_of(charset);
+    // end ne devrait pas être npos ici puisque start ne l'est pas
+    
+    return str.substr(start, end - start + 1);
 }
 

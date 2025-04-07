@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/07 00:03:36 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 17:14:50 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,39 +79,3 @@ void Webserv::validateNoNestedServers(ConfigNode *node, const std::string &filen
     }
 }
 
-/**
- * @brief Construit les objets Server à partir de l'arbre de configuration
- * @param config Noeud racine de la configuration
- */
-void Webserv::buildServers(ConfigNode *config)
-{
-    if (!config)
-        return;
-        
-    for (size_t i = 0; i < config->children.size(); ++i)
-    {
-        ConfigNode *serverNode = config->children[i];
-        if (serverNode->type != "server")
-            throw std::runtime_error("Expected 'server' block");
-        
-        int port = DEFAULT_PORT;
-        
-        std::map<std::string, std::vector<std::string> >::const_iterator it; 
-        it = serverNode->directives.find("listen");
-        if (it != serverNode->directives.end() && !it->second.empty())
-        {
-            std::stringstream portStream(it->second[0]);
-            if (!(portStream >> port))
-            {
-                std::cout << "Warning: Invalid port value, using default port " 
-                          << DEFAULT_PORT << std::endl;
-                port = DEFAULT_PORT;
-            }
-        }
-        
-        Serveur *newServer = new Serveur();
-        serveurs[newServer->getfd()] = newServer;
-        
-        std::cout << "Added server on port " << port << std::endl;
-    }
-}
