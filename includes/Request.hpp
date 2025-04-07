@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/06 22:56:38 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 17:46:16 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 #include <sys/socket.h>
 #include <fstream>
 #include <sstream>
+#include "Utils.hpp"
+
 
 #define GOOD_REQUEST "200 OK"
 #define BAD_REQUEST "400 Bad Request"

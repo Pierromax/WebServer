@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/07 00:03:52 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 17:15:19 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,7 +123,6 @@ void Webserv::validateAndBuildServers(ConfigNode *root, const std::string &filen
     validateNoNestedServers(root, filename);
     std::cout << "\nParsed Configuration:" << std::endl;
     displayConfig(root);
-    buildServers(root);
 }
 
 /**

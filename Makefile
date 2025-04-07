@@ -13,7 +13,7 @@ INC = -I $(INCLUDES_DIR)
 
 #cpp files
 SRCS = $(SRCS_DIR)/Webserv.cpp \
-       $(SRCS_DIR)/Serveur.cpp \
+       $(SRCS_DIR)/Server.cpp \
        $(SRCS_DIR)/Request.cpp \
        $(SRCS_DIR)/Response.cpp \
        $(SRCS_DIR)/Client.cpp \

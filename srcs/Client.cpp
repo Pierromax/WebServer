@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/06 23:55:14 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/07 17:45:10 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,15 @@ Client::Client() : fd(-1)
 
 Client::Client(int &client_fd) : fd(client_fd)
 {
-    int flags = fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0;
-    fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
-
+    memset(&address, 0, sizeof(address));
+    
+    // Vérifier que le descripteur est valide
+    if (fd >= 0) {
+        int flags = fcntl(client_fd, F_GETFL, 0);
+        if (flags != -1) {
+            fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+        }
+    }
 }
 
 Client::Client(const Client &cpy) : fd(cpy.fd) {}
