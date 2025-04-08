@@ -1,6 +1,8 @@
 webserv
-./.objs
+objs/
+.objs/
 .vscode
 *.o
 logs/
-objs/
+.test_mode
+.normal_mode

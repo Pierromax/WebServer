@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/07 17:14:50 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/08 15:46:40 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,25 +14,41 @@
 #include <sstream>
 
 /**
- * @brief Vérifie qu'il n'y a pas de locations dupliquées dans le même noeud parent
- * @param node Noeud à vérifier
- * @param filename Nom du fichier de configuration
- * @throw std::runtime_error si des duplications sont détectées
+ * @brief Validates configuration tree structure and detects errors
+ * @param node Node to check
+ * @param filename Configuration filename (for error reporting)
+ * @param depth Current depth in tree (0 for root)
+ * @throw std::runtime_error if configuration errors are detected
  */
-void Webserv::validateNoDuplicateLocations(ConfigNode *node,
-                                          const std::string &filename)
+void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth)
 {
     if (!node)
         return;
     std::map<std::string, size_t> locationPaths;
     
+    if (depth > 1 && node->type == "server")
+    {
+        std::stringstream err;
+        err << "\"server\" directive is not allowed here in " 
+            << filename << ":" << node->line;
+        throw std::runtime_error(err.str());
+    }
+    
     for (size_t i = 0; i < node->children.size(); ++i)
     {
         ConfigNode *child = node->children[i];
+        
+        if (node->type == "server" && child->type == "server")
+        {
+            std::stringstream err;
+            err << "\"server\" directive is not allowed here in " 
+                << filename << ":" << child->line;
+            throw std::runtime_error(err.str());
+        }
+        
         if (child->type == "location")
         {
             std::string path = child->value;
-            
             std::map<std::string, size_t>::iterator it = locationPaths.find(path);
             if (it != locationPaths.end())
             {
@@ -43,39 +59,20 @@ void Webserv::validateNoDuplicateLocations(ConfigNode *node,
             }
             locationPaths[path] = child->line;
         }
-        validateNoDuplicateLocations(child, filename);
     }
+    
+    for (size_t i = 0; i < node->children.size(); ++i)
+        validateConfigTree(node->children[i], filename, depth + 1);
 }
 
 /**
- * @brief Vérifie qu'il n'y a pas de servers dans d'autres servers
- * @param node Noeud à vérifier
- * @param filename Nom du fichier de configuration
- * @throw std::runtime_error si des servers sont imbriqués
+ * @brief Validates the configuration tree
+ * @param root Root node of the configuration
+ * @param filename Configuration filename (for error reporting)
  */
-void Webserv::validateNoNestedServers(ConfigNode *node, const std::string &filename)
+void Webserv::validateServers(ConfigNode *root, const std::string &filename)
 {
-    if (!node)
-        return;
-    
-    if (node->type == "server")
-    {
-        for (size_t i = 0; i < node->children.size(); ++i)
-        {
-            if (node->children[i]->type == "server")
-            {
-                std::stringstream err;
-                err << "\"server\" directive is not allowed here in " 
-                    << filename << ":" << node->children[i]->line;
-                throw std::runtime_error(err.str());
-            }
-            validateNoNestedServers(node->children[i], filename);
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < node->children.size(); ++i)
-            validateNoNestedServers(node->children[i], filename);
-    }
+    validateConfigTree(root, filename, 0);
+    displayConfig(root);
 }
 

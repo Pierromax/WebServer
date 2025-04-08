@@ -21,7 +21,7 @@ RED="\033[0;31m"
 YELLOW="\033[0;33m"
 BLUE="\033[0;34m"
 WHITE="\033[1;37m"
-RESET="\033[0m"
+R="\033[0m"
 BOLD="\033[1m"
 CHECK_MARK="\u2714"
 CROSS_MARK="\u274C"
@@ -42,11 +42,11 @@ framed_message() {
         bottom_border+="─"
     done
     
-    top_border+="┐${RESET}"
-    bottom_border+="┘${RESET}"
+    top_border+="┐${R}"
+    bottom_border+="┘${R}"
     
     echo -e "$top_border" | tee -a "$LOG_FILE"
-    echo -e "${BLUE}${BOLD}│ $message │${RESET}" | tee -a "$LOG_FILE"
+    echo -e "${BLUE}${BOLD}│ $message │${R}" | tee -a "$LOG_FILE"
     echo -e "$bottom_border" | tee -a "$LOG_FILE"
 }
 
@@ -73,7 +73,7 @@ test_config() {
     
     # Get the ending line number
     local end_line=$(wc -l < "$LOG_FILE")
-    local log_ref="${WHITE}${BOLD}→ ${LOG_FILE}:${start_line}-${end_line}${RESET}"
+    local log_ref="${WHITE}${BOLD}→ ${LOG_FILE}:${start_line}-${end_line}${R}"
     
     if [ $result -eq 0 ]; then
         if [ "$invert" == "true" ]; then
@@ -94,7 +94,7 @@ test_config() {
             # Extract error message from the log
             local error_output=$(tail -n $((end_line - start_line + 1)) "$LOG_FILE" | grep -i "error")
             if [ -n "$error_output" ]; then
-                echo -e "${YELLOW}  Error: ${error_output}${RESET}" | tee -a "$LOG_FILE"
+                echo -e "${YELLOW}  Error: ${error_output}${R}" | tee -a "$LOG_FILE"
             fi
         fi
     fi

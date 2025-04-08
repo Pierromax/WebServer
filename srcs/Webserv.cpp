@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 18:14:07 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/08 17:01:00 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,21 @@
 #include "Utils.hpp"
 #include "Server.hpp"
 #include <sstream>
+#include <csignal>
+
+// Variable globale pour contrôler la boucle principale
+volatile sig_atomic_t g_running = 1;
+
+/**
+ * @brief Signal handler for SIGINT (Ctrl+C)
+ * @param sig Signal number
+ */
+void signalHandler(int sig)
+{
+    (void)sig;
+    std::cout << std::endl << "Received SIGINT, shutting down..." << std::endl;
+    g_running = 0;
+}
 
 /**
  * @brief Constructeur par défaut
@@ -109,86 +124,114 @@ void Webserv::acceptNewClient(const Server &server)
 }
 
 /**
- * @brief Boucle principale du serveur
+ * @brief Removes closed file descriptors from the poll array
+ */
+void Webserv::cleanInvalidFileDescriptors()
+{
+    for (size_t i = 0; i < fds.size(); ++i)
+        if (fds[i].fd == -1)
+        {
+            fds.erase(fds.begin() + i);
+            --i;
+        }
+}
+
+/**
+ * @brief Processes a client request and generates a response
+ * @param client_fd Client file descriptor
+ * @return Response string to send back to client
+ */
+std::string Webserv::processRequest(int client_fd)
+{
+    Request req(client_fd);
+    Response resp;
+    std::string path = req.getPath();
+    
+    if (path.find(".css") != std::string::npos)
+    {
+        std::string file_path = "." + path;
+        std::ifstream css_file(file_path.c_str());
+        if (css_file.is_open())
+        {
+            std::stringstream buffer;
+            buffer << css_file.rdbuf();
+            resp.setStatusCode("200 OK");
+            resp.setContentType("text/css");
+            resp.setContent(buffer.str());
+            css_file.close();
+        }
+        else
+        {
+            resp.setStatusCode("404 Not Found");
+            resp.setContentType("text/css");
+            resp.setContent("/* CSS file not found */");
+        }
+    }
+    else
+    {
+        resp.setStatusCode("404 Not Found");
+        resp.loadErrorPage("./config/html/404.html");
+    }
+    
+    return resp.build();
+}
+
+/**
+ * @brief Closes client connection and cleans up resources
+ * @param clientFd Client file descriptor to clean up
+ * @param it Iterator pointing to the client's pollfd entry
+ */
+void Webserv::closeClientConnection(int clientFd, std::vector<pollfd>::iterator &it)
+{
+    close(clientFd);
+    delete clients[clientFd];
+    clients.erase(clientFd);
+    it->fd = -1;
+}
+
+/**
+ * @brief Main server loop
  */
 void Webserv::run()
 {
-#if CONFIG_TESTER == 0
-    while (true)
+    std::cout << "Webserver running." << std::endl;
+    g_running = 1;
+    signal(SIGINT, signalHandler);
+    
+    while (g_running)
     {
-        int ret = poll(fds.data(), fds.size(), -1);
+        int ret = poll(fds.data(), fds.size(), 1000);
         if (ret < 0)
-            throw(std::runtime_error("poll failed"));
-            
-        bool clientProcessed = false; // Pour traiter un seul client par itération
+        {
+            if (errno == EINTR)
+                continue;
+            std::cerr << "Poll error: " << strerror(errno) << std::endl;
+            break;
+        }
         
+        bool clientProcessed = false;
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end() && !clientProcessed; ++it)
         {
-            // Vérifier si c'est un serveur prêt à accepter une connexion
-            if (serveurs.count(it->fd) && (it->revents & POLLIN))
-            {
+            if (serveurs.count(it->fd) && (it->revents & POLLIN)) {
                 acceptNewClient(*serveurs[it->fd]);
-                break; // Évite les problèmes de double traitement
+                break;
             }
-            // Vérifier si c'est un client avec des données à lire
             else if (clients.count(it->fd) && (it->revents & POLLIN))
             {
                 try {
-                    Request req(it->fd);
-                    Response resp;
-                    std::string path = req.getPath();
-                    
-                    if (path.find(".css") != std::string::npos) {
-                        std::string file_path = "." + path;
-                        std::ifstream css_file(file_path.c_str());
-                        if (css_file.is_open()) {
-                            std::stringstream buffer;
-                            buffer << css_file.rdbuf();
-                            resp.setStatusCode("200 OK");
-                            resp.setContentType("text/css");
-                            resp.setContent(buffer.str());
-                            css_file.close();
-                        } else {
-                            resp.setStatusCode("404 Not Found");
-                            resp.setContentType("text/css");
-                            resp.setContent("/* CSS file not found */");
-                        }
-                    } else {
-                        resp.setStatusCode("404 Not Found");
-                        resp.loadErrorPage("./config/html/404.html");
-                    }
-                    
-                    std::string response_str = resp.build();
+                    std::string response_str = processRequest(it->fd);
                     send(it->fd, response_str.c_str(), response_str.length(), 0);
-                    close(it->fd);
-                    delete clients[it->fd];
-                    clients.erase(it->fd);
-                    it->fd = -1;
-                    
-                    clientProcessed = true;
+                    closeClientConnection(it->fd, it);
                 } catch (std::exception &e) {
-                    std::cerr << "Erreur lors du traitement de la requête: " << e.what() << std::endl;
-                    close(it->fd);
-                    delete clients[it->fd];
-                    clients.erase(it->fd);
-                    it->fd = -1;
-                    
-                    clientProcessed = true;
+                    std::cerr << "Error processing request: " << e.what() << std::endl;
+                    closeClientConnection(it->fd, it);
                 }
+                clientProcessed = true;
             } 
         }
-        
-        for (size_t i = 0; i < fds.size(); ++i) {
-            if (fds[i].fd == -1) {
-                fds.erase(fds.begin() + i);
-                --i;
-            }
-        }
+        cleanInvalidFileDescriptors();
     }
-#else
-    std::cout << "Configuration loaded successfully. Running in tester mode." << std::endl;
-    // En mode testeur, on n'exécute pas la boucle principale
-#endif
+    std::cout << "Webserver shutting down" << std::endl;
 }
 
 /**
@@ -203,7 +246,7 @@ void Webserv::storeServers(std::string &filename)
         std::vector<Token> tokens = tokenizeConfigFile(filename);
         std::vector<Token> filteredTokens = filterTokens(tokens, filename);
         rootConfig = parseTokens(filteredTokens, filename);
-        validateAndBuildServers(rootConfig, filename);
+        validateServers(rootConfig, filename);
     }
     catch (const std::exception &e)
     {
@@ -219,13 +262,11 @@ void Webserv::launchServers()
 {
     std::cout << "Lancement des serveurs..." << std::endl;
     
-    // Nettoyer les serveurs existants
     for (std::map<int, Server*>::iterator it = serveurs.begin(); it != serveurs.end(); ++it)
         delete it->second;
     serveurs.clear();
     fds.clear();
     
-    // Créer les serveurs à partir de la configuration
     if (rootConfig && !rootConfig->children.empty())
     {
         for (size_t i = 0; i < rootConfig->children.size(); ++i)
@@ -267,6 +308,8 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
 {
     if (!node)
         return;
+    if (node->type == "root")
+        std::cout << "\nParsed Configuration:" << std::endl;
     std::string indent(depth * 4, ' ');
     std::cout << indent << node->type;
     if (!node->value.empty())

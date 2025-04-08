@@ -88,7 +88,7 @@ MathUtils::MathUtils(double precision) {
  */
 double MathUtils::computeAverage(const std::vector<double>& values) {
     double sum = 0.0;
-    int count = values.size();
+    int count = values.size(); // One line after start vars declaration
     
     if (count == 0)
         return 0.0;
@@ -97,8 +97,8 @@ double MathUtils::computeAverage(const std::vector<double>& values) {
     
     std::vector<double>::const_iterator it; // One line before iterator declaration
     for (it = values.begin(); it != values.end(); ++it)
-        if (*it < 0)
-            sum -= *it * 2;
+        if (*it < 0) // Only one line instruction in loops, no brackets needed
+            sum -= *it * 2; // Same in conditions
     return sum / count;
 }
 ```
