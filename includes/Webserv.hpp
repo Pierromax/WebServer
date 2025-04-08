@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/07 18:14:07 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/08 16:42:00 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@
 #include <set>
 #include <cstring>
 #include <fcntl.h>
+#include <signal.h>
+#include <csignal> // Pour sig_atomic_t
 
 #ifndef CONFIG_TESTER
 # define CONFIG_TESTER 0
@@ -97,7 +99,7 @@ struct ConfigNode
     ConfigNode *parent;
     std::vector<ConfigNode *> children;
     std::map<std::string, std::vector<std::string> > directives;
-    std::size_t line; // Add line number information
+    std::size_t line;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
         : type(t), value(v), parent(p), line(ln) {}
@@ -105,9 +107,7 @@ struct ConfigNode
     ~ConfigNode()
     {
         for (size_t i = 0; i < children.size(); ++i)
-        {
             delete children[i];
-        }
     }
 };
 
@@ -132,20 +132,24 @@ private:
     std::vector<Token> tokenizeConfigFile(const std::string &filename);
     std::vector<Token> filterTokens(const std::vector<Token> &tokens, const std::string &filename);
     ConfigNode* parseTokens(std::vector<Token> &tokens, const std::string &filename);
-    void validateAndBuildServers(ConfigNode *root, const std::string &filename);
+    void validateServers(ConfigNode *root, const std::string &filename);
+    
+    // Nouvelle fonction de validation fusionnée
+    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
     
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
     void displayTokens(const std::vector<Token> &tokens);
-    void validateNoDuplicateLocations(ConfigNode *node, const std::string &filename);
-    void validateNoNestedServers(ConfigNode *node, const std::string &filename);
-
+    
     ConfigNode* initConfigNode(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     void handleLocationDirective(ConfigNode *node, std::vector<Token> &tokens, size_t &index);
     void checkOpeningBrace(std::vector<Token> &tokens, size_t &index, 
                            const std::string &keyword, std::size_t lineNumber);
     bool handleServerDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
     bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
+    void cleanInvalidFileDescriptors();
+    std::string processRequest(int client_fd);
+    void closeClientConnection(int clientFd, std::vector<pollfd>::iterator &it);
 
 public:
     Webserv();

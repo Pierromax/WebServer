@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/07 17:15:19 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/08 15:02:49 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,19 +110,6 @@ ConfigNode* Webserv::parseTokens(std::vector<Token> &tokens, const std::string &
         delete root;
         throw;
     }
-}
-
-/**
- * @brief Valide et initialise les serveurs à partir de l'arbre de configuration
- * @param root Noeud racine de la configuration
- * @param filename Nom du fichier (pour les erreurs)
- */
-void Webserv::validateAndBuildServers(ConfigNode *root, const std::string &filename)
-{
-    validateNoDuplicateLocations(root, filename);
-    validateNoNestedServers(root, filename);
-    std::cout << "\nParsed Configuration:" << std::endl;
-    displayConfig(root);
 }
 
 /**

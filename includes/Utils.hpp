@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 17:58:32 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/08 17:11:21 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,21 @@
 #include <string>
 #include <iostream>
 
+// Définitions des codes ANSI pour la formatation du texte
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define BLUE "\033[34m"
+#define YELLOW "\033[33m"
+#define WHITE "\033[37m"
+#define R "\033[0m"
+#define B "\033[1m"
+#define D "\033[2m"
+#define I "\033[3m"
+
 /**
- * @brief Supprime un pointeur et le met à NULL
- * @tparam T Type du pointeur
- * @param ptr Référence vers le pointeur à supprimer
+ * @brief Deletes a pointer and sets it to NULL
+ * @tparam T Pointer type
+ * @param ptr Reference to the pointer to delete
  */
 template<typename T>
 void deleteAndNull(T*& ptr)
@@ -32,11 +43,24 @@ void deleteAndNull(T*& ptr)
 }
 
 /**
- * @brief Fonction de debug pour tracer l'exécution et identifier où un segfault se produit
- * @param n Numéro de ligne ou identificateur personnalisé
- * @param msg Message supplémentaire optionnel
+ * @brief Debug function to trace execution and identify where a segfault occurs
+ * @param msg Optional additional message
  */
-inline void s(int n, const std::string& msg = "")
+inline void s(const std::string& msg = "")
+{
+    static int count = 0;
+    std::cout << "Squid #" << count++;
+    if (!msg.empty())
+        std::cout << " - " << msg;
+    std::cout << std::endl;
+}
+
+/**
+ * @brief Debug function to trace execution with a specific number
+ * @param n Line number or custom identifier
+ * @param msg Optional additional message
+ */
+inline void sn(int n, const std::string& msg = "")
 {
     std::cout << "Squid #" << n;
     if (!msg.empty())
