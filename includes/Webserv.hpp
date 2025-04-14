@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/08 16:42:00 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/12 13:35:23 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,7 +136,7 @@ private:
     
     // Nouvelle fonction de validation fusionnée
     void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
-    
+
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
     void displayTokens(const std::vector<Token> &tokens);

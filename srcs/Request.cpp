@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 18:00:43 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/14 10:52:42 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,10 +62,8 @@ void	Request::parseRequest(const std::string &buffer)
 
     std::getline(raw_request, line, '\r');
     Request::parseFirstline(line);
-    
     if (raw_request.peek() == '\n')
         raw_request.ignore(1);
-        
     while (std::getline(raw_request, line, '\r'))
     {
         if (raw_request.peek() == '\n')
@@ -74,12 +72,9 @@ void	Request::parseRequest(const std::string &buffer)
             break;
         Request::parseHeader(line);
     }
-    
     std::streampos bodystart = raw_request.tellg();
     if (headers.count("content-length") && method != "GET")
-    {
         Request::parseBody(buffer.substr(bodystart));
-    }
 }
 
 /**
@@ -100,13 +95,11 @@ void	Request::parseFirstline(const std::string &line)
 		statuscode = BAD_REQUEST;
 		return;
 	}
-	
 	if (method != "GET" && method != "POST" && method != "DELETE")
 		statuscode = METHOD_NOT_ALLOWED;
 	
 	if (path.empty() || path[0] != '/')
 		statuscode = BAD_REQUEST;
-	
 	if (version != "HTTP/1.1")
 		statuscode = BAD_REQUEST;
 }
@@ -134,28 +127,23 @@ void	Request::parseHeader(const std::string &line)
 //a faire en separant si la requete est POST ou DELETE
 void Request::parseBody(const std::string &raw_body)
 {
-	// Vérifier si le contenu est valide
 	if (raw_body.empty() || !headers.count("content-length"))
 	{
 		this->body = "";
 		return;
 	}
-
 	std::istringstream iss(headers["content-length"]);
 	int body_length = 0;
 	
-	// S'assurer que la conversion est réussie
 	if (!(iss >> body_length) || body_length < 0)
 	{
 		this->body = "";
 		return;
 	}
-	
-	// Vérifier que le raw_body est assez long
 	if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
 		this->body = raw_body.substr(0, body_length);
 	else
-		this->body = raw_body; // Prendre tout ce qui est disponible
+		this->body = raw_body;
 }
 
 std::string trimString(std::string &str, const std::string &charset)

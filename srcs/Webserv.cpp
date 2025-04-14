@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/08 17:01:00 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/14 13:28:22 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,40 +141,40 @@ void Webserv::cleanInvalidFileDescriptors()
  * @param client_fd Client file descriptor
  * @return Response string to send back to client
  */
-std::string Webserv::processRequest(int client_fd)
-{
-    Request req(client_fd);
-    Response resp;
-    std::string path = req.getPath();
+// std::string Webserv::processRequest(int client_fd)
+// {
+//     Request req(client_fd);
+//     Response resp;
+//     std::string path = req.getPath();
     
-    if (path.find(".css") != std::string::npos)
-    {
-        std::string file_path = "." + path;
-        std::ifstream css_file(file_path.c_str());
-        if (css_file.is_open())
-        {
-            std::stringstream buffer;
-            buffer << css_file.rdbuf();
-            resp.setStatusCode("200 OK");
-            resp.setContentType("text/css");
-            resp.setContent(buffer.str());
-            css_file.close();
-        }
-        else
-        {
-            resp.setStatusCode("404 Not Found");
-            resp.setContentType("text/css");
-            resp.setContent("/* CSS file not found */");
-        }
-    }
-    else
-    {
-        resp.setStatusCode("404 Not Found");
-        resp.loadErrorPage("./config/html/404.html");
-    }
+//     if (path.find(".css") != std::string::npos)
+//     {
+//         std::string file_path = "." + path;
+//         std::ifstream css_file(file_path.c_str());
+//         if (css_file.is_open())
+//         {
+//             std::stringstream buffer;
+//             buffer << css_file.rdbuf();
+//             resp.setStatusCode("200 OK");
+//             resp.setContentType("text/css");
+//             resp.setContent(buffer.str());
+//             css_file.close();
+//         }
+//         else
+//         {
+//             resp.setStatusCode("404 Not Found");
+//             resp.setContentType("text/css");
+//             resp.setContent("/* CSS file not found */");
+//         }
+//     }
+//     else
+//     {
+//         resp.setStatusCode("404 Not Found");
+//         resp.loadErrorPage("./config/html/404.html");
+//     }
     
-    return resp.build();
-}
+//     return resp.build();
+// }
 
 /**
  * @brief Closes client connection and cleans up resources
@@ -208,7 +208,6 @@ void Webserv::run()
             std::cerr << "Poll error: " << strerror(errno) << std::endl;
             break;
         }
-        
         bool clientProcessed = false;
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end() && !clientProcessed; ++it)
         {
