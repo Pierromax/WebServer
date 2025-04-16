@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/14 13:28:22 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/16 14:34:50 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ Webserv::Webserv() : rootConfig(NULL)
     newfd.fd = newServer->getfd();
     newfd.events = POLLIN;
     fds.push_back(newfd);
-    serveurs[newfd.fd] = newServer;
+    servers[newfd.fd] = newServer;
     std::cout << "Serveur ajouté à la map avec fd = " << newfd.fd << std::endl;
 }
 
@@ -74,7 +74,7 @@ Webserv &Webserv::operator=(const Webserv &rhs)
     {
         deleteAndNull(rootConfig);
         this->fds = rhs.fds;
-        this->serveurs = rhs.serveurs;
+        this->servers = rhs.servers;
     }
     return (*this);
 }
@@ -85,7 +85,7 @@ Webserv &Webserv::operator=(const Webserv &rhs)
 Webserv::~Webserv()
 {
     deleteAndNull(rootConfig);
-    for (std::map<int, Server*>::iterator it = serveurs.begin(); it != serveurs.end(); ++it)
+    for (std::map<int, Server*>::iterator it = servers.begin(); it != serveurs.end(); ++it)
         delete it->second;
     for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
         delete it->second;
@@ -137,46 +137,6 @@ void Webserv::cleanInvalidFileDescriptors()
 }
 
 /**
- * @brief Processes a client request and generates a response
- * @param client_fd Client file descriptor
- * @return Response string to send back to client
- */
-// std::string Webserv::processRequest(int client_fd)
-// {
-//     Request req(client_fd);
-//     Response resp;
-//     std::string path = req.getPath();
-    
-//     if (path.find(".css") != std::string::npos)
-//     {
-//         std::string file_path = "." + path;
-//         std::ifstream css_file(file_path.c_str());
-//         if (css_file.is_open())
-//         {
-//             std::stringstream buffer;
-//             buffer << css_file.rdbuf();
-//             resp.setStatusCode("200 OK");
-//             resp.setContentType("text/css");
-//             resp.setContent(buffer.str());
-//             css_file.close();
-//         }
-//         else
-//         {
-//             resp.setStatusCode("404 Not Found");
-//             resp.setContentType("text/css");
-//             resp.setContent("/* CSS file not found */");
-//         }
-//     }
-//     else
-//     {
-//         resp.setStatusCode("404 Not Found");
-//         resp.loadErrorPage("./config/html/404.html");
-//     }
-    
-//     return resp.build();
-// }
-
-/**
  * @brief Closes client connection and cleans up resources
  * @param clientFd Client file descriptor to clean up
  * @param it Iterator pointing to the client's pollfd entry
@@ -205,32 +165,46 @@ void Webserv::run()
         {
             if (errno == EINTR)
                 continue;
-            std::cerr << "Poll error: " << strerror(errno) << std::endl;
-            break;
-        }
-        bool clientProcessed = false;
-        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end() && !clientProcessed; ++it)
-        {
-            if (serveurs.count(it->fd) && (it->revents & POLLIN)) {
-                acceptNewClient(*serveurs[it->fd]);
+                std::cerr << "Poll error: " << strerror(errno) << std::endl;
                 break;
             }
+        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
+        {
+            if (servers.count(it->fd) && (it->revents & POLLIN))
+                active_servers.push_back(it->fd);
             else if (clients.count(it->fd) && (it->revents & POLLIN))
-            {
-                try {
-                    std::string response_str = processRequest(it->fd);
-                    send(it->fd, response_str.c_str(), response_str.length(), 0);
-                    closeClientConnection(it->fd, it);
-                } catch (std::exception &e) {
-                    std::cerr << "Error processing request: " << e.what() << std::endl;
-                    closeClientConnection(it->fd, it);
-                }
-                clientProcessed = true;
-            } 
+                active_clients.push_back(it->fd);
         }
-        cleanInvalidFileDescriptors();
+        try {
+            handleServers();
+            handleClients();
+        }
+        catch (std::exception &e) {
+            std::cerr << "Error processing request: " << e.what() << std::endl;
+        }
     }
     std::cout << "Webserver shutting down" << std::endl;
+}
+
+void    Webserv::handleServers()
+{
+    std::vector<int>::iterator it;
+    for (it = active_servers.begin(); it != active_servers.end(); it++)
+        acceptNewClient(*servers[*it]);
+}
+
+void    Webserv::handleClients()
+{
+    std::vector<int>::iterator it;
+    for (it = active_clients.begin(); it != active_clients.end(); it++)
+    {
+        Request     Req(*it);
+        Response    resp(Req);
+        std::string to_send = resp.build();
+        
+        send(*it, to_send.c_str(), to_send.length(), 0);
+    }
+    cleanInvalidFileDescriptors();
 }
 
 /**
@@ -243,15 +217,8 @@ void Webserv::storeServers(std::string &filename)
     try
     {
         std::vector<Token> tokens = tokenizeConfigFile(filename);
-        std::vector<Token> filteredTokens = filterTokens(tokens, filename);
-        rootConfig = parseTokens(filteredTokens, filename);
-        validateServers(rootConfig, filename);
-    }
-    catch (const std::exception &e)
-    {
-        deleteAndNull(rootConfig);
-        throw std::runtime_error(e.what());
-    }
+        std::vector<Token> filteredTokens = filterTokens(tokens, filena                closeClientConnection(client_fd, fd_it);
+
 }
 
 /**
@@ -261,9 +228,9 @@ void Webserv::launchServers()
 {
     std::cout << "Lancement des serveurs..." << std::endl;
     
-    for (std::map<int, Server*>::iterator it = serveurs.begin(); it != serveurs.end(); ++it)
+    for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
-    serveurs.clear();
+    servers.clear();
     fds.clear();
     
     if (rootConfig && !rootConfig->children.empty())
@@ -279,21 +246,21 @@ void Webserv::launchServers()
             newfd.fd = newServer->getfd();
             newfd.events = POLLIN;
             fds.push_back(newfd);
-            serveurs[newfd.fd] = newServer;
+            servers[newfd.fd] = newServer;
             std::cout << "Server added on fd = " << newfd.fd 
                       << " (port " << ntohs(newServer->getAddress().sin_port) << ")" << std::endl;
         }
     }
     
     // Si aucun serveur n'a été créé, utiliser un serveur par défaut
-    if (serveurs.empty())
+    if (servers.empty())
     {
         Server *defaultServer = new Server();
         pollfd newfd;
         newfd.fd = defaultServer->getfd();
         newfd.events = POLLIN;
         fds.push_back(newfd);
-        serveurs[newfd.fd] = defaultServer;
+        servers[newfd.fd] = defaultServer;
         std::cout << "Default server added on fd = " << newfd.fd << std::endl;
     }
 }
