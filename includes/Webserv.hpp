@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/16 14:24:20 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/17 16:42:20 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,8 +121,8 @@ private:
     sockaddr_in adress;
     socklen_t adrLen;
     std::vector<pollfd> fds;
-    std::vector<int> active_servers;
-    std::vector<int> active_clients;
+    std::vector<pollfd> active_servers;
+    std::vector<pollfd> active_clients;
     std::map<int, Server*> servers;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;

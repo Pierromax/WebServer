@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/14 13:25:01 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/17 17:13:37 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,17 +88,42 @@ void Response::setBody(const std::string &body)
 
 void    Response::handleGetRequest(const Request &req)
 {
-    
+    std::string path = req.getPath();
+
+    if (path == "/")
+    {
+        setBody("<html><body><h1>Welcome to the Web Server!</h1></body></html>");
+        setContentType("text/html");
+    }
+    else
+    {
+        std::string filePath = "config/html" + path;
+        std::ifstream file(filePath.c_str());
+        if (file.is_open())
+        {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            setBody(buffer.str());
+            file.close();
+        }
+        else
+        {
+            status_code = "404 Not Found";
+            loadErrorPage(status_code);
+        }
+    }
 }
 
 void    Response::handlePostRequest(const Request &req)
 {
-    
+    (void)req;
+
 }
 
 void    Response::handleDeleteRequest(const Request &req)
 {
-    
+    (void)req;
+
 }
 
 std::string Response::build() const

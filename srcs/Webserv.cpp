@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/16 14:34:50 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/17 17:26:30 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ Webserv &Webserv::operator=(const Webserv &rhs)
 Webserv::~Webserv()
 {
     deleteAndNull(rootConfig);
-    for (std::map<int, Server*>::iterator it = servers.begin(); it != serveurs.end(); ++it)
+    for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
     for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
         delete it->second;
@@ -117,7 +117,7 @@ void Webserv::acceptNewClient(const Server &server)
     Client *newclient = new Client(client_fd);
     pollfd newfd;
     newfd.fd = client_fd;
-    newfd.events = POLLIN;
+    newfd.events = POLLIN | POLLOUT;
     fds.push_back(newfd);
     clients[client_fd] = newclient;
     std::cout << "client ajouter avec fd = " << client_fd << std::endl;
@@ -161,19 +161,19 @@ void Webserv::run()
     while (g_running)
     {
         int ret = poll(fds.data(), fds.size(), 1000);
-        if (ret < 0)
-        {
-            if (errno == EINTR)
-                continue;
-                std::cerr << "Poll error: " << strerror(errno) << std::endl;
-                break;
-            }
+        // if (ret < 0)
+        // {
+        //     if (errno == EINTR)
+        //         continue;
+        //     std::cerr << "Poll error: " << strerror(errno) << std::endl;
+        //     break;
+        // }
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
         {
-            if (servers.count(it->fd) && (it->revents & POLLIN))
-                active_servers.push_back(it->fd);
-            else if (clients.count(it->fd) && (it->revents & POLLIN))
-                active_clients.push_back(it->fd);
+            if (servers.count(it->fd))
+                active_servers.push_back(*it);
+            else if (clients.count(it->fd))
+                active_clients.push_back(*it);
         }
         try {
             handleServers();
@@ -188,21 +188,32 @@ void Webserv::run()
 
 void    Webserv::handleServers()
 {
-    std::vector<int>::iterator it;
+    std::vector<pollfd>::iterator it;
     for (it = active_servers.begin(); it != active_servers.end(); it++)
-        acceptNewClient(*servers[*it]);
+    {
+        if (it->revents & POLLERR)
+        {
+            std::cerr << "Error on server fd = " << it->fd << std::endl;
+            continue;
+        }
+        try {
+            acceptNewClient(*servers[it->fd]);
+        } catch (const std::exception &e){
+            std::cerr << "Error accepting new client: " << e.what() << std::endl;
+        }
+    }
 }
 
 void    Webserv::handleClients()
 {
-    std::vector<int>::iterator it;
+    std::vector<pollfd>::iterator it;
     for (it = active_clients.begin(); it != active_clients.end(); it++)
     {
-        Request     Req(*it);
+        Request     Req(it->fd);
         Response    resp(Req);
         std::string to_send = resp.build();
         
-        send(*it, to_send.c_str(), to_send.length(), 0);
+        //send(it->fd, to_send.c_str(), to_send.length(), 0);
     }
     cleanInvalidFileDescriptors();
 }
@@ -217,8 +228,15 @@ void Webserv::storeServers(std::string &filename)
     try
     {
         std::vector<Token> tokens = tokenizeConfigFile(filename);
-        std::vector<Token> filteredTokens = filterTokens(tokens, filena                closeClientConnection(client_fd, fd_it);
-
+        std::vector<Token> filteredTokens = filterTokens(tokens, filename);
+        rootConfig = parseTokens(filteredTokens, filename);
+        validateServers(rootConfig, filename);
+    }
+    catch (const std::exception &e)
+    {
+        deleteAndNull(rootConfig);
+        throw std::runtime_error(e.what());
+    }
 }
 
 /**
