@@ -151,7 +151,7 @@ private:
     bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
     void cleanInvalidFileDescriptors();
     std::string processRequest(int client_fd);
-    void closeClientConnection(int clientFd, std::vector<pollfd>::iterator &it);
+    void closeClientConnection(int clientFd);
 
 public:
     Webserv();

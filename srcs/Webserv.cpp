@@ -15,6 +15,7 @@
 #include "Server.hpp"
 #include <sstream>
 #include <csignal>
+#include <cerrno> // For errno
 
 // Variable globale pour contrôler la boucle principale
 volatile sig_atomic_t g_running = 1;
@@ -99,25 +100,27 @@ Webserv::~Webserv()
  */
 void Webserv::acceptNewClient(const Server &server)
 {
-    //std::cout << "Tentative d'accepter un nouveau client depuis le serveur fd = "
-    //          << server.getfd() << std::endl;
     sockaddr_in serveuraddr = server.getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
     int client_fd = accept(server.getfd(), (sockaddr *)&serveuraddr, &addrlen);
+    
     if (client_fd < 0)
     {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-           // std::cout << "Aucune connexion client en attente" << std::endl;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
             return;
         }
         std::cerr << "Erreur accept(): " << strerror(errno) << std::endl;
         throw (std::runtime_error("Error: accept client failed"));
     }
+    
     std::cout << "Nouveau client accepté avec fd = " << client_fd << std::endl;
     Client *newclient = new Client(client_fd);
     pollfd newfd;
+    
     newfd.fd = client_fd;
-    newfd.events = POLLIN | POLLOUT;
+    newfd.events = POLLIN;
+    newfd.revents = 0;
     fds.push_back(newfd);
     clients[client_fd] = newclient;
     std::cout << "client ajouter avec fd = " << client_fd << std::endl;
@@ -129,24 +132,35 @@ void Webserv::acceptNewClient(const Server &server)
 void Webserv::cleanInvalidFileDescriptors()
 {
     for (size_t i = 0; i < fds.size(); ++i)
+    {
         if (fds[i].fd == -1)
         {
             fds.erase(fds.begin() + i);
             --i;
         }
+    }
 }
 
 /**
  * @brief Closes client connection and cleans up resources
  * @param clientFd Client file descriptor to clean up
- * @param it Iterator pointing to the client's pollfd entry
  */
-void Webserv::closeClientConnection(int clientFd, std::vector<pollfd>::iterator &it)
+void Webserv::closeClientConnection(int clientFd)
 {
+    std::cout << "Closing connection for fd = " << clientFd << std::endl;
     close(clientFd);
     delete clients[clientFd];
     clients.erase(clientFd);
-    it->fd = -1;
+
+    // Mark the corresponding pollfd in the main fds vector for removal
+    for (std::vector<pollfd>::iterator pfd_it = fds.begin(); pfd_it != fds.end(); ++pfd_it)
+    {
+        if (pfd_it->fd == clientFd)
+        {
+            pfd_it->fd = -1;
+            break;
+        }
+    }
 }
 
 /**
@@ -164,16 +178,22 @@ void Webserv::run()
         if (ret < 0)
         {
             if (errno == EINTR)
+            {
                 continue;
+            }
             std::cerr << "Poll error: " << strerror(errno) << std::endl;
             break;
         }
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
         {
             if (servers.count(it->fd))
+            {
                 active_servers.push_back(*it);
+            }
             else if (clients.count(it->fd))
+            {
                 active_clients.push_back(*it);
+            }
         }
         try {
             handleServers();
@@ -208,18 +228,73 @@ void    Webserv::handleServers()
 void    Webserv::handleClients()
 {
     std::vector<pollfd>::iterator it;
-    for (it = active_clients.begin(); it != active_clients.end(); it++)
+    
+    for (it = active_clients.begin(); it != active_clients.end(); ++it)
     {
-        Request     Req(it->fd);
-        Response    resp(Req);
-        std::string to_send = resp.build();
-        
-        try {
-            send(it->fd, to_send.c_str(), to_send.length(), 0);
-        } catch (std::exception &e) {
-            std::cerr << "Error processing request: " << e.what() << std::endl;
+        int currentFd = it->fd;
+        bool closeConn = false;
+
+        if (it->revents & (POLLERR | POLLHUP))
+        {
+            std::cerr << "Error or HUP on client fd = " << currentFd << std::endl;
+            closeConn = true;
         }
-        closeClientConnection(it->fd, it);
+        else if (it->revents & POLLIN)
+        {
+            Request req(currentFd);
+            ssize_t bytesRead = req.getBytesRead();
+
+            if (bytesRead <= 0)
+            {
+                if (bytesRead == 0)
+                {
+                    std::cout << "Client fd = " << currentFd << " disconnected." << std::endl;
+                    closeConn = true;
+                }
+                else
+                {
+                    if (errno != EAGAIN && errno != EWOULDBLOCK)
+                    {
+                        std::cerr << "Recv error on client fd = " << currentFd << ": " << strerror(errno) << std::endl;
+                        closeConn = true;
+                    }
+                }
+            }
+            else
+            {
+                if (!req.isEmptyInput())
+                {
+                    try {
+                        if (req.getStatusCode() != GOOD_REQUEST)
+                        {
+                            std::cerr << "Bad request from fd = " << currentFd << " (" << req.getStatusCode() << ")" << std::endl;
+                            Response resp(req);
+                            std::string to_send = resp.build();
+                            if (send(currentFd, to_send.c_str(), to_send.length(), 0) < 0)
+                                std::cerr << "Error sending error response to fd = " << currentFd << ": " << strerror(errno) << std::endl;
+                            closeConn = true;
+                        }
+                        else
+                        {
+                            Response resp(req);
+                            std::string to_send = resp.build();
+                            ssize_t bytes_sent = send(currentFd, to_send.c_str(), to_send.length(), 0);
+                            if (bytes_sent < 0)
+                            {
+                                std::cerr << "Error sending response to fd = " << currentFd << ": " << strerror(errno) << std::endl;
+                                closeConn = true;
+                            } else
+                                std::cout << "Response sent to fd = " << currentFd << "." << std::endl;
+                        }
+                    } catch (const std::exception &e) {
+                        std::cerr << "Exception processing client fd = " << currentFd << ": " << e.what() << std::endl;
+                        closeConn = true;
+                    }
+                }
+            }
+        }
+        if (closeConn)
+            closeClientConnection(currentFd);
     }
     cleanInvalidFileDescriptors();
     active_clients.clear();
@@ -257,7 +332,6 @@ void Webserv::launchServers()
         delete it->second;
     servers.clear();
     fds.clear();
-    
     if (rootConfig && !rootConfig->children.empty())
     {
         for (size_t i = 0; i < rootConfig->children.size(); ++i)
@@ -277,7 +351,6 @@ void Webserv::launchServers()
         }
     }
     
-    // Si aucun serveur n'a été créé, utiliser un serveur par défaut
     if (servers.empty())
     {
         Server *defaultServer = new Server();

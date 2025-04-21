@@ -35,6 +35,8 @@ class Request
         std::string version;
         std::map<std::string, std::string> headers;
         std::string body;
+        ssize_t     _bytesRead; // Store the result of recv()
+        bool        _isEmptyInput; // Flag for whitespace-only input
 
         void        parseRequest(const std::string &buffer);
         void        parseFirstline(const std::string &line);
@@ -51,6 +53,8 @@ class Request
         std::string getPath() const;
         std::string getStatusCode() const;
         std::string getHeader(const std::string &name) const;
+        ssize_t     getBytesRead() const;
+        bool        isEmptyInput() const;
 };
 
 std::string trimString(std::string &str, const std::string &charset);

@@ -92,7 +92,7 @@ void    Response::handleGetRequest(const Request &req)
 
     if (path == "/")
     {
-        setBody("<html><body><h1>Welcome to the Web Server!</h1></body></html>");
+        setBody("<html><body><h1>Welcome to the Web Server!</h1><br></body></html>\n");
         setContentType("text/html");
     }
     else
