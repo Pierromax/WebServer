@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/17 17:26:30 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/04/18 19:07:25 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,15 +99,15 @@ Webserv::~Webserv()
  */
 void Webserv::acceptNewClient(const Server &server)
 {
-    std::cout << "Tentative d'accepter un nouveau client depuis le serveur fd = "
-              << server.getfd() << std::endl;
+    //std::cout << "Tentative d'accepter un nouveau client depuis le serveur fd = "
+    //          << server.getfd() << std::endl;
     sockaddr_in serveuraddr = server.getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
     int client_fd = accept(server.getfd(), (sockaddr *)&serveuraddr, &addrlen);
     if (client_fd < 0)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            std::cout << "Aucune connexion client en attente" << std::endl;
+           // std::cout << "Aucune connexion client en attente" << std::endl;
             return;
         }
         std::cerr << "Erreur accept(): " << strerror(errno) << std::endl;
@@ -161,13 +161,13 @@ void Webserv::run()
     while (g_running)
     {
         int ret = poll(fds.data(), fds.size(), 1000);
-        // if (ret < 0)
-        // {
-        //     if (errno == EINTR)
-        //         continue;
-        //     std::cerr << "Poll error: " << strerror(errno) << std::endl;
-        //     break;
-        // }
+        if (ret < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            std::cerr << "Poll error: " << strerror(errno) << std::endl;
+            break;
+        }
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
         {
             if (servers.count(it->fd))
@@ -202,6 +202,7 @@ void    Webserv::handleServers()
             std::cerr << "Error accepting new client: " << e.what() << std::endl;
         }
     }
+    active_servers.clear();
 }
 
 void    Webserv::handleClients()
@@ -213,9 +214,15 @@ void    Webserv::handleClients()
         Response    resp(Req);
         std::string to_send = resp.build();
         
-        //send(it->fd, to_send.c_str(), to_send.length(), 0);
+        try {
+            send(it->fd, to_send.c_str(), to_send.length(), 0);
+        } catch (std::exception &e) {
+            std::cerr << "Error processing request: " << e.what() << std::endl;
+        }
+        closeClientConnection(it->fd, it);
     }
     cleanInvalidFileDescriptors();
+    active_clients.clear();
 }
 
 /**
