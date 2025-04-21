@@ -302,20 +302,46 @@ std::string Response::findErrorPageUri(const std::string& errorCode, ConfigNode*
     return "";
 }
 
-std::string Response::resolveErrorPagePath(const std::string& errorPageUri) const
+std::string Response::resolveErrorPagePath(const std::string& errorPageUri, ConfigNode* directiveContext) const
 {
-    if (!_server) return "";
+    std::string fullPath = "";
+    std::string locationPath = "";
 
-    std::string root = findEffectiveRoot(_server->getConfigNode());
-    if (root.empty()) return "";
-
-    std::string fullPath = root;
-    if (!fullPath.empty() && !errorPageUri.empty() && fullPath[fullPath.length() - 1] == '/' && errorPageUri[0] == '/')
-        fullPath += errorPageUri.substr(1);
-    else if (!fullPath.empty() && !errorPageUri.empty() && fullPath[fullPath.length() - 1] != '/' && errorPageUri[0] != '/')
-        fullPath += "/" + errorPageUri;
+    if (errorPageUri.empty())
+        return "";
+    if (errorPageUri[0] == '/')
+    {
+        if (!_server)
+            return "";
+		fullPath = findEffectiveRoot(_server->getConfigNode());
+    }
     else
-        fullPath += errorPageUri;
+    {
+        fullPath = findEffectiveRoot(directiveContext);
+        if (directiveContext && directiveContext->type == "location")
+            locationPath = directiveContext->value;
+    }
+    if (fullPath.empty())
+        return "";
+    if (!locationPath.empty())
+    {
+        if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/' && locationPath[0] != '/')
+            fullPath += '/';
+        else if (!fullPath.empty() && fullPath[fullPath.length() - 1] == '/' && locationPath[0] == '/')
+            locationPath = locationPath.substr(1);
+        fullPath += locationPath;
+    }
+
+    if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/')
+        fullPath += '/';
+
+    if (!errorPageUri.empty())
+    {
+        if (errorPageUri[0] == '/')
+            fullPath += errorPageUri.substr(1);
+        else
+            fullPath += errorPageUri;
+    }
     return fullPath;
 }
 
@@ -336,7 +362,7 @@ void Response::loadErrorPage(const std::string& errorCode, ConfigNode* locationN
     std::string content = "";
 
     if (!errorPageUri.empty())
-        errorPagePath = resolveErrorPagePath(errorPageUri);
+        errorPagePath = resolveErrorPagePath(errorPageUri, directiveContext);
 
     if (!errorPagePath.empty() && loadPageContent(errorPagePath, content))
     {
@@ -358,10 +384,9 @@ std::string Response::build() const
     response << "HTTP/1.1 " << status_code << "\r\n";
     response << "Content-Type: " << content_type << "\r\n";
     response << "Content-Length: " << body.size() << "\r\n";
-    // Add other headers from the 'headers' map if needed
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
         response << it->first << ": " << it->second << "\r\n";
-    response << "Connection: close\r\n"; // Assuming close for now
+    response << "Connection: close\r\n"; 
     response << "\r\n";
     response << body;
 

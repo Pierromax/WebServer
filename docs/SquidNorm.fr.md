@@ -38,6 +38,7 @@ et améliorer la lisibilité du code.
 - Une fonction doit idéalement accomplir une seule tâche clairement définie.
 - Si une instruction (boucle ou condition) contient une seule ligne, on peut omettre 
   les accolades {} et placer l'instruction sur la même ligne.
+  
 
 ### 5. Nommage
 - Les noms de variables et de fonctions doivent être en camelCase et en anglais.
