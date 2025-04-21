@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/08 16:42:00 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/17 16:42:20 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,7 +121,9 @@ private:
     sockaddr_in adress;
     socklen_t adrLen;
     std::vector<pollfd> fds;
-    std::map<int, Server*> serveurs;
+    std::vector<pollfd> active_servers;
+    std::vector<pollfd> active_clients;
+    std::map<int, Server*> servers;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;
 
@@ -136,7 +138,7 @@ private:
     
     // Nouvelle fonction de validation fusionnée
     void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
-    
+
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
     void displayTokens(const std::vector<Token> &tokens);
@@ -149,7 +151,7 @@ private:
     bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
     void cleanInvalidFileDescriptors();
     std::string processRequest(int client_fd);
-    void closeClientConnection(int clientFd, std::vector<pollfd>::iterator &it);
+    void closeClientConnection(int clientFd);
 
 public:
     Webserv();
@@ -158,7 +160,9 @@ public:
     Webserv &operator=(const Webserv &rhs);
     ~Webserv();
 
-    void acceptNewClient(const Server &server);
+    void acceptNewClient(Server *server); // Changed parameter to Server*
+    void handleClients();
+    void handleServers();
     void run();
     void storeServers(std::string &filename);
     void launchServers();

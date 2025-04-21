@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 17:46:16 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/14 13:25:09 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,14 @@
 class Request
 {
     private:
-        int         fd;
         std::string statuscode;
         std::string method;
         std::string path;
         std::string version;
         std::map<std::string, std::string> headers;
         std::string body;
+        ssize_t     _bytesRead; // Store the result of recv()
+        bool        _isEmptyInput; // Flag for whitespace-only input
 
         void        parseRequest(const std::string &buffer);
         void        parseFirstline(const std::string &line);
@@ -52,6 +53,8 @@ class Request
         std::string getPath() const;
         std::string getStatusCode() const;
         std::string getHeader(const std::string &name) const;
+        ssize_t     getBytesRead() const;
+        bool        isEmptyInput() const;
 };
 
 std::string trimString(std::string &str, const std::string &charset);

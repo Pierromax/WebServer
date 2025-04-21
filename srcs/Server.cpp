@@ -13,17 +13,17 @@
 #include "Server.hpp"
 #include "Webserv.hpp"
 
-Server::Server() : port(80), isDefault(false), maxBodySize(15000000)
+Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), _configNode(NULL)
 {
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
-		throw (std::runtime_error("failed create socket"));
+		throw std::runtime_error("failed create socket");
 
 	int opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-		throw (std::runtime_error("failed to set socket reuse port option"));
+		throw std::runtime_error("failed to set socket reuse port option");
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw (std::runtime_error("failed to set socket options"));
+		throw std::runtime_error("failed to set socket options");
 
 	adress.sin_family = AF_INET;
 	adress.sin_addr.s_addr = INADDR_ANY;
@@ -31,18 +31,16 @@ Server::Server() : port(80), isDefault(false), maxBodySize(15000000)
 	adrLen = sizeof(adress);
 
 	if (bind(fd, (sockaddr *)&adress, adrLen) < 0)
-		throw (std::runtime_error(std::string("failed bind server: ") + strerror(errno)));
+		throw std::runtime_error(std::string("failed bind server: ") + strerror(errno));
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-		throw (std::runtime_error("failed to get nonBlock socket"));
+		throw std::runtime_error("failed to get nonBlock socket");
 	if (listen(fd, 10) < 0)
-		throw (std::runtime_error("can't listen serveur"));
+		throw std::runtime_error("can't listen serveur");
 	std::cout << "Serveur en écoute sur le port " << DEFAULT_PORT << std::endl;
 }
 
 Server::Server(const Server &other)
-{
-	*this = other;
-}
+	{ *this = other; }
 
 Server &Server::operator=(const Server &other)
 {
@@ -56,6 +54,7 @@ Server &Server::operator=(const Server &other)
 		errorPages = other.errorPages;
 		maxBodySize = other.maxBodySize;
 		routes = other.routes;
+		_configNode = other._configNode; // Copy config node pointer
 	}
 	return *this;
 }
@@ -64,18 +63,17 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 {
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
-		throw (std::runtime_error("failed create socket"));
+		throw std::runtime_error("failed create socket");
 
 	int opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-		throw (std::runtime_error("failed to set socket reuse port option"));
+		throw std::runtime_error("failed to set socket reuse port option");
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw (std::runtime_error("failed to set socket options"));
+		throw std::runtime_error("failed to set socket options");
 
 	adress.sin_family = AF_INET;
 	adress.sin_addr.s_addr = INADDR_ANY;
-
-	// Extract port from ConfigNode
+	_configNode = configNode; // Store the config node
 	port = DEFAULT_PORT;
 	std::map<std::string, std::vector<std::string> >::const_iterator it = configNode->directives.find("listen");
 	if (it != configNode->directives.end() && !it->second.empty())
@@ -92,23 +90,22 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 	adrLen = sizeof(adress);
 
 	if (bind(fd, (sockaddr *)&adress, adrLen) < 0)
-		throw (std::runtime_error(std::string("failed bind server: ") + strerror(errno)));
+		throw std::runtime_error(std::string("failed bind server: ") + strerror(errno));
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-		throw (std::runtime_error("failed to get nonBlock socket"));
+		throw std::runtime_error("failed to get nonBlock socket");
 	if (listen(fd, 10) < 0)
-		throw(std::runtime_error("can't listen serveur"));
+		throw std::runtime_error("can't listen serveur");
 	std::cout << "Serveur en écoute sur le port " << port << std::endl;
 }
 
 int Server::getfd() const
-{
-	return this->fd;
-}
+	{ return this->fd; }
 
 sockaddr_in Server::getAddress() const
-{
-	return this->adress;
-}
+	{ return this->adress; }
+
+ConfigNode* Server::getConfigNode() const
+	{ return this->_configNode; }
 
 Server::~Server()
 {

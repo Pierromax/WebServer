@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/06 23:13:26 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/14 13:31:55 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,18 +24,25 @@
 #include <unistd.h>
 #include <cstring>
 
+// Forward declaration
+class Server;
+
 class Client
 {
     private:
         int         fd;
         sockaddr_in address;
+        Server*     _server; // Pointer to the server that accepted this client
 
     public:
         Client();
-        Client(int &clientFD);
+        Client(int clientFD, Server* server); // Updated constructor
         Client(const Client &cpy);
         Client &operator=(const Client &rhs);
         ~Client();
+
+        Server* getServer() const; // Getter for the server
+        
 };
 
 #endif

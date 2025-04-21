@@ -94,10 +94,10 @@ double MathUtils::computeAverage(const std::vector<double>& values) {
         return 0.0;
     for (int i = 0; i < count; i++)
         sum += values[i];
-    
+
     std::vector<double>::const_iterator it; // One line before iterator declaration
     for (it = values.begin(); it != values.end(); ++it)
-        if (*it < 0) // Only one line instruction in loops, no brackets needed
+        if (*it < 0) // If there's only one line instruction in loops, no brackets needed
             sum -= *it * 2; // Same in conditions
     return sum / count;
 }

@@ -3,27 +3,46 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/07 18:00:43 by cezou            ###   ########.fr       */
+/*   Updated: 2025/04/17 16:53:15 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
+#include <cerrno> // For errno
+#include <cstring> // For strerror
 
-Request::Request(int client_fd) : fd(client_fd), statuscode(GOOD_REQUEST), body("")
+Request::Request(int client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesRead(-1), _isEmptyInput(false)
 {
     char buffer[1025] = {0};
-    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    
-    if (bytes_received > 0)
+
+    _bytesRead = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    if (_bytesRead > 0)
     {
-        buffer[bytes_received] = '\0';
-        Request::parseRequest(buffer);
+        buffer[_bytesRead] = '\0';
+        bool isOnlyNewline = (_bytesRead == 1 && buffer[0] == '\n');
+        bool isOnlyCRLF = (_bytesRead == 2 && buffer[0] == '\r' && buffer[1] == '\n');
+
+        if (isOnlyNewline || isOnlyCRLF)
+            _isEmptyInput = true;
+        else 
+        {
+            _isEmptyInput = false; 
+            Request::parseRequest(buffer);
+        }
     }
-    else
-        statuscode = BAD_REQUEST;
+    else if (_bytesRead == 0)
+        statuscode = ""; // Indicate disconnect
+    else // _bytesRead < 0
+    {
+        if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            statuscode = BAD_REQUEST;
+            std::cerr << "recv error: " << strerror(errno) << std::endl;
+        }
+    }
 }
 
 Request::Request(const Request &cpy) : headers(cpy.headers)
@@ -47,9 +66,14 @@ std::string Request::getPath() const { return path; }
 
 std::string Request::getStatusCode() const { return statuscode; }
 
+ssize_t Request::getBytesRead() const { return _bytesRead; }
+
+bool Request::isEmptyInput() const { return _isEmptyInput; }
+
 std::string Request::getHeader(const std::string &name) const 
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(name);
+
     if (it != headers.end())
         return it->second;
     return "";
@@ -62,10 +86,8 @@ void	Request::parseRequest(const std::string &buffer)
 
     std::getline(raw_request, line, '\r');
     Request::parseFirstline(line);
-    
     if (raw_request.peek() == '\n')
         raw_request.ignore(1);
-        
     while (std::getline(raw_request, line, '\r'))
     {
         if (raw_request.peek() == '\n')
@@ -74,12 +96,10 @@ void	Request::parseRequest(const std::string &buffer)
             break;
         Request::parseHeader(line);
     }
-    
+
     std::streampos bodystart = raw_request.tellg();
     if (headers.count("content-length") && method != "GET")
-    {
         Request::parseBody(buffer.substr(bodystart));
-    }
 }
 
 /**
@@ -89,8 +109,6 @@ void	Request::parseRequest(const std::string &buffer)
 void	Request::parseFirstline(const std::string &line)
 {
 	std::istringstream firstline(line);
-
-	// Initialiser avec des valeurs par défaut pour éviter les pointeurs non initialisés
 	method = "";
 	path = "";
 	version = "";
@@ -100,13 +118,10 @@ void	Request::parseFirstline(const std::string &line)
 		statuscode = BAD_REQUEST;
 		return;
 	}
-	
 	if (method != "GET" && method != "POST" && method != "DELETE")
 		statuscode = METHOD_NOT_ALLOWED;
-	
 	if (path.empty() || path[0] != '/')
 		statuscode = BAD_REQUEST;
-	
 	if (version != "HTTP/1.1")
 		statuscode = BAD_REQUEST;
 }
@@ -124,17 +139,14 @@ void	Request::parseHeader(const std::string &line)
 		return;
 	key = line.substr(0, pos);
 	value = line.substr(pos + 1);
-
 	key = trimString(key, " \t");
 	value = trimString(value, " \t");
-
 	headers[key] = value;
 }
 
 //a faire en separant si la requete est POST ou DELETE
 void Request::parseBody(const std::string &raw_body)
 {
-	// Vérifier si le contenu est valide
 	if (raw_body.empty() || !headers.count("content-length"))
 	{
 		this->body = "";
@@ -144,18 +156,15 @@ void Request::parseBody(const std::string &raw_body)
 	std::istringstream iss(headers["content-length"]);
 	int body_length = 0;
 	
-	// S'assurer que la conversion est réussie
 	if (!(iss >> body_length) || body_length < 0)
 	{
 		this->body = "";
 		return;
 	}
-	
-	// Vérifier que le raw_body est assez long
 	if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
 		this->body = raw_body.substr(0, body_length);
 	else
-		this->body = raw_body; // Prendre tout ce qui est disponible
+		this->body = raw_body;
 }
 
 std::string trimString(std::string &str, const std::string &charset)
@@ -168,11 +177,8 @@ std::string trimString(std::string &str, const std::string &charset)
 
     start = str.find_first_not_of(charset);
     if (start == std::string::npos)
-        return ""; // La chaîne ne contient que des caractères à supprimer
-        
+        return "";
     end = str.find_last_not_of(charset);
-    // end ne devrait pas être npos ici puisque start ne l'est pas
-    
     return str.substr(start, end - start + 1);
 }
 
