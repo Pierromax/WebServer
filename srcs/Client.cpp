@@ -11,37 +11,43 @@
 /* ************************************************************************** */
 
 #include "Client.hpp"
+#include "Server.hpp" // Include Server header
 
-Client::Client() : fd(-1)
+Client::Client() : fd(-1), _server(NULL)
+	{ memset(&address, 0, sizeof(address)); }
+
+// Updated constructor
+Client::Client(int client_fd, Server* server) : fd(client_fd), _server(server)
 {
     memset(&address, 0, sizeof(address));
-}
-
-Client::Client(int &client_fd) : fd(client_fd)
-{
-    memset(&address, 0, sizeof(address));
-    
-    // Vérifier que le descripteur est valide
-    if (fd >= 0) {
+    if (fd >= 0)
+    {
         int flags = fcntl(client_fd, F_GETFL, 0);
-        if (flags != -1) {
+        if (flags != -1)
             fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
-        }
     }
 }
 
-Client::Client(const Client &cpy) : fd(cpy.fd) {}
+Client::Client(const Client &cpy) : fd(cpy.fd), _server(cpy._server) {}
 
 Client &Client::operator=(const Client &rhs)
 {
     if (&rhs != this)
-        return (*this);
+    {
+        fd = rhs.fd;
+        address = rhs.address;
+        _server = rhs._server;
+    }
     return (*this);
 }
 
 Client::~Client()
 {
-    close(fd);
+    if (fd >= 0)
+        close(fd);
 }
+
+Server* Client::getServer() const
+	{ return _server; }
 
 

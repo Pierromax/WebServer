@@ -61,11 +61,13 @@ public:
 	std::map<int, std::string> errorPages;
 	size_t maxBodySize;
 	std::map<std::string, t_Route> routes;
+	ConfigNode* getConfigNode() const; // Getter for the config node
 
 private:
 	int fd;
 	sockaddr_in adress;
 	socklen_t adrLen;
+	ConfigNode* _configNode; // Store the config node used to create this server
 };
 
 #endif // SERVER_HPP

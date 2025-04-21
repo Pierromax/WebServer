@@ -24,19 +24,24 @@
 #include <unistd.h>
 #include <cstring>
 
+// Forward declaration
+class Server;
+
 class Client
 {
     private:
         int         fd;
         sockaddr_in address;
+        Server*     _server; // Pointer to the server that accepted this client
 
     public:
         Client();
-        Client(int &clientFD);
+        Client(int clientFD, Server* server); // Updated constructor
         Client(const Client &cpy);
         Client &operator=(const Client &rhs);
         ~Client();
 
+        Server* getServer() const; // Getter for the server
         
 };
 

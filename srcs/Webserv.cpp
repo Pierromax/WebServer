@@ -96,13 +96,15 @@ Webserv::~Webserv()
 
 /**
  * @brief Accepte un nouveau client sur une connexion serveur
- * @param server Référence au serveur acceptant la connexion
+ * @param server Pointeur vers le serveur acceptant la connexion
  */
-void Webserv::acceptNewClient(const Server &server)
+void Webserv::acceptNewClient(Server *server)
 {
-    sockaddr_in serveuraddr = server.getAddress();
+    if (!server) return; // Safety check
+
+    sockaddr_in serveuraddr = server->getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
-    int client_fd = accept(server.getfd(), (sockaddr *)&serveuraddr, &addrlen);
+    int client_fd = accept(server->getfd(), (sockaddr *)&serveuraddr, &addrlen);
     
     if (client_fd < 0)
     {
@@ -111,11 +113,11 @@ void Webserv::acceptNewClient(const Server &server)
             return;
         }
         std::cerr << "Erreur accept(): " << strerror(errno) << std::endl;
-        throw (std::runtime_error("Error: accept client failed"));
+        throw std::runtime_error("Error: accept client failed");
     }
     
     std::cout << "Nouveau client accepté avec fd = " << client_fd << std::endl;
-    Client *newclient = new Client(client_fd);
+    Client *newclient = new Client(client_fd, server); // Pass server pointer
     pollfd newfd;
     
     newfd.fd = client_fd;
@@ -206,7 +208,7 @@ void Webserv::run()
     std::cout << "Webserver shutting down" << std::endl;
 }
 
-void    Webserv::handleServers()
+void Webserv::handleServers()
 {
     std::vector<pollfd>::iterator it;
     for (it = active_servers.begin(); it != active_servers.end(); it++)
@@ -217,7 +219,7 @@ void    Webserv::handleServers()
             continue;
         }
         try {
-            acceptNewClient(*servers[it->fd]);
+            acceptNewClient(servers[it->fd]); // Pass Server*
         } catch (const std::exception &e){
             std::cerr << "Error accepting new client: " << e.what() << std::endl;
         }
@@ -225,7 +227,7 @@ void    Webserv::handleServers()
     active_servers.clear();
 }
 
-void    Webserv::handleClients()
+void Webserv::handleClients()
 {
     std::vector<pollfd>::iterator it;
     
@@ -241,7 +243,12 @@ void    Webserv::handleClients()
         }
         else if (it->revents & POLLIN)
         {
-            Request req(currentFd);
+            Client* client = clients[currentFd]; // Get client object
+            if (!client) continue; // Should not happen, but safety check
+            Server* server = client->getServer(); // Get associated server
+            if (!server) continue; // Should not happen
+
+            Request req(currentFd); // Read request data
             ssize_t bytesRead = req.getBytesRead();
 
             if (bytesRead <= 0)
@@ -268,7 +275,7 @@ void    Webserv::handleClients()
                         if (req.getStatusCode() != GOOD_REQUEST)
                         {
                             std::cerr << "Bad request from fd = " << currentFd << " (" << req.getStatusCode() << ")" << std::endl;
-                            Response resp(req);
+                            Response resp(req, server); // Pass server pointer
                             std::string to_send = resp.build();
                             if (send(currentFd, to_send.c_str(), to_send.length(), 0) < 0)
                                 std::cerr << "Error sending error response to fd = " << currentFd << ": " << strerror(errno) << std::endl;
@@ -276,7 +283,7 @@ void    Webserv::handleClients()
                         }
                         else
                         {
-                            Response resp(req);
+                            Response resp(req, server); // Pass server pointer
                             std::string to_send = resp.build();
                             ssize_t bytes_sent = send(currentFd, to_send.c_str(), to_send.length(), 0);
                             if (bytes_sent < 0)

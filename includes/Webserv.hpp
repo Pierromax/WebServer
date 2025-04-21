@@ -160,7 +160,7 @@ public:
     Webserv &operator=(const Webserv &rhs);
     ~Webserv();
 
-    void acceptNewClient(const Server &server);
+    void acceptNewClient(Server *server); // Changed parameter to Server*
     void handleClients();
     void handleServers();
     void run();
