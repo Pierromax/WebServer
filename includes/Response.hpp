@@ -46,7 +46,7 @@ class Response
 
         // --- Error Handling Helpers ---
         std::string findErrorPageUri(const std::string& errorCode, ConfigNode* locationNode, ConfigNode*& directiveContext) const;
-        std::string resolveErrorPagePath(const std::string& errorPageUri) const;
+        std::string resolveErrorPagePath(const std::string& errorPageUri, ConfigNode* directiveContext) const;
         void generateDefaultErrorPage(const std::string& errorCode);
         void loadErrorPage(const std::string& errorCode, ConfigNode* locationNode = NULL);
         
