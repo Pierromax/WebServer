@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/14 13:25:42 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/04 18:37:47 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,14 @@
 #include <sstream>
 #include <fstream>
 
+class Request;
+
 class Response
 {
     private:
         std::string status_code;
         std::map <std::string, std::string> headers;
+        std::string connection_type;
         std::string content_type;
         std::string body;
         
@@ -38,14 +41,16 @@ class Response
         void    setContentType(const std::string &type);
         void    setBody(const std::string &body);
         void    setHeaders(const std::string &key, const std::string &value);
-        
+        void    setConnectionType(const std::string &type);
+        std::string getConnectionType() const;
 
         void    handleGetRequest(const Request &req);
         void    handlePostRequest(const Request &req);
         void    handleDeleteRequest(const Request &req);
         
-        std::string build() const;
-        void loadErrorPage(const std::string &file_path);
+        std::string build(const std::string &path) const;
+        void    loadErrorPage(const std::string &status_code);
+        void    loadHtmlFile(const std::string &file_path);
 };
 
 #endif

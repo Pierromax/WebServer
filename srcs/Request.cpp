@@ -6,16 +6,18 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/17 16:53:15 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/04 18:26:07 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-Request::Request(int client_fd) : statuscode(GOOD_REQUEST), body("")
+Request::Request(int client_fd , ConfigNode &root) : statuscode(GOOD_REQUEST), node(&root), body("")
 {
+	this->fd = client_fd;
+	
     char buffer[1025] = {0};
-    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytes_received > 0)
     {
@@ -105,7 +107,6 @@ void	Request::parseFirstline(const std::string &line)
 }
 
 //ignore les header faux, on les utiliseras pas de toute facon (vrai fonctionnement http)
-//passer de map a multimap so on fait bonus (pour les COOKIES)
 void	Request::parseHeader(const std::string &line)
 {
 	size_t pos;
@@ -120,8 +121,11 @@ void	Request::parseHeader(const std::string &line)
 
 	key = trimString(key, " \t");
 	value = trimString(value, " \t");
-
-	headers[key] = value;
+	
+	if (headers.count("Cookie") && key == "Cookie")
+		headers[key] = headers[key] + "; " + value;
+	else
+		headers[key] = value;
 }
 
 //a faire en separant si la requete est POST ou DELETE
@@ -157,10 +161,14 @@ std::string trimString(std::string &str, const std::string &charset)
     start = str.find_first_not_of(charset);
     if (start == std::string::npos)
         return ""; // La chaîne ne contient que des caractères à supprimer
-        
+
     end = str.find_last_not_of(charset);
     // end ne devrait pas être npos ici puisque start ne l'est pas
     
     return str.substr(start, end - start + 1);
 }
 
+std::string		Request::getroot() const
+{
+	return (node->value);
+}

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/18 19:07:25 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/04 19:11:24 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,12 +126,12 @@ void Webserv::acceptNewClient(const Server &server)
 /**
  * @brief Removes closed file descriptors from the poll array
  */
-void Webserv::cleanInvalidFileDescriptors()
+void Webserv::cleanInvalidFileDescriptors(std::vector<pollfd> active_fds)
 {
-    for (size_t i = 0; i < fds.size(); ++i)
-        if (fds[i].fd == -1)
+    for (size_t i = 0; i < active_fds.size(); ++i)
+        if (active_fds[i].fd == -1)
         {
-            fds.erase(fds.begin() + i);
+            active_fds.erase(active_fds.begin() + i);
             --i;
         }
 }
@@ -156,6 +156,7 @@ void Webserv::run()
 {
     std::cout << "Webserver running." << std::endl;
     g_running = 1;
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, signalHandler);
     
     while (g_running)
@@ -209,20 +210,31 @@ void    Webserv::handleClients()
 {
     std::vector<pollfd>::iterator it;
     for (it = active_clients.begin(); it != active_clients.end(); it++)
-    {
-        Request     Req(it->fd);
+    {  
+        Request     Req(it->fd, *rootConfig);
         Response    resp(Req);
-        std::string to_send = resp.build();
-        
-        try {
-            send(it->fd, to_send.c_str(), to_send.length(), 0);
-        } catch (std::exception &e) {
-            std::cerr << "Error processing request: " << e.what() << std::endl;
+        std::string to_send = resp.build(Req.getPath());
+        size_t total_sent = 0;
+
+        while (total_sent < to_send.length()) 
+        {
+            ssize_t sent = send(it->fd, to_send.c_str() + total_sent, to_send.length() - total_sent, 0);
+            if (sent < 0) 
+            {
+                if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                    std::cerr << "Socket not ready for writing, would block" << std::endl;
+                } else if (errno == EPIPE || errno == ECONNRESET) {
+                    closeClientConnection(it->fd, it);
+                } else {
+                    closeClientConnection(it->fd, it);
+                }
+                break;
+            }
+            total_sent += sent;
         }
-        closeClientConnection(it->fd, it);
+        if (resp.getConnectionType() != "keep-alive")
+            closeClientConnection(it->fd, it);
     }
-    cleanInvalidFileDescriptors();
-    active_clients.clear();
 }
 
 /**
