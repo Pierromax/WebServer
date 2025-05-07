@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/04 18:26:07 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/07 14:53:09 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,14 +118,14 @@ void	Request::parseHeader(const std::string &line)
 		return;
 	key = line.substr(0, pos);
 	value = line.substr(pos + 1);
-
-	key = trimString(key, " \t");
-	value = trimString(value, " \t");
 	
 	if (headers.count("Cookie") && key == "Cookie")
 		headers[key] = headers[key] + "; " + value;
 	else
 		headers[key] = value;
+
+	key = trimString(key, " \t");
+	value = trimString(value, " \t");
 }
 
 //a faire en separant si la requete est POST ou DELETE

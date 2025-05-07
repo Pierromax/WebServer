@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/04 19:00:08 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/07 14:43:56 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,7 +158,7 @@ std::string Response::build(const std::string &path) const
 
 void    Response::loadHtmlFile(const std::string &path)
 {
-    std::string filePath = "/home/ple-guya/Projets/Webserv/config/html" + path;
+    std::string filePath = "./config/html" + path;
     std::ifstream file(filePath.c_str());
     std::cout << filePath << std::endl;
 
@@ -179,7 +179,7 @@ void    Response::loadErrorPage(const std::string &status)
     std::string filePath;
     
     errorCode = status.substr(0,3);
-    filePath = "/home/ple-guya/Projets/Webserv/config/html" + errorCode + ".html";
+    filePath = "./config/html" + errorCode + ".html";
 
     std::ifstream file(filePath.c_str());
     if (file.is_open())
