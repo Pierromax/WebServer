@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/17 16:42:20 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/04 17:31:00 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ private:
                            const std::string &keyword, std::size_t lineNumber);
     bool handleServerDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
     bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
-    void cleanInvalidFileDescriptors();
+    void cleanInvalidFileDescriptors(std::vector<pollfd> active_fds);
     std::string processRequest(int client_fd);
     void closeClientConnection(int clientFd);
 

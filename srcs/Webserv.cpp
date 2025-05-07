@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/18 19:07:25 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/07 15:09:58 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,13 +131,18 @@ void Webserv::acceptNewClient(Server *server)
 /**
  * @brief Removes closed file descriptors from the poll array
  */
-void Webserv::cleanInvalidFileDescriptors()
+void Webserv::cleanInvalidFileDescriptors(std::vector<pollfd> active_fds)
 {
+<<<<<<< HEAD
     for (size_t i = 0; i < fds.size(); ++i)
     {
         if (fds[i].fd == -1)
+=======
+    for (size_t i = 0; i < active_fds.size(); ++i)
+        if (active_fds[i].fd == -1)
+>>>>>>> response
         {
-            fds.erase(fds.begin() + i);
+            active_fds.erase(active_fds.begin() + i);
             --i;
         }
     }
@@ -172,6 +177,7 @@ void Webserv::run()
 {
     std::cout << "Webserver running." << std::endl;
     g_running = 1;
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, signalHandler);
     
     while (g_running)
@@ -303,8 +309,6 @@ void Webserv::handleClients()
         if (closeConn)
             closeClientConnection(currentFd);
     }
-    cleanInvalidFileDescriptors();
-    active_clients.clear();
 }
 
 /**

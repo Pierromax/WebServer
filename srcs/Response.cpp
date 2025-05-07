@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/17 17:13:37 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/07 15:06:34 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,11 @@ Response::~Response()
 /*      Getter & Setter      */
 /*****************************/
 
+std::string Response::getConnectionType() const
+{
+    return(connection_type);
+}
+
 void Response::setStatusCode(const std::string &status)
 {
     status_code = status;
@@ -84,6 +89,11 @@ void Response::setHeaders(const std::string &headKey, const std::string &headVal
 void Response::setContentType(const std::string &type)
 {
     content_type = type;
+}
+
+void Response::setConnectionType(const std::string &type)
+{
+    connection_type = type;
 }
 
 void Response::setBody(const std::string &body)
