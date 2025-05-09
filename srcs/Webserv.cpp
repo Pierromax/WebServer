@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:09:58 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/07 15:52:00 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,14 +133,8 @@ void Webserv::acceptNewClient(Server *server)
  */
 void Webserv::cleanInvalidFileDescriptors(std::vector<pollfd> active_fds)
 {
-<<<<<<< HEAD
-    for (size_t i = 0; i < fds.size(); ++i)
-    {
-        if (fds[i].fd == -1)
-=======
-    for (size_t i = 0; i < active_fds.size(); ++i)
+    for (size_t i = 0; i < active_fds.size(); ++i){
         if (active_fds[i].fd == -1)
->>>>>>> response
         {
             active_fds.erase(active_fds.begin() + i);
             --i;
@@ -249,11 +243,6 @@ void Webserv::handleClients()
         }
         else if (it->revents & POLLIN)
         {
-            Client* client = clients[currentFd]; // Get client object
-            if (!client) continue; // Should not happen, but safety check
-            Server* server = client->getServer(); // Get associated server
-            if (!server) continue; // Should not happen
-
             Request req(currentFd); // Read request data
             ssize_t bytesRead = req.getBytesRead();
 
@@ -278,18 +267,7 @@ void Webserv::handleClients()
                 if (!req.isEmptyInput())
                 {
                     try {
-                        if (req.getStatusCode() != GOOD_REQUEST)
-                        {
-                            std::cerr << "Bad request from fd = " << currentFd << " (" << req.getStatusCode() << ")" << std::endl;
-                            Response resp(req, server); // Pass server pointer
-                            std::string to_send = resp.build();
-                            if (send(currentFd, to_send.c_str(), to_send.length(), 0) < 0)
-                                std::cerr << "Error sending error response to fd = " << currentFd << ": " << strerror(errno) << std::endl;
-                            closeConn = true;
-                        }
-                        else
-                        {
-                            Response resp(req, server); // Pass server pointer
+                            Response resp(req, clients[it->fd].getservers()); // Pass server pointer
                             std::string to_send = resp.build();
                             ssize_t bytes_sent = send(currentFd, to_send.c_str(), to_send.length(), 0);
                             if (bytes_sent < 0)
@@ -298,7 +276,6 @@ void Webserv::handleClients()
                                 closeConn = true;
                             } else
                                 std::cout << "Response sent to fd = " << currentFd << "." << std::endl;
-                        }
                     } catch (const std::exception &e) {
                         std::cerr << "Exception processing client fd = " << currentFd << ": " << e.what() << std::endl;
                         closeConn = true;
