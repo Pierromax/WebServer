@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:03:17 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/09 16:41:08 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 #include <cerrno> // For errno
 #include <cstring> // For strerror
 
-Request::Request(int client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesRead(-1), _isEmptyInput(false)
+Request::Request(pollfd client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesRead(-1), _isEmptyInput(false)
 {
 	this->fd = client_fd;
 	
     char buffer[1025] = {0};
-    ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
+    ssize_t bytes_received = recv(this->client_fd->fd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytes_received > 0)
     {
@@ -33,6 +33,7 @@ Request::Request(int client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesRead
         {
             _isEmptyInput = false; 
             Request::parseRequest(buffer);
+            
         }
     }
     else if (_bytesRead == 0)
@@ -62,6 +63,8 @@ Request &Request::operator=(const Request &rhs)
 Request::~Request()
 {}
 
+void Request::setMethod(const std::string &method) { this->method = method; }
+
 std::string Request::getMethod() const { return method; }
 
 std::string Request::getPath() const { return path; }
@@ -71,6 +74,39 @@ std::string Request::getStatusCode() const { return statuscode; }
 ssize_t Request::getBytesRead() const { return _bytesRead; }
 
 bool Request::isEmptyInput() const { return _isEmptyInput; }
+
+bool Request::isEmpty() const
+{
+    return (method.empty() && path.empty() && version.empty() && headers.empty());
+}
+
+short Request::getStatus() const
+{
+    if (statuscode == GOOD_REQUEST)
+        return 200;
+    else if (statuscode == BAD_REQUEST)
+        return 400;
+    else if (statuscode == FILE_NOT_FOUND)
+        return 404;
+    else if (statuscode == METHOD_NOT_ALLOWED)
+        return 405;
+    return 0;
+}
+
+short Request::getFd() const
+{
+    return fd.fd;
+}
+
+short Request::getEvents() const
+{
+    return fd.events;    
+}
+
+short Request::getRevents() const
+{
+    return fd.revents;    
+}
 
 std::string Request::getHeader(const std::string &name) const 
 {
@@ -187,9 +223,4 @@ std::string trimString(std::string &str, const std::string &charset)
 
     end = str.find_last_not_of(charset);
     return str.substr(start, end - start + 1);
-}
-
-std::string		Request::getroot() const
-{
-	return (node->value);
 }

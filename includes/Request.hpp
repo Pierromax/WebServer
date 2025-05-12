@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:00:16 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/09 13:50:05 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@
 class Request
 {
     private:
-        int         fd;
+        pollfd      fd;
         std::string statuscode;
         std::string method;
         std::string path;
@@ -52,7 +52,10 @@ class Request
         Request(const Request &cpy);
         Request &operator=(const Request &rhs);
         ~Request();
-
+        
+        std::string getStatus() const;
+        short Request::getEvents() const
+        short Request::getRevents() const
         std::string getMethod() const;
         std::string getPath() const;
         std::string getStatusCode() const;

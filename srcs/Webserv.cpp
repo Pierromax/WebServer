@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:52:00 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/09 13:43:38 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -233,7 +233,6 @@ void Webserv::handleClients()
     
     for (it = active_clients.begin(); it != active_clients.end(); ++it)
     {
-        int currentFd = it->fd;
         bool closeConn = false;
 
         if (it->revents & (POLLERR | POLLHUP))
@@ -241,50 +240,40 @@ void Webserv::handleClients()
             std::cerr << "Error or HUP on client fd = " << currentFd << std::endl;
             closeConn = true;
         }
-        else if (it->revents & POLLIN)
-        {
-            Request req(currentFd); // Read request data
-            ssize_t bytesRead = req.getBytesRead();
+        Request req(currentFd); // Read request data
+        ssize_t bytesRead = req.getBytesRead();
 
-            if (bytesRead <= 0)
+        if (bytesRead <= 0)
+        {
+            if (bytesRead == 0)
             {
-                if (bytesRead == 0)
-                {
-                    std::cout << "Client fd = " << currentFd << " disconnected." << std::endl;
-                    closeConn = true;
-                }
-                else
-                {
-                    if (errno != EAGAIN && errno != EWOULDBLOCK)
-                    {
-                        std::cerr << "Recv error on client fd = " << currentFd << ": " << strerror(errno) << std::endl;
-                        closeConn = true;
-                    }
-                }
+                std::cout << "Client fd = " << currentFd << " disconnected." << std::endl;
+                closeConn = true;
             }
             else
             {
-                if (!req.isEmptyInput())
+                if (errno != EAGAIN && errno != EWOULDBLOCK)
                 {
-                    try {
-                            Response resp(req, clients[it->fd].getservers()); // Pass server pointer
-                            std::string to_send = resp.build();
-                            ssize_t bytes_sent = send(currentFd, to_send.c_str(), to_send.length(), 0);
-                            if (bytes_sent < 0)
-                            {
-                                std::cerr << "Error sending response to fd = " << currentFd << ": " << strerror(errno) << std::endl;
-                                closeConn = true;
-                            } else
-                                std::cout << "Response sent to fd = " << currentFd << "." << std::endl;
-                    } catch (const std::exception &e) {
-                        std::cerr << "Exception processing client fd = " << currentFd << ": " << e.what() << std::endl;
-                        closeConn = true;
-                    }
+                    std::cerr << "Recv error on client fd = " << currentFd << ": " << strerror(errno) << std::endl;
+                    closeConn = true;
                 }
             }
         }
+        else if (!req.isEmptyInput())
+        {
+            try {
+                Response resp(req, clients[it->fd].getservers()); // Pass server pointer
+                resp.send(it->fd);
+            } catch (const std::exception &e) {
+                if (e.what() == "Client disconnected")
+                    closeConn = true;
+            }
+        }
         if (closeConn)
-            closeClientConnection(currentFd);
+        {
+            closeClientConnection(it->fd);
+            active_clients.erase(it);
+        }
     }
 }
 

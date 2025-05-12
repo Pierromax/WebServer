@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:06:34 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/09 13:53:04 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -403,3 +403,27 @@ std::string Response::build() const
     return response.str();
 }
 
+void Response::send(int fd) const
+{
+    std::string response = build();
+    
+    ssize_t bytesSent = send(fd, response.c_str(), response.size(), 0);
+    if (bytesSent == -1)
+        throw std::runtime_error("Failed to send response");
+    while (total_sent < to_send.length()) 
+    {
+        ssize_t sent = send(it->fd, to_send.c_str() + total_sent, to_send.length() - total_sent, 0);
+        if (sent < 0) 
+        {
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                std::cerr << "Socket not ready for writing, would block" << std::endl;
+            } else if (errno == EPIPE || errno == ECONNRESET) {
+                throw std::runtime_error("Client disconnected");
+            } else {
+                throw std::runtime_error("Client disconnected");
+            }
+            break;
+        }
+        total_sent += sent;
+    }
+}
