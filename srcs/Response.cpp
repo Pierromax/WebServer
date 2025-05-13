@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:24:14 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 19:12:18 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -416,9 +416,9 @@ void Response::sendResponse() const
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
                 std::cerr << "Socket not ready for writing, would block" << std::endl;
             } else if (errno == EPIPE || errno == ECONNRESET) {
-                throw std::runtime_error("Client disconnected");
+                std::cerr << "Client disconnected" << std::endl;
             } else {
-                throw std::runtime_error("Failed to send response");
+                std::cerr << "Failed to send response" << std::endl;
             }
             break;
         }

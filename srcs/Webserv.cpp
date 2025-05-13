@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 19:01:29 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 19:11:04 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -230,6 +230,8 @@ void Webserv::handleServers()
 void Webserv::handleClients()
 {
     std::vector<pollfd>::iterator it;
+        std::vector<int> to_close;
+
     
     for (it = active_clients.begin(); it != active_clients.end(); ++it)
     {
@@ -251,7 +253,19 @@ void Webserv::handleClients()
         if (it->revents & POLLOUT && !clients[it->fd]->request->isEmptyInput())
             clients[it->fd]->response->sendResponse();
         if (closeConn)
-            closeClientConnection(it->fd);
+            to_close.push_back(it->fd);
+    }
+    for (size_t i = 0; i < to_close.size(); ++i)
+    {
+        closeClientConnection(to_close[i]);
+        // Supprime tous les pollfd correspondants dans active_clients
+        for (std::vector<pollfd>::iterator it = active_clients.begin(); it != active_clients.end(); )
+        {
+            if (it->fd == to_close[i])
+                it = active_clients.erase(it);
+            else
+                ++it;
+        }
     }
 }
 
