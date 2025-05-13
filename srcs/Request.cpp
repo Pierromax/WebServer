@@ -6,20 +6,83 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/09 16:41:08 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:23:57 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
+#include "Utils.hpp"
+#include "Webserv.hpp"
 #include <cerrno> // For errno
 #include <cstring> // For strerror
 
-Request::Request(pollfd client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesRead(-1), _isEmptyInput(false)
+Request::Request(int client_fd) : fd(client_fd),                     
+      statuscode(""),
+      method(""),
+      path(""),
+      version(""),
+      headers(),
+      body(""),
+      _bytesRead(0),
+      _isEmptyInput(false)
+{}
+
+Request::Request(const Request &cpy) : fd(cpy.fd),                     
+      statuscode(cpy.statuscode),
+      method(cpy.method),
+      path(cpy.path),
+      version(cpy.version),
+      headers(cpy.headers),
+      body(cpy.body),
+      _bytesRead(cpy._bytesRead),
+      _isEmptyInput(cpy._isEmptyInput)
+{}
+
+Request &Request::operator=(const Request &rhs)
 {
-	this->fd = client_fd;
-	
+	if (&rhs != this)
+    {
+        fd = rhs.fd;                     
+        statuscode = rhs.statuscode;
+        method = rhs.method;
+        path = rhs.path;
+        version = rhs.version;
+        headers = rhs.headers;
+        body = rhs.body;
+        _bytesRead = rhs._bytesRead;
+        _isEmptyInput = rhs._isEmptyInput;
+    }
+	return (*this);
+}
+
+Request::~Request()
+{}
+
+int         Request::getfd() const { return fd;}
+
+std::string Request::getMethod() const { return method; }
+
+std::string Request::getPath() const { return path; }
+
+std::string Request::getStatusCode() const { return statuscode; }
+
+ssize_t Request::getBytesRead() const { return _bytesRead; }
+
+bool Request::isEmptyInput() const { return _isEmptyInput; }
+
+std::string Request::getHeader(const std::string &name) const 
+{
+    std::map<std::string, std::string>::const_iterator it = headers.find(name);
+
+    if (it != headers.end())
+        return it->second;
+    return "";
+}
+
+void    Request::ReadFromSocket()
+{
     char buffer[1025] = {0};
-    ssize_t bytes_received = recv(this->client_fd->fd, buffer, sizeof(buffer) - 1, 0);
+    ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytes_received > 0)
     {
@@ -33,7 +96,6 @@ Request::Request(pollfd client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesR
         {
             _isEmptyInput = false; 
             Request::parseRequest(buffer);
-            
         }
     }
     else if (_bytesRead == 0)
@@ -46,75 +108,6 @@ Request::Request(pollfd client_fd) : statuscode(GOOD_REQUEST), body(""), _bytesR
             std::cerr << "recv error: " << strerror(errno) << std::endl;
         }
     }
-}
-
-Request::Request(const Request &cpy) : headers(cpy.headers)
-{
-	
-}
-
-Request &Request::operator=(const Request &rhs)
-{
-	if (&rhs != this)
-		return (*this);
-	return (*this);
-}
-
-Request::~Request()
-{}
-
-void Request::setMethod(const std::string &method) { this->method = method; }
-
-std::string Request::getMethod() const { return method; }
-
-std::string Request::getPath() const { return path; }
-
-std::string Request::getStatusCode() const { return statuscode; }
-
-ssize_t Request::getBytesRead() const { return _bytesRead; }
-
-bool Request::isEmptyInput() const { return _isEmptyInput; }
-
-bool Request::isEmpty() const
-{
-    return (method.empty() && path.empty() && version.empty() && headers.empty());
-}
-
-short Request::getStatus() const
-{
-    if (statuscode == GOOD_REQUEST)
-        return 200;
-    else if (statuscode == BAD_REQUEST)
-        return 400;
-    else if (statuscode == FILE_NOT_FOUND)
-        return 404;
-    else if (statuscode == METHOD_NOT_ALLOWED)
-        return 405;
-    return 0;
-}
-
-short Request::getFd() const
-{
-    return fd.fd;
-}
-
-short Request::getEvents() const
-{
-    return fd.events;    
-}
-
-short Request::getRevents() const
-{
-    return fd.revents;    
-}
-
-std::string Request::getHeader(const std::string &name) const 
-{
-    std::map<std::string, std::string>::const_iterator it = headers.find(name);
-
-    if (it != headers.end())
-        return it->second;
-    return "";
 }
 
 void	Request::parseRequest(const std::string &buffer)
@@ -147,9 +140,6 @@ void	Request::parseRequest(const std::string &buffer)
 void	Request::parseFirstline(const std::string &line)
 {
 	std::istringstream firstline(line);
-	method = "";
-	path = "";
-	version = "";
 
 	if (line.empty() || !(firstline >> method >> path >> version))
 	{

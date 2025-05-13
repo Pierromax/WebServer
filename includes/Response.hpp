@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:00:49 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:19:26 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,10 @@
 #define RESPONSE_HPP
 
 #include "Request.hpp"
+#include "Server.hpp"
+#include "Webserv.hpp"
+#include "Utils.hpp"
+#include <map>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -23,14 +27,12 @@
 #include <map>        // Added for getMimeType
 
 // Forward declarations
-class Server;
 struct ConfigNode;
-
-class Request;
 
 class Response
 {
     private:
+        int         fd;
         std::string status_code;
         std::map <std::string, std::string> headers;
         std::string connection_type;
@@ -71,7 +73,8 @@ class Response
         void    handlePostRequest(const Request &req);
         void    handleDeleteRequest(const Request &req);
         
-        std::string build(const std::string &path) const;
+        std::string build() const;
+        void    sendResponse() const;
         void    loadErrorPage(const std::string &status_code);
         void    loadHtmlFile(const std::string &file_path);
 };

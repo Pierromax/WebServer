@@ -6,15 +6,14 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/07 15:00:01 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:36:04 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include "Request.hpp"
-#include "Response.hpp"
+
 #include <iostream>
 #include <string>
 #include <sys/socket.h>
@@ -23,9 +22,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
-
 // Forward declaration
 class Server;
+class Response;
+class Request;
 
 class Client
 {
@@ -33,16 +33,23 @@ class Client
         int         fd;
         sockaddr_in address;
         Server*     _server; // Pointer to the server that accepted this client
-
-    public:
-        Client();
-        Client(int clientFD, Server* server); // Updated constructor
-        Client(const Client &cpy);
-        Client &operator=(const Client &rhs);
-        ~Client();
-
-        Server* getServer() const; // Getter for the server
+        bool        isReady;
         
+    public:
+        Request     *request;
+        Response    *response;
+        
+        // Client();
+        // Client(const Client &cpy);
+        // Client &operator=(const Client &rhs);
+        Client(int clientFD, Server* server); // Updated constructor
+        ~Client();
+        
+        Server* getServer() const;
+        void    PrepareResponse();
+        bool    isRequestValid() const;
+
 };
+
 
 #endif

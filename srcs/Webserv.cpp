@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/09 13:43:38 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:46:32 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,43 +237,25 @@ void Webserv::handleClients()
 
         if (it->revents & (POLLERR | POLLHUP))
         {
-            std::cerr << "Error or HUP on client fd = " << currentFd << std::endl;
+            std::cerr << "Error or HUP on client fd = " << it->fd << std::endl;
             closeConn = true;
         }
-        Request req(currentFd); // Read request data
-        ssize_t bytesRead = req.getBytesRead();
-
-        if (bytesRead <= 0)
+        if (it->revents & POLLIN)
         {
-            if (bytesRead == 0)
-            {
-                std::cout << "Client fd = " << currentFd << " disconnected." << std::endl;
-                closeConn = true;
-            }
+            clients[it->fd]->request->ReadFromSocket();
+            if (clients[it->fd]->isRequestValid())
+                clients[it->fd]->PrepareResponse();
             else
-            {
-                if (errno != EAGAIN && errno != EWOULDBLOCK)
-                {
-                    std::cerr << "Recv error on client fd = " << currentFd << ": " << strerror(errno) << std::endl;
-                    closeConn = true;
-                }
-            }
+                closeConn = true;
         }
-        else if (!req.isEmptyInput())
-        {
-            try {
-                Response resp(req, clients[it->fd].getservers()); // Pass server pointer
-                resp.send(it->fd);
-            } catch (const std::exception &e) {
-                if (e.what() == "Client disconnected")
-                    closeConn = true;
-            }
-        }
+        if (it->revents & POLLOUT && !clients[it->fd]->request->isEmptyInput())
+            clients[it->fd]->response->sendResponse();
         if (closeConn)
         {
             closeClientConnection(it->fd);
             active_clients.erase(it);
         }
+        
     }
 }
 

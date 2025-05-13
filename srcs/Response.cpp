@@ -6,15 +6,13 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/09 13:53:04 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:24:14 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
-#include "Server.hpp"
-#include "Webserv.hpp"
-#include "Utils.hpp"
-#include <map>
+#include "Request.hpp"
+#include "Response.hpp"
 
 /*****************************/
 /* Constructor & Destructors */
@@ -27,6 +25,7 @@ Response::Response() : status_code("200 OK"), content_type("text/html"), body(""
 
 Response::Response(const Request &req, Server* server) : _server(server)
 {
+    fd = req.getfd();
     status_code = "200 OK";
     content_type = "text/plain";
     body = "";
@@ -35,7 +34,7 @@ Response::Response(const Request &req, Server* server) : _server(server)
     std::string method = req.getMethod();
 
     if (status != GOOD_REQUEST)
-        loadErrorPage(status.substr(0, 3));
+        loadErrorPage(status.substr(0, 3), NULL);
     else if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
@@ -403,16 +402,15 @@ std::string Response::build() const
     return response.str();
 }
 
-void Response::send(int fd) const
+void Response::sendResponse() const
 {
     std::string response = build();
     
-    ssize_t bytesSent = send(fd, response.c_str(), response.size(), 0);
-    if (bytesSent == -1)
-        throw std::runtime_error("Failed to send response");
-    while (total_sent < to_send.length()) 
+    ssize_t total_sent = 0;
+    ssize_t response_len = response.size();
+    while (total_sent < response_len) 
     {
-        ssize_t sent = send(it->fd, to_send.c_str() + total_sent, to_send.length() - total_sent, 0);
+        ssize_t sent = send(this->fd, response.c_str() + total_sent, response_len - total_sent, 0);
         if (sent < 0) 
         {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
@@ -420,7 +418,7 @@ void Response::send(int fd) const
             } else if (errno == EPIPE || errno == ECONNRESET) {
                 throw std::runtime_error("Client disconnected");
             } else {
-                throw std::runtime_error("Client disconnected");
+                throw std::runtime_error("Failed to send response");
             }
             break;
         }

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/09 13:50:05 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 18:27:03 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,6 @@
 #include <sys/socket.h>
 #include <fstream>
 #include <sstream>
-#include "Utils.hpp"
-#include "Webserv.hpp"
-
 
 #define GOOD_REQUEST "200 OK"
 #define BAD_REQUEST "400 Bad Request"
@@ -31,13 +28,12 @@
 class Request
 {
     private:
-        pollfd      fd;
+        int         fd;
         std::string statuscode;
         std::string method;
         std::string path;
         std::string version;
         std::map<std::string, std::string> headers;
-        ConfigNode  *node;
         std::string body;
         ssize_t     _bytesRead; // Store the result of recv()
         bool        _isEmptyInput; // Flag for whitespace-only input
@@ -48,20 +44,19 @@ class Request
         void        parseBody(const std::string &buffer);
 
     public:
-        Request(int clientFD, ConfigNode &root);
+        Request(int clientFD);
         Request(const Request &cpy);
         Request &operator=(const Request &rhs);
         ~Request();
-        
-        std::string getStatus() const;
-        short Request::getEvents() const
-        short Request::getRevents() const
+
+        int         getfd() const;
         std::string getMethod() const;
         std::string getPath() const;
         std::string getStatusCode() const;
         std::string getHeader(const std::string &name) const;
         ssize_t     getBytesRead() const;
         bool        isEmptyInput() const;
+        void        ReadFromSocket();
 };
 
 std::string trimString(std::string &str, const std::string &charset);
