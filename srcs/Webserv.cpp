@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:46:32 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/13 19:01:29 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,7 +243,7 @@ void Webserv::handleClients()
         if (it->revents & POLLIN)
         {
             clients[it->fd]->request->ReadFromSocket();
-            if (clients[it->fd]->isRequestValid())
+            if (clients[it->fd]->isRequestValid() && clients[it->fd]->request->isEmptyInput())
                 clients[it->fd]->PrepareResponse();
             else
                 closeConn = true;
@@ -251,11 +251,7 @@ void Webserv::handleClients()
         if (it->revents & POLLOUT && !clients[it->fd]->request->isEmptyInput())
             clients[it->fd]->response->sendResponse();
         if (closeConn)
-        {
             closeClientConnection(it->fd);
-            active_clients.erase(it);
-        }
-        
     }
 }
 
