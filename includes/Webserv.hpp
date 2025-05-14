@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/05/04 17:31:00 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 17:39:55 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,8 +121,6 @@ private:
     sockaddr_in adress;
     socklen_t adrLen;
     std::vector<pollfd> fds;
-    std::vector<pollfd> active_servers;
-    std::vector<pollfd> active_clients;
     std::map<int, Server*> servers;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;
@@ -149,7 +147,7 @@ private:
                            const std::string &keyword, std::size_t lineNumber);
     bool handleServerDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
     bool handleLocationDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *node);
-    void cleanInvalidFileDescriptors(std::vector<pollfd> active_fds);
+    void cleanInvalidFileDescriptors();
     std::string processRequest(int client_fd);
     void closeClientConnection(int clientFd);
 
@@ -161,12 +159,14 @@ public:
     ~Webserv();
 
     void acceptNewClient(Server *server); // Changed parameter to Server*
-    void handleClients();
-    void handleServers();
+    void handleClients(pollfd &server);
+    void handleServers(pollfd &client);
     void run();
     void storeServers(std::string &filename);
     void launchServers();
     void displayConfig(ConfigNode *node, int depth = 0);
+
+    void setPollEvent(int fd, short events);
 };
 
 #endif

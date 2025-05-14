@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:36:04 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 21:07:00 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,10 @@ class Client
         ~Client();
         
         Server* getServer() const;
-        void    PrepareResponse();
+        void    prepareRequest();
+        void    prepareResponse();
         bool    isRequestValid() const;
+        void    sendResponse() const;
 
 };
 

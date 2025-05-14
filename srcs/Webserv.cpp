@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 19:11:04 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 22:41:42 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,8 @@ Webserv::Webserv() : rootConfig(NULL)
  */
 Webserv::Webserv(std::string config_filename) : rootConfig(NULL)
 {
+    fds.reserve(20);
+
     storeServers(config_filename);
     launchServers();
 }
@@ -88,10 +90,13 @@ Webserv::~Webserv()
     deleteAndNull(rootConfig);
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
+    servers.clear();
     for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
         delete it->second;
+    clients.clear();
     for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
         close(it->fd);
+    fds.clear();
 }
 
 /**
@@ -101,7 +106,7 @@ Webserv::~Webserv()
 void Webserv::acceptNewClient(Server *server)
 {
     if (!server) return; // Safety check
-
+    
     sockaddr_in serveuraddr = server->getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
     int client_fd = accept(server->getfd(), (sockaddr *)&serveuraddr, &addrlen);
@@ -122,21 +127,20 @@ void Webserv::acceptNewClient(Server *server)
     
     newfd.fd = client_fd;
     newfd.events = POLLIN;
-    newfd.revents = 0;
     fds.push_back(newfd);
+    // std::cout << fds.size();
     clients[client_fd] = newclient;
-    std::cout << "client ajouter avec fd = " << client_fd << std::endl;
 }
 
 /**
  * @brief Removes closed file descriptors from the poll array
  */
-void Webserv::cleanInvalidFileDescriptors(std::vector<pollfd> active_fds)
+void Webserv::cleanInvalidFileDescriptors()
 {
-    for (size_t i = 0; i < active_fds.size(); ++i){
-        if (active_fds[i].fd == -1)
+    for (size_t i = 0; i < fds.size(); ++i){
+        if (fds[i].fd == -1)
         {
-            active_fds.erase(active_fds.begin() + i);
+            fds.erase(fds.begin() + i);
             --i;
         }
     }
@@ -148,16 +152,17 @@ void Webserv::cleanInvalidFileDescriptors(std::vector<pollfd> active_fds)
  */
 void Webserv::closeClientConnection(int clientFd)
 {
-    std::cout << "Closing connection for fd = " << clientFd << std::endl;
+    if (clients.count(clientFd) == 0)
+        return;
     close(clientFd);
     delete clients[clientFd];
     clients.erase(clientFd);
 
-    // Mark the corresponding pollfd in the main fds vector for removal
     for (std::vector<pollfd>::iterator pfd_it = fds.begin(); pfd_it != fds.end(); ++pfd_it)
     {
         if (pfd_it->fd == clientFd)
         {
+            std::cout << "[DEBUG] Marking pollfd as -1 for fd = " << clientFd << std::endl;
             pfd_it->fd = -1;
             break;
         }
@@ -186,86 +191,72 @@ void Webserv::run()
             std::cerr << "Poll error: " << strerror(errno) << std::endl;
             break;
         }
-        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it)
+        cleanInvalidFileDescriptors();
+        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); it++)
         {
+            if (it->fd == -1)
+                continue;
             if (servers.count(it->fd))
-            {
-                active_servers.push_back(*it);
-            }
+                handleServers(*it);
             else if (clients.count(it->fd))
-            {
-                active_clients.push_back(*it);
-            }
-        }
-        try {
-            handleServers();
-            handleClients();
-        }
-        catch (std::exception &e) {
-            std::cerr << "Error processing request: " << e.what() << std::endl;
+                handleClients(*it);
+                
         }
     }
     std::cout << "Webserver shutting down" << std::endl;
 }
 
-void Webserv::handleServers()
+void Webserv::handleServers(pollfd &it)
 {
-    std::vector<pollfd>::iterator it;
-    for (it = active_servers.begin(); it != active_servers.end(); it++)
+
+    if (it.revents & POLLERR)
     {
-        if (it->revents & POLLERR)
-        {
-            std::cerr << "Error on server fd = " << it->fd << std::endl;
-            continue;
-        }
+        std::cerr << "Error on server fd = " << it.fd << std::endl;
+        return;
+    }
+    if (it.revents & POLLIN)
+    {
         try {
-            acceptNewClient(servers[it->fd]); // Pass Server*
+            acceptNewClient(servers[it.fd]);
         } catch (const std::exception &e){
             std::cerr << "Error accepting new client: " << e.what() << std::endl;
         }
+        
     }
-    active_servers.clear();
 }
 
-void Webserv::handleClients()
+void Webserv::handleClients(pollfd &it)
 {
-    std::vector<pollfd>::iterator it;
-        std::vector<int> to_close;
+    bool closeConn = false;
 
-    
-    for (it = active_clients.begin(); it != active_clients.end(); ++it)
+    if (it.revents & (POLLERR | POLLHUP))
     {
-        bool closeConn = false;
+        std::cerr << "Error or HUP on client fd = " << it.fd << std::endl;
+        closeConn = true;
 
-        if (it->revents & (POLLERR | POLLHUP))
-        {
-            std::cerr << "Error or HUP on client fd = " << it->fd << std::endl;
-            closeConn = true;
-        }
-        if (it->revents & POLLIN)
-        {
-            clients[it->fd]->request->ReadFromSocket();
-            if (clients[it->fd]->isRequestValid() && clients[it->fd]->request->isEmptyInput())
-                clients[it->fd]->PrepareResponse();
-            else
-                closeConn = true;
-        }
-        if (it->revents & POLLOUT && !clients[it->fd]->request->isEmptyInput())
-            clients[it->fd]->response->sendResponse();
-        if (closeConn)
-            to_close.push_back(it->fd);
     }
-    for (size_t i = 0; i < to_close.size(); ++i)
+    if (it.revents & POLLIN)
     {
-        closeClientConnection(to_close[i]);
-        // Supprime tous les pollfd correspondants dans active_clients
-        for (std::vector<pollfd>::iterator it = active_clients.begin(); it != active_clients.end(); )
+        clients[it.fd]->prepareRequest();
+        if (clients[it.fd]->isRequestValid())
         {
-            if (it->fd == to_close[i])
-                it = active_clients.erase(it);
-            else
-                ++it;
+            clients[it.fd]->prepareResponse();
+            setPollEvent(it.fd, POLLOUT);
         }
+        else
+            closeConn = true;
+    }
+    else if (it.revents & POLLOUT && clients[it.fd]->response)
+    {
+        clients[it.fd]->sendResponse();
+        if (clients[it.fd]->response->getConnectionType() == "keep-alive")
+            setPollEvent(it.fd, POLLIN);
+        else
+            closeConn = true;
+    }
+    if (closeConn)
+    {
+        closeClientConnection(it.fd);
     }
 }
 
@@ -360,4 +351,16 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
     for (size_t i = 0; i < node->children.size(); ++i)
         displayConfig(node->children[i], depth + 1);
     std::cout << indent << "}" << std::endl;
+}
+
+void Webserv::setPollEvent(int fd, short events)
+{
+    for (size_t i = 0; i < fds.size(); ++i)
+    {
+        if (fds[i].fd == fd)
+        {
+            fds[i].events = events;
+            break;
+        }
+    }
 }

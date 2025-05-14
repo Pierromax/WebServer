@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:23:57 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 22:24:41 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,13 @@
 #include <cstring> // For strerror
 
 Request::Request(int client_fd) : fd(client_fd),                     
-      statuscode(""),
+      statuscode("200 OK"),
       method(""),
       path(""),
       version(""),
       headers(),
       body(""),
+      raw_request(""),
       _bytesRead(0),
       _isEmptyInput(false)
 {}
@@ -34,6 +35,7 @@ Request::Request(const Request &cpy) : fd(cpy.fd),
       version(cpy.version),
       headers(cpy.headers),
       body(cpy.body),
+      raw_request(cpy.raw_request),
       _bytesRead(cpy._bytesRead),
       _isEmptyInput(cpy._isEmptyInput)
 {}
@@ -83,24 +85,29 @@ void    Request::ReadFromSocket()
 {
     char buffer[1025] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
-    
+
     if (bytes_received > 0)
     {
-        buffer[_bytesRead] = '\0';
-        bool isOnlyNewline = (_bytesRead == 1 && buffer[0] == '\n');
-        bool isOnlyCRLF = (_bytesRead == 2 && buffer[0] == '\r' && buffer[1] == '\n');
+        buffer[bytes_received] = '\0';
+        this->raw_request += buffer;
 
-        if (isOnlyNewline || isOnlyCRLF)
-            _isEmptyInput = true;
-        else 
+        // Détection de fin de requête HTTP (simple: double CRLF)
+        if (this->raw_request.find("\r\n\r\n") != std::string::npos)
         {
-            _isEmptyInput = false; 
-            Request::parseRequest(buffer);
+            _isEmptyInput = true;
+            parseRequest(this->raw_request);
         }
+        else
+        {
+            _isEmptyInput = false;
+        }
+        _bytesRead += bytes_received;
     }
-    else if (_bytesRead == 0)
+    else if (bytes_received == 0)
+    {
         statuscode = ""; // Indicate disconnect
-    else // _bytesRead < 0
+    }
+    else
     {
         if (errno != EAGAIN && errno != EWOULDBLOCK)
         {

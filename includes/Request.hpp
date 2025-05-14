@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:27:03 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 18:40:07 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ class Request
         std::string version;
         std::map<std::string, std::string> headers;
         std::string body;
+        std::string raw_request;
         ssize_t     _bytesRead; // Store the result of recv()
         bool        _isEmptyInput; // Flag for whitespace-only input
 

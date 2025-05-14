@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 19:12:18 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 22:45:11 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,8 +33,16 @@ Response::Response(const Request &req, Server* server) : _server(server)
     std::string status = req.getStatusCode();
     std::string method = req.getMethod();
 
+    std::cout << "method : " << method << std::endl;
+    std::cout << "status : " << status << std::endl;
+
+    
+    if (req.getHeader("Connection") == "keep-alive")
+        setConnectionType("keep-alive");
+    else
+        setConnectionType("close");
     if (status != GOOD_REQUEST)
-        loadErrorPage(status.substr(0, 3), NULL);
+        loadErrorPage("404", NULL);
     else if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
@@ -69,6 +77,11 @@ Response::~Response()
 /*****************************/
 /*      Getter & Setter      */
 /*****************************/
+
+std::string Response::getbody() const
+{
+    return(body);
+}
 
 std::string Response::getConnectionType() const
 {
@@ -254,6 +267,9 @@ void Response::handleGetRequest(const Request &req)
     ConfigNode* locationNode = findBestLocation(path);
     std::string filePath = resolveFilePath(locationNode, path);
     std::string content;
+    
+std::cout << "URI demandée: " << req.getPath() << std::endl;
+std::cout << "Chemin complet du fichier: " << filePath << std::endl;
 
     if (filePath.empty())
     {
@@ -263,7 +279,6 @@ void Response::handleGetRequest(const Request &req)
     else if (loadPageContent(filePath, content))
     {
         setBody(content);
-        status_code = "200 OK";
         setContentType(getMimeType(filePath));
     }
     else
@@ -395,33 +410,11 @@ std::string Response::build() const
     response << "Content-Length: " << body.size() << "\r\n";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
         response << it->first << ": " << it->second << "\r\n";
-    response << "Connection: close\r\n"; 
+    response << "Connection: " << getConnectionType() << "\r\n"; 
     response << "\r\n";
     response << body;
 
     return response.str();
 }
 
-void Response::sendResponse() const
-{
-    std::string response = build();
-    
-    ssize_t total_sent = 0;
-    ssize_t response_len = response.size();
-    while (total_sent < response_len) 
-    {
-        ssize_t sent = send(this->fd, response.c_str() + total_sent, response_len - total_sent, 0);
-        if (sent < 0) 
-        {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                std::cerr << "Socket not ready for writing, would block" << std::endl;
-            } else if (errno == EPIPE || errno == ECONNRESET) {
-                std::cerr << "Client disconnected" << std::endl;
-            } else {
-                std::cerr << "Failed to send response" << std::endl;
-            }
-            break;
-        }
-        total_sent += sent;
-    }
-}
+

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/13 18:19:26 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 15:54:59 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,13 +68,14 @@ class Response
         void    setHeaders(const std::string &key, const std::string &value);
         void    setConnectionType(const std::string &type);
         std::string getConnectionType() const;
+        std::string getbody() const;
 
         void    handleGetRequest(const Request &req);
         void    handlePostRequest(const Request &req);
         void    handleDeleteRequest(const Request &req);
         
         std::string build() const;
-        void    sendResponse() const;
+        void   sendResponse() const;
         void    loadErrorPage(const std::string &status_code);
         void    loadHtmlFile(const std::string &file_path);
 };
