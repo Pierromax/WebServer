@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 22:41:42 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/26 15:26:05 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,7 +128,6 @@ void Webserv::acceptNewClient(Server *server)
     newfd.fd = client_fd;
     newfd.events = POLLIN;
     fds.push_back(newfd);
-    // std::cout << fds.size();
     clients[client_fd] = newclient;
 }
 
@@ -154,6 +153,7 @@ void Webserv::closeClientConnection(int clientFd)
 {
     if (clients.count(clientFd) == 0)
         return;
+    std::cout << "connection close with fd = " << clientFd << std::endl; 
     close(clientFd);
     delete clients[clientFd];
     clients.erase(clientFd);
@@ -162,7 +162,7 @@ void Webserv::closeClientConnection(int clientFd)
     {
         if (pfd_it->fd == clientFd)
         {
-            std::cout << "[DEBUG] Marking pollfd as -1 for fd = " << clientFd << std::endl;
+            //std::cout << "[DEBUG] Marking pollfd as -1 for fd = " << clientFd << std::endl;
             pfd_it->fd = -1;
             break;
         }
@@ -221,7 +221,6 @@ void Webserv::handleServers(pollfd &it)
         } catch (const std::exception &e){
             std::cerr << "Error accepting new client: " << e.what() << std::endl;
         }
-        
     }
 }
 
@@ -254,10 +253,8 @@ void Webserv::handleClients(pollfd &it)
         else
             closeConn = true;
     }
-    if (closeConn)
-    {
+    if (closeConn && clients[it.fd]->response->getConnectionType() != "keep-alive")
         closeClientConnection(it.fd);
-    }
 }
 
 /**

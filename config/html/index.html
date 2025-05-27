@@ -17,9 +17,37 @@
         p {
             color: #666;
         }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049; /* Vert légèrement plus foncé */
+            transform: scale(1.05); /* Agrandit légèrement le bouton */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Ajoute une légère ombre */
+        }
     </style>
 </head>
 <body>
     <h1>Bienvenue sur Webserv !</h1>
+    <div class="upload-rediretion">
+        <button type="button" class="select-button" id="uploadButton">Upload</button>
+    </div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function()
+    {
+        var uButton = document.getElementById('uploadButton');
+        uButton.addEventListener('click', function()
+        {
+        window.location.href = '/upload';
+        });
+    });
+
+</script>
 </html>

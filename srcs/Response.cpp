@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 22:45:11 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/26 17:52:06 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,25 +25,12 @@ Response::Response() : status_code("200 OK"), content_type("text/html"), body(""
 
 Response::Response(const Request &req, Server* server) : _server(server)
 {
-    fd = req.getfd();
-    status_code = "200 OK";
-    content_type = "text/plain";
-    body = "";
-
-    std::string status = req.getStatusCode();
     std::string method = req.getMethod();
-
-    std::cout << "method : " << method << std::endl;
-    std::cout << "status : " << status << std::endl;
-
-    
-    if (req.getHeader("Connection") == "keep-alive")
-        setConnectionType("keep-alive");
-    else
-        setConnectionType("close");
-    if (status != GOOD_REQUEST)
-        loadErrorPage("404", NULL);
-    else if (method == "GET")
+    fd = req.getfd();
+    status_code = req.getStatusCode();
+    setConnectionType(req.getHeader("Connection"));
+        
+    if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
         handlePostRequest(req);
@@ -268,8 +255,8 @@ void Response::handleGetRequest(const Request &req)
     std::string filePath = resolveFilePath(locationNode, path);
     std::string content;
     
-std::cout << "URI demandée: " << req.getPath() << std::endl;
-std::cout << "Chemin complet du fichier: " << filePath << std::endl;
+    std::cout << "URL demandée: " << req.getPath() << std::endl;
+    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
 
     if (filePath.empty())
     {
@@ -290,7 +277,14 @@ std::cout << "Chemin complet du fichier: " << filePath << std::endl;
 
 void Response::handlePostRequest(const Request &req)
 {
-    (void)req;
+    std::string contentType = req.getHeader("Content-Type");
+    size_t      pos = contentType.find("boundary=");
+    std::string boundary;
+    
+    if (contentType.find("multipart/form-data") != std::string::npos)
+    {
+        
+    }
 }
 
 void Response::handleDeleteRequest(const Request &req)

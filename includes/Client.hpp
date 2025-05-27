@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 21:07:00 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 22:48:21 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,6 @@ class Client
         int         fd;
         sockaddr_in address;
         Server*     _server; // Pointer to the server that accepted this client
-        bool        isReady;
         
     public:
         Request     *request;

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 22:38:55 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/14 22:48:29 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@ Client::Client(int client_fd, Server* server) : fd(client_fd)
                                                 , _server(server)
                                                 , request(NULL)
                                                 , response(NULL)
-                                                , isReady(false)
 {
     memset(&address, 0, sizeof(address));
     if (fd >= 0)
