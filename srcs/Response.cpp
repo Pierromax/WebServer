@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/26 17:52:06 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/29 18:00:51 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,11 +278,32 @@ void Response::handleGetRequest(const Request &req)
 void Response::handlePostRequest(const Request &req)
 {
     std::string contentType = req.getHeader("Content-Type");
-    size_t      pos = contentType.find("boundary=");
     std::string boundary;
-    
+    size_t      pos = contentType.find("boundary=");
+    std::string end;
+    std::string delimiter;
+    std::string content;
+        
     if (contentType.find("multipart/form-data") != std::string::npos)
     {
+        content = req.getBody();
+        if (pos != std::string::npos)
+        {
+            boundary = contentType.substr(pos + 9);
+            delimiter = "--" + boundary;
+            end = delimiter + "--";
+        }
+        else
+        {
+            status_code = BAD_REQUEST;
+            return;
+        }
+        std::vector<std::string> bodies;
+        bodies = splitPostBody(content, delimiter);
+        for (size_t i = 0; i < bodies.size(); i++)
+        {
+            std::cerr << bodies[i] << std::endl;
+        }
         
     }
 }
@@ -411,4 +432,28 @@ std::string Response::build() const
     return response.str();
 }
 
+std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
+{
+    std::vector<std::string>    split;
+    std::string                 content;
+    size_t                      start = 0;
+    size_t                      newStart;
+    
+    std::cout << "=== DEBUT splitPostBody ===" << std::endl;
 
+    while (true)
+    {
+        newStart = body.find(delim, start);
+        if (newStart == std::string::npos)
+        {
+            split.push_back(body.substr(start));
+            break;
+        }
+        content = body.substr(start, newStart - start);
+        split.push_back(content);
+        start = newStart + delim.length();
+    }
+    std::cout << "=== END splitPostBody ===" << std::endl;
+
+    return split;
+}

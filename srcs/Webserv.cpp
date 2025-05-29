@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/26 15:26:05 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/28 16:08:28 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,6 +106,7 @@ Webserv::~Webserv()
 void Webserv::acceptNewClient(Server *server)
 {
     if (!server) return; // Safety check
+    std::cout << "enter handle acceptnew client" << std::endl;
     
     sockaddr_in serveuraddr = server->getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
@@ -124,7 +125,7 @@ void Webserv::acceptNewClient(Server *server)
     std::cout << "Nouveau client accepté avec fd = " << client_fd << std::endl;
     Client *newclient = new Client(client_fd, server); // Pass server pointer
     pollfd newfd;
-    
+    std::cout << "client accepted" << std::endl;
     newfd.fd = client_fd;
     newfd.events = POLLIN;
     fds.push_back(newfd);
@@ -227,12 +228,12 @@ void Webserv::handleServers(pollfd &it)
 void Webserv::handleClients(pollfd &it)
 {
     bool closeConn = false;
+    time_t  currentTime;
 
     if (it.revents & (POLLERR | POLLHUP))
     {
         std::cerr << "Error or HUP on client fd = " << it.fd << std::endl;
         closeConn = true;
-
     }
     if (it.revents & POLLIN)
     {
@@ -245,7 +246,7 @@ void Webserv::handleClients(pollfd &it)
         else
             closeConn = true;
     }
-    else if (it.revents & POLLOUT && clients[it.fd]->response)
+    else if (it.revents & POLLOUT && clients[it.fd]->response && !closeConn)
     {
         clients[it.fd]->sendResponse();
         if (clients[it.fd]->response->getConnectionType() == "keep-alive")
@@ -253,7 +254,7 @@ void Webserv::handleClients(pollfd &it)
         else
             closeConn = true;
     }
-    if (closeConn && clients[it.fd]->response->getConnectionType() != "keep-alive")
+    if (closeConn || clients[it.fd]->isTimeout())
         closeClientConnection(it.fd);
 }
 

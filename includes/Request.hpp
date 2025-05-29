@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 18:40:07 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/28 17:26:03 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,8 +55,10 @@ class Request
         std::string getPath() const;
         std::string getStatusCode() const;
         std::string getHeader(const std::string &name) const;
+        std::string getBody() const;
         ssize_t     getBytesRead() const;
         bool        isEmptyInput() const;
+        bool        isComplete() const;
         void        ReadFromSocket();
 };
 

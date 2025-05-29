@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 22:24:41 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/29 13:35:12 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,11 @@ ssize_t Request::getBytesRead() const { return _bytesRead; }
 
 bool Request::isEmptyInput() const { return _isEmptyInput; }
 
+std::string Request::getBody() const
+{
+    return body;
+}
+
 std::string Request::getHeader(const std::string &name) const 
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(name);
@@ -89,7 +94,7 @@ void    Request::ReadFromSocket()
     if (bytes_received > 0)
     {
         buffer[bytes_received] = '\0';
-        this->raw_request += buffer;
+        this->raw_request.append(buffer); 
 
         // Détection de fin de requête HTTP (simple: double CRLF)
         if (this->raw_request.find("\r\n\r\n") != std::string::npos)
@@ -220,4 +225,19 @@ std::string trimString(std::string &str, const std::string &charset)
 
     end = str.find_last_not_of(charset);
     return str.substr(start, end - start + 1);
+}
+
+bool Request::isComplete() const
+{
+    if (this->raw_request.find("\r\n\r\n") == std::string::npos) //check headers
+        return (false);
+    if (headers.count("content-lenght")) //check le body
+    {
+        std::istringstream iss(getHeader("contentlenght"));
+        size_t lenght;
+        iss >> lenght;
+        if (this->body.length() < lenght)
+            return false;
+    }
+    return true;
 }

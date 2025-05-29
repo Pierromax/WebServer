@@ -6,25 +6,21 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/14 22:48:29 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/29 15:11:43 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
-#include "Server.hpp" // Include Server header
+#include "Server.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 
-// Client::Client() : fd(-1), _server(NULL), request(), 
-//     {
-//          memset(&address, 0, sizeof(address)); }
-
-// Updated constructor
 Client::Client(int client_fd, Server* server) : fd(client_fd)
                                                 , _server(server)
                                                 , request(NULL)
                                                 , response(NULL)
 {
+    this->lastActivity = time(NULL);
     memset(&address, 0, sizeof(address));
     if (fd >= 0)
     {
@@ -34,18 +30,38 @@ Client::Client(int client_fd, Server* server) : fd(client_fd)
     }
 }
 
+
 Client::~Client()
 {
     if (fd >= 0)
-        close(fd);
+    close(fd);
     if (request)
-        delete request;
+    delete request;
     if (response)
-        delete response;
+    delete response;
 }
 
-Server* Client::getServer() const
-{ return _server; }
+time_t  Client::getLastActivity() const {return this->lastActivity;}
+
+
+bool Client::isTimeout() const
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    
+    // Configuration adaptative selon l'état
+    time_t timeout_value;
+    if (!request || !request->isComplete())
+        timeout_value = CONNECTION_ESTABLISHMENT_TIMEOUT; // ~30s
+    else if (response)
+        timeout_value = RESPONSE_SENDING_TIMEOUT; // ~60s
+    else
+        timeout_value = KEEPALIVE_TIMEOUT; // ~120s
+    
+    return (now.tv_sec - lastActivity) > timeout_value;
+}
+
+Server* Client::getServer() const { return _server; }
 
 void    Client::prepareResponse()
 {
