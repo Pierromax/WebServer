@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/29 18:00:51 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/30 16:14:15 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -283,6 +283,8 @@ void Response::handlePostRequest(const Request &req)
     std::string end;
     std::string delimiter;
     std::string content;
+    std::map<std::string, std::string> bodyHeaders;
+    std::vector<std::string> bodies;
         
     if (contentType.find("multipart/form-data") != std::string::npos)
     {
@@ -298,13 +300,12 @@ void Response::handlePostRequest(const Request &req)
             status_code = BAD_REQUEST;
             return;
         }
-        std::vector<std::string> bodies;
+
         bodies = splitPostBody(content, delimiter);
-        for (size_t i = 0; i < bodies.size(); i++)
+        for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
         {
-            std::cerr << bodies[i] << std::endl;
+            bodyHeaders = extractPostHeaders(*it);
         }
-        
     }
 }
 
@@ -438,8 +439,6 @@ std::vector<std::string> Response::splitPostBody(std::string body, std::string d
     std::string                 content;
     size_t                      start = 0;
     size_t                      newStart;
-    
-    std::cout << "=== DEBUT splitPostBody ===" << std::endl;
 
     while (true)
     {
@@ -453,7 +452,27 @@ std::vector<std::string> Response::splitPostBody(std::string body, std::string d
         split.push_back(content);
         start = newStart + delim.length();
     }
-    std::cout << "=== END splitPostBody ===" << std::endl;
-
     return split;
+}
+
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
+{
+    std::map<std::string, std::string>  parseHeader;
+    std::stringstream                   ss(content);
+    std::string                         line;
+
+    while(std::getline(ss, line))
+    {
+        if (line.empty() || line == "\r")
+            break;
+        size_t pos = line.find(":");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        value = trimString(value, " \t\n\r");
+        parseHeader[key] = value;
+    }
+    return parseHeader;
 }

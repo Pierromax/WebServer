@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/29 15:47:59 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/30 14:45:43 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,10 +56,11 @@ class Response
         void        loadErrorPage(const std::string& errorCode, ConfigNode* locationNode = NULL);
 
         // CreateReponse function
-        void                        handleGetRequest(const Request &req);
-        void                        handlePostRequest(const Request &req);
-        void                        handleDeleteRequest(const Request &req);
-        std::vector<std::string>    splitPostBody(std::string body, std::string delim);
+        void                                handleGetRequest(const Request &req);
+        void                                handlePostRequest(const Request &req);
+        void                                handleDeleteRequest(const Request &req);
+        std::vector<std::string>            splitPostBody(std::string body, std::string delim);
+        std::map<std::string, std::string>  extractPostHeaders(std::string content);
         
     public:
         Response();
