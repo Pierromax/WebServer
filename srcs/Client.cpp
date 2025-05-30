@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/29 15:11:43 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/30 12:42:02 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,17 +110,8 @@ void Client::sendResponse() const
     while (total_sent < resp_len) 
     {
         ssize_t sent = send(this->fd, resp.c_str() + total_sent, resp_len - total_sent, 0);
-        if (sent < 0) 
-        {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                std::cerr << "Socket not ready for writing, would block" << std::endl;
-            } else if (errno == EPIPE || errno == ECONNRESET) {
-                std::cerr << "Client disconnected" << std::endl;
-            } else {
-                std::cerr << "Failed to send response" << std::endl;
-            }
+        if (sent <= 0) 
             break;
-        }
         total_sent += sent;
     }
 }
