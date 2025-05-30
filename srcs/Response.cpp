@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 16:14:15 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/30 17:38:58 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -300,11 +300,17 @@ void Response::handlePostRequest(const Request &req)
             status_code = BAD_REQUEST;
             return;
         }
-
         bodies = splitPostBody(content, delimiter);
         for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
         {
-            bodyHeaders = extractPostHeaders(*it);
+            pos = it->find("\r\n\r\n");
+            if (pos != std::string::npos)
+            {
+                std::string headerPart = it->substr(0, pos);
+                std::string bodyPart = it->substr(pos + 4);
+                bodyHeaders = extractPostHeaders(headerPart);
+                if (uploadSucced)
+            }
         }
     }
 }
@@ -475,4 +481,17 @@ std::map<std::string, std::string>  Response::extractPostHeaders(std::string con
         parseHeader[key] = value;
     }
     return parseHeader;
+}
+
+bool    Response::isFilename(std::map<std::string, std::string> headers)
+{
+    if (partHeaders.count("Content-Disposition"))
+    {
+        if (partHeaders["Content-Disposition"].find("filename=") != std::string::npos)
+        {
+                    // C'est un fichier !
+            std::string filename = extractFilename(partHeaders["Content-Disposition"]);
+            saveFileToLocal(filename, bodyPart);
+        }
+    }
 }
