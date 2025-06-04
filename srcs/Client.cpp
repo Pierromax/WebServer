@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 12:42:02 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/05/30 16:18:59 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,11 +34,11 @@ Client::Client(int client_fd, Server* server) : fd(client_fd)
 Client::~Client()
 {
     if (fd >= 0)
-    close(fd);
+        close(fd);
     if (request)
-    delete request;
+        delete request;
     if (response)
-    delete response;
+        delete response;
 }
 
 time_t  Client::getLastActivity() const {return this->lastActivity;}
