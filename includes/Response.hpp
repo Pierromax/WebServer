@@ -17,6 +17,7 @@
 #include "Server.hpp"
 #include "Webserv.hpp"
 #include "Utils.hpp"
+#include "CGIsHandling.hpp"
 #include <map>
 #include <iostream>
 #include <string>
@@ -48,6 +49,9 @@ class Response
         std::string resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const;
         std::string getMimeType(const std::string& filePath) const;
         bool        loadPageContent(const std::string& filePath, std::string& content) const;
+
+        // --- CGI Handling ---
+        void        handleCgiRequest(const Request &req, ConfigNode* locationNode, const std::string& filePath);
 
         // --- Error Handling Helpers ---
         std::string findErrorPageUri(const std::string& errorCode, ConfigNode* locationNode, ConfigNode*& directiveContext) const;

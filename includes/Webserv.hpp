@@ -136,6 +136,7 @@ private:
     
     // Nouvelle fonction de validation fusionnée
     void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
+    void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
 
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
