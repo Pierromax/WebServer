@@ -14,6 +14,23 @@
 #include <sstream>
 
 /**
+ * @brief Validates CGI directive format
+ * @param values Values for the CGI directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ */
+void Webserv::validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
+{
+    if (values.size() != 2)
+    {
+        std::stringstream err;
+        err << "directive \"cgi\" takes exactly 2 arguments in " 
+            << filename << ":" << line;
+        throw std::runtime_error(err.str());
+    }
+}
+
+/**
  * @brief Validates configuration tree structure and detects errors
  * @param node Node to check
  * @param filename Configuration filename (for error reporting)
@@ -32,6 +49,13 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
         err << "\"server\" directive is not allowed here in " 
             << filename << ":" << node->line;
         throw std::runtime_error(err.str());
+    }
+    
+    for (std::map<std::string, std::vector<std::string> >::iterator it = node->directives.begin(); 
+         it != node->directives.end(); ++it)
+    {
+        if (it->first == "cgi")
+            validateCgiDirective(it->second, filename, node->line);
     }
     
     for (size_t i = 0; i < node->children.size(); ++i)

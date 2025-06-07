@@ -96,11 +96,38 @@ void    Request::ReadFromSocket()
         buffer[bytes_received] = '\0';
         this->raw_request.append(buffer); 
 
-        // Détection de fin de requête HTTP (simple: double CRLF)
-        if (this->raw_request.find("\r\n\r\n") != std::string::npos)
+        // Détection de fin de requête HTTP (double CRLF pour headers)
+        size_t headerEnd = this->raw_request.find("\r\n\r\n");
+        if (headerEnd != std::string::npos)
         {
-            _isEmptyInput = true;
-            parseRequest(this->raw_request);
+            // Parse juste les headers pour obtenir content-length
+            std::string headerPart = this->raw_request.substr(0, headerEnd + 4);
+            parseRequest(headerPart);
+            
+            // Pour POST, vérifier si on a tout le body
+            if (method == "POST" && headers.count("content-length"))
+            {
+                std::istringstream iss(headers["content-length"]);
+                int expected_length = 0;
+                iss >> expected_length;
+                
+                size_t current_body_length = this->raw_request.length() - (headerEnd + 4);
+                if (current_body_length >= static_cast<size_t>(expected_length))
+                {
+                    // On a tout le body, re-parser la requête complète
+                    parseRequest(this->raw_request);
+                    _isEmptyInput = true;
+                }
+                else
+                {
+                    _isEmptyInput = false; // Attendre plus de données
+                }
+            }
+            else
+            {
+                // GET ou requête sans body
+                _isEmptyInput = true;
+            }
         }
         else
         {
@@ -141,8 +168,12 @@ void	Request::parseRequest(const std::string &buffer)
     }
 
     std::streampos bodystart = raw_request.tellg();
-    if (headers.count("content-length") && method != "GET")
-        Request::parseBody(buffer.substr(bodystart));
+    if (headers.count("content-length") && method != "GET" && bodystart != std::streampos(-1))
+    {
+        size_t bodyStartIndex = static_cast<size_t>(bodystart);
+        if (bodyStartIndex < buffer.length())
+            Request::parseBody(buffer.substr(bodyStartIndex));
+    }
 }
 
 /**
@@ -179,13 +210,17 @@ void	Request::parseHeader(const std::string &line)
 	key = line.substr(0, pos);
 	value = line.substr(pos + 1);
 	
-	if (headers.count("Cookie") && key == "Cookie")
+	key = trimString(key, " \t");
+	value = trimString(value, " \t");
+	
+	// Convertir la clé en minuscules pour une comparaison cohérente
+	for (size_t i = 0; i < key.length(); ++i)
+		key[i] = std::tolower(key[i]);
+	
+	if (headers.count("cookie") && key == "cookie")
 		headers[key].append("; " + value);
 	else
 		headers[key] = value;
-
-	key = trimString(key, " \t");
-	value = trimString(value, " \t");
 }
 
 //a faire en separant si la requete est POST ou DELETE
@@ -205,10 +240,17 @@ void Request::parseBody(const std::string &raw_body)
 		this->body = "";
 		return;
 	}
-	if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
-		this->body = raw_body.substr(0, body_length);
+	
+	// Pour les requêtes POST, on doit lire exactement body_length caractères
+	if (body_length > 0)
+	{
+		if (raw_body.length() >= static_cast<size_t>(body_length))
+			this->body = raw_body.substr(0, body_length);
+		else
+			this->body = raw_body; // Prendre ce qu'on a pour l'instant
+	}
 	else
-		this->body = raw_body;
+		this->body = "";
 }
 
 std::string trimString(std::string &str, const std::string &charset)
@@ -231,9 +273,9 @@ bool Request::isComplete() const
 {
     if (this->raw_request.find("\r\n\r\n") == std::string::npos) //check headers
         return (false);
-    if (headers.count("content-lenght")) //check le body
+    if (headers.count("content-length")) //check le body
     {
-        std::istringstream iss(getHeader("contentlenght"));
+        std::istringstream iss(getHeader("content-length"));
         size_t lenght;
         iss >> lenght;
         if (this->body.length() < lenght)
