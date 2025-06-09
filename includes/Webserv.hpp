@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/05/14 17:39:55 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,9 +134,11 @@ private:
     ConfigNode* parseTokens(std::vector<Token> &tokens, const std::string &filename);
     void validateServers(ConfigNode *root, const std::string &filename);
     
-    // Nouvelle fonction de validation fusionnée
-    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
+    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateDirectives(ConfigNode *node, const std::string &filename);
+    void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
+    void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);
 
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);

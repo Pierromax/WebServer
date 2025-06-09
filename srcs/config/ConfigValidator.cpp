@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/08 15:46:40 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,14 +35,13 @@ void Webserv::validateCgiDirective(const std::vector<std::string> &values, const
  * @param node Node to check
  * @param filename Configuration filename (for error reporting)
  * @param depth Current depth in tree (0 for root)
+ * @param usedPorts Map to track duplicate ports across servers
  * @throw std::runtime_error if configuration errors are detected
  */
-void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth)
+void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
 {
     if (!node)
         return;
-    std::map<std::string, size_t> locationPaths;
-    
     if (depth > 1 && node->type == "server")
     {
         std::stringstream err;
@@ -50,13 +49,35 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
             << filename << ":" << node->line;
         throw std::runtime_error(err.str());
     }
-    
+    validateDirectives(node, filename);
+    validateChildNodes(node, filename, depth, usedPorts);
+}
+
+/**
+ * @brief Validates directives within a node
+ * @param node Node to validate
+ * @param filename Configuration filename (for error reporting)
+ */
+void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
+{
     for (std::map<std::string, std::vector<std::string> >::iterator it = node->directives.begin(); 
          it != node->directives.end(); ++it)
     {
         if (it->first == "cgi")
             validateCgiDirective(it->second, filename, node->line);
     }
+}
+
+/**
+ * @brief Validates child nodes and checks for duplicates
+ * @param node Parent node
+ * @param filename Configuration filename (for error reporting) 
+ * @param depth Current depth in tree
+ * @param usedPorts Map to track duplicate ports across servers
+ */
+void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
+{
+    std::map<std::string, size_t> locationPaths;
     
     for (size_t i = 0; i < node->children.size(); ++i)
     {
@@ -69,7 +90,6 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
                 << filename << ":" << child->line;
             throw std::runtime_error(err.str());
         }
-        
         if (child->type == "location")
         {
             std::string path = child->value;
@@ -83,10 +103,37 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
             }
             locationPaths[path] = child->line;
         }
+        if (child->type == "server")
+            validateServerPorts(child, filename, usedPorts);
+        validateConfigTree(child, filename, depth + 1, usedPorts);
     }
-    
-    for (size_t i = 0; i < node->children.size(); ++i)
-        validateConfigTree(node->children[i], filename, depth + 1);
+}
+
+/**
+ * @brief Validates server ports for duplicates
+ * @param serverNode Server node to validate
+ * @param filename Configuration filename (for error reporting)
+ * @param usedPorts Map to track duplicate ports
+ */
+void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts)
+{
+    std::map<std::string, std::vector<std::string> >::iterator it = serverNode->directives.find("listen");
+    if (it == serverNode->directives.end() || it->second.empty())
+        return;
+    std::stringstream ss(it->second[0]);
+    int port;
+    if (!(ss >> port))
+        return;
+    std::map<int, size_t>::iterator portIt = usedPorts.find(port);
+    if (portIt != usedPorts.end())
+    {
+        std::stringstream err;
+        err << "duplicate listen port " << port << " in " 
+            << filename << ":" << serverNode->line 
+            << " (first defined at line " << portIt->second << ")";
+        throw std::runtime_error(err.str());
+    }
+    usedPorts[port] = serverNode->line;
 }
 
 /**
@@ -96,7 +143,8 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
  */
 void Webserv::validateServers(ConfigNode *root, const std::string &filename)
 {
-    validateConfigTree(root, filename, 0);
+    std::map<int, size_t> usedPorts;
+    validateConfigTree(root, filename, 0, usedPorts);
     displayConfig(root);
 }
 

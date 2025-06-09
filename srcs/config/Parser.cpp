@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/04 09:51:28 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/07 16:58:10 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -310,6 +310,20 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
         throw std::runtime_error(err.str());
     }
     index++;
-    currentNode->directives[key] = values;
+
+    if (key == "listen")
+    {
+        if (currentNode->type != "server")
+        {
+            std::stringstream err;
+            err << "\"listen\" directive is not allowed here in " 
+                << tokens[index-1].filename << ":" << tokens[index-1].line;
+            throw std::runtime_error(err.str());
+        }
+        for (size_t i = 0; i < values.size(); ++i)
+            currentNode->directives[key].push_back(values[i]);
+    }	
+    else
+        currentNode->directives[key] = values;
     return true;
 }

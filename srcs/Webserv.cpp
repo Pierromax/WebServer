@@ -6,7 +6,7 @@
 /*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/06 19:13:42 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -290,7 +290,7 @@ void Webserv::launchServers()
     
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
-    servers.clear();
+    servers.clear();    
     fds.clear();
     if (rootConfig && !rootConfig->children.empty())
     {
