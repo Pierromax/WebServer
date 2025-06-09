@@ -6,45 +6,47 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 12:49:18 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/09 18:48:11 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 #include "Utils.hpp"
 #include "Webserv.hpp"
-#include <cerrno> // For errno
+#include <cerrno>  // For errno
 #include <cstring> // For strerror
 
-Request::Request(int client_fd) : fd(client_fd),                     
-      statuscode("200 OK"),
-      method(""),
-      path(""),
-      version(""),
-      headers(),
-      body(""),
-      raw_request(""),
-      _bytesRead(0),
-      _isEmptyInput(false)
-{}
+Request::Request(int client_fd) : fd(client_fd),
+                                  statuscode("200 OK"),
+                                  method(""),
+                                  path(""),
+                                  version(""),
+                                  headers(),
+                                  body(""),
+                                  raw_request(""),
+                                  _bytesRead(0),
+                                  _isEmptyInput(false)
+{
+}
 
-Request::Request(const Request &cpy) : fd(cpy.fd),                     
-      statuscode(cpy.statuscode),
-      method(cpy.method),
-      path(cpy.path),
-      version(cpy.version),
-      headers(cpy.headers),
-      body(cpy.body),
-      raw_request(cpy.raw_request),
-      _bytesRead(cpy._bytesRead),
-      _isEmptyInput(cpy._isEmptyInput)
-{}
+Request::Request(const Request &cpy) : fd(cpy.fd),
+                                       statuscode(cpy.statuscode),
+                                       method(cpy.method),
+                                       path(cpy.path),
+                                       version(cpy.version),
+                                       headers(cpy.headers),
+                                       body(cpy.body),
+                                       raw_request(cpy.raw_request),
+                                       _bytesRead(cpy._bytesRead),
+                                       _isEmptyInput(cpy._isEmptyInput)
+{
+}
 
 Request &Request::operator=(const Request &rhs)
 {
-	if (&rhs != this)
+    if (&rhs != this)
     {
-        fd = rhs.fd;                     
+        fd = rhs.fd;
         statuscode = rhs.statuscode;
         method = rhs.method;
         path = rhs.path;
@@ -54,13 +56,14 @@ Request &Request::operator=(const Request &rhs)
         _bytesRead = rhs._bytesRead;
         _isEmptyInput = rhs._isEmptyInput;
     }
-	return (*this);
+    return (*this);
 }
 
 Request::~Request()
-{}
+{
+}
 
-int         Request::getfd() const { return fd;}
+int Request::getfd() const { return fd; }
 
 std::string Request::getMethod() const { return method; }
 
@@ -77,7 +80,7 @@ std::string Request::getBody() const
     return body;
 }
 
-std::string Request::getHeader(const std::string &name) const 
+std::string Request::getHeader(const std::string &name) const
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(name);
 
@@ -86,18 +89,18 @@ std::string Request::getHeader(const std::string &name) const
     return "";
 }
 
-void    Request::ReadFromSocket()
+void Request::ReadFromSocket()
 {
+    std::cout << "enter read from socket" << std::endl;
     char buffer[1025] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes_received > 0)
     {
         buffer[bytes_received] = '\0';
-        this->raw_request.append(buffer); 
+        this->raw_request.append(buffer);
 
-        // Détection de fin de requête HTTP (simple: double CRLF)
-        if (this->raw_request.find("\r\n\r\n") != std::string::npos)
+        if (isComplete())
         {
             _isEmptyInput = true;
             parseRequest(this->raw_request);
@@ -122,8 +125,9 @@ void    Request::ReadFromSocket()
     }
 }
 
-void	Request::parseRequest(const std::string &buffer)
+void Request::parseRequest(const std::string &buffer)
 {
+    std::cout << "enter parsse request" << std::endl;
     std::istringstream raw_request(buffer);
     std::string line;
 
@@ -140,82 +144,90 @@ void	Request::parseRequest(const std::string &buffer)
         Request::parseHeader(line);
     }
 
-    std::streampos bodystart = raw_request.tellg();
-    if (headers.count("content-length") && method != "GET")
-        Request::parseBody(buffer.substr(bodystart));
+    std::cout << "finish header parsing " << getMethod() << std::endl;
+
+    size_t headerEndPos = buffer.find("\r\n\r\n");
+    if (headerEndPos != std::string::npos && headers.count("Content-Length") && method != "GET")
+    {
+        size_t bodyStartPos = headerEndPos + 4; // +4 pour passer "\r\n\r\n"
+        std::cout << buffer.substr(bodyStartPos) << std::endl;
+        Request::parseBody(buffer.substr(bodyStartPos));
+    }
 }
 
 /**
  * @brief Analyse la première ligne de la requête HTTP
  * @param line Première ligne à analyser
  */
-void	Request::parseFirstline(const std::string &line)
+void Request::parseFirstline(const std::string &line)
 {
-	std::istringstream firstline(line);
+    std::istringstream firstline(line);
 
-	if (line.empty() || !(firstline >> method >> path >> version))
-	{
-		statuscode = BAD_REQUEST;
-		return;
-	}
-	if (method != "GET" && method != "POST" && method != "DELETE")
-		statuscode = METHOD_NOT_ALLOWED;
-	if (path.empty() || path[0] != '/')
-		statuscode = BAD_REQUEST;
-	if (version != "HTTP/1.1")
-		statuscode = BAD_REQUEST;
+    if (line.empty() || !(firstline >> method >> path >> version))
+    {
+        statuscode = BAD_REQUEST;
+        return;
+    }
+    if (method != "GET" && method != "POST" && method != "DELETE")
+        statuscode = METHOD_NOT_ALLOWED;
+    if (path.empty() || path[0] != '/')
+        statuscode = BAD_REQUEST;
+    if (version != "HTTP/1.1")
+        statuscode = BAD_REQUEST;
 }
 
-//ignore les header faux, on les utiliseras pas de toute facon (vrai fonctionnement http)
-void	Request::parseHeader(const std::string &line)
+// ignore les header faux, on les utiliseras pas de toute facon (vrai fonctionnement http)
+void Request::parseHeader(const std::string &line)
 {
-	size_t pos;
-	std::string key;
-	std::string value;
+    size_t pos;
+    std::string key;
+    std::string value;
 
-	pos = line.find(":");
-	if (pos == std::string::npos)
-		return;
-	key = line.substr(0, pos);
-	value = line.substr(pos + 1);
-	
-	if (headers.count("Cookie") && key == "Cookie")
-		headers[key].append("; " + value);
-	else
-		headers[key] = value;
+    pos = line.find(":");
+    if (pos == std::string::npos)
+        return;
+    key = line.substr(0, pos);
+    value = line.substr(pos + 1);
 
-	key = trimString(key, " \t");
-	value = trimString(value, " \t");
+    key = trimString(key, " \t");
+    value = trimString(value, " \t");
+
+    if (headers.count("Cookie") && key == "Cookie")
+        headers[key].append("; " + value);
+    else
+        headers[key] = value;
 }
 
-//a faire en separant si la requete est POST ou DELETE
+// a faire en separant si la requete est POST ou DELETE
 void Request::parseBody(const std::string &raw_body)
 {
-	if (raw_body.empty() || !headers.count("content-length"))
-	{
-		this->body = "";
-		return;
-	}
+    std::cout << "enter parse body" << std::endl;
+    if (raw_body.empty() || !headers.count("content-length"))
+    {
+        this->body = "";
+        return;
+    }
 
-	std::istringstream iss(headers["content-length"]);
-	int body_length = 0;
-	
-	if (!(iss >> body_length) || body_length < 0)
-	{
-		this->body = "";
-		return;
-	}
-	if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
-		this->body = raw_body.substr(0, body_length);
-	else
-		this->body = raw_body;
+    std::istringstream iss(headers["content-length"]);
+    int body_length = 0;
+
+    if (!(iss >> body_length) || body_length < 0)
+    {
+        this->body = "";
+        return;
+    }
+    if (body_length > 0 && raw_body.length() >= static_cast<size_t>(body_length))
+        this->body = raw_body.substr(0, body_length);
+    else
+        this->body = raw_body;
+    std::cout << raw_body << std::endl;
 }
 
 std::string trimString(std::string &str, const std::string &charset)
 {
     if (str.empty())
         return "";
-        
+
     size_t start;
     size_t end;
 
@@ -229,15 +241,29 @@ std::string trimString(std::string &str, const std::string &charset)
 
 bool Request::isComplete() const
 {
-    if (this->raw_request.find("\r\n\r\n") == std::string::npos) //check headers
+    size_t headerEnd = this->raw_request.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
         return (false);
-    if (headers.count("content-lenght")) //check le body
-    {
-        std::istringstream iss(getHeader("contentlenght"));
-        size_t lenght;
-        iss >> lenght;
-        if (this->body.length() < lenght)
-            return false;
-    }
+    size_t pos = raw_request.find("Content-Length:");
+    if (pos == std::string::npos)
+        return true;
+
+    size_t start = raw_request.find(":", pos) + 1;
+    size_t end = raw_request.find("\r\n", start);
+
+    std::string strValue = raw_request.substr(start, end - start);
+    strValue = trimString(strValue, " \t");
+
+    std::istringstream iss(strValue);
+    size_t value;
+    iss >> value;
+
+    if (value == 0)
+        return true;
+
+    size_t actualBodyLength = raw_request.length() - (headerEnd + 4);
+
+    if (actualBodyLength < value)
+        return false;
     return true;
 }

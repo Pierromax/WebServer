@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/28 17:26:03 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/09 15:02:46 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #define BAD_REQUEST "400 Bad Request"
 #define FILE_NOT_FOUND "404 Not Found"
 #define METHOD_NOT_ALLOWED "405 Method Not Allowed"
+#define INTERNAL_ERROR "500 Internal Server Error"
 
 class Request
 {

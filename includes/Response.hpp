@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 17:35:55 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/09 14:57:57 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,8 +61,9 @@ class Response
         void                                handleDeleteRequest(const Request &req);
         std::vector<std::string>            splitPostBody(std::string body, std::string delim);
         std::map<std::string, std::string>  extractPostHeaders(std::string content);
-        bool                                isFilename(std::map<std::string, std::string> headers);
-        
+        bool                                extractFileToSave(std::map<std::string, std::string> headers, std::string content, std::string location);
+        bool                                saveFile(std::string filename, std::string body, std::string location);
+
     public:
         Response();
         Response(const Request &req, Server* server);

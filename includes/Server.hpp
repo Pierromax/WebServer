@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/07 18:02:18 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 15:03:59 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,13 @@ struct ConfigNode;
 struct t_Route
 {
 	std::vector<std::string> allowedMethods;
-	std::string redirect;
-	std::string root;
-	bool directoryListing;
-	std::string defaultFile;
-	std::string cgiExtension;
-	bool allowUploads;
-	std::string uploadDirectory;
+	std::string 			redirect;
+	std::string 			root;
+	std::string 			defaultFile;
+	std::string 			cgiExtension;
+	std::string 			uploadDirectory;
+	bool 					allowUploads;
+	bool 					directoryListing;
 };
 
 class Server

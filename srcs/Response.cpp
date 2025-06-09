@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 18:14:16 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/09 16:29:43 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,9 +100,113 @@ void Response::setBody(const std::string &body)
     this->body = body;
 }
 
-/**********************************/
-/* Request Handling Member Funcs  */
-/**********************************/
+/**************************************/
+/* main Request Handling Member Funcs */
+/**************************************/
+
+void Response::handleGetRequest(const Request &req)
+{
+    std::string path = req.getPath();
+    ConfigNode* locationNode = findBestLocation(path);
+    std::string filePath = resolveFilePath(locationNode, path);
+    std::string content;
+    
+    std::cout << "URL demandée: " << req.getPath() << std::endl;
+    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
+
+    if (filePath.empty())
+    {
+        status_code = "404 Not Found";
+        loadErrorPage("404", locationNode);
+    }
+    else if (loadPageContent(filePath, content))
+    {
+        setBody(content);
+        setContentType(getMimeType(filePath));
+    }
+    else
+    {
+        status_code = "403 Forbidden";
+        loadErrorPage("403", locationNode);
+    }
+}
+
+void Response::handlePostRequest(const Request &req)
+{
+    std::string contentType = req.getHeader("Content-Type");
+    std::map<std::string, std::string> bodyHeaders;
+    std::vector<std::string> bodies;
+    ConfigNode* locationNode = findBestLocation(req.getPath());
+    std::string location = findEffectiveRoot(locationNode);
+
+
+    std::cout << "find multiform" << std::endl;
+    if (contentType.find("multipart/form-data") == std::string::npos)
+    {
+        status_code = BAD_REQUEST; 
+        return;
+    }
+    std::cout << "find boundary " << std::endl;
+    size_t pos = contentType.find("boundary=");
+    if (pos == std::string::npos)
+    {
+        status_code = BAD_REQUEST; 
+        return;
+    }
+    std::string boundary = contentType.substr(pos + 9);
+    std::string delimiter = "--" + boundary;
+    std::string content = req.getBody();
+
+    std::cout << content << std::endl;
+    if (content.empty())
+    {
+        status_code = BAD_REQUEST; 
+        return;
+    }
+    std::cout << "content non empty" << std::endl;
+    bodies = splitPostBody(content, delimiter);
+
+    bool validFile = false;
+    for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
+    {
+        pos = it->find("\r\n\r\n");
+        if (pos != std::string::npos)
+        {
+            std::cout << "extarct info" << std::endl;
+            std::string headerPart = it->substr(0, pos);
+            std::string bodyPart = it->substr(pos + 4);
+            bodyHeaders = extractPostHeaders(headerPart);
+            std::cout << "try to save" << std::endl;
+            if (extractFileToSave(bodyHeaders, bodyPart, location))
+                validFile = true;
+            std::cout << "after saving file" << std::endl;
+        }
+    }
+    std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
+    if (validFile)
+    {
+        // Succès - le status_code est déjà mis à "201 Created" dans saveFile
+        std::string successBody = 
+            "<html>"
+            "<head><title>Upload réussi</title></head>"
+            "<body>"
+            "<h1>Fichier uploadé avec succès !</h1>"
+            "<p>Votre fichier a été sauvegardé sur le serveur.</p>"
+            "</body>"
+            "</html>";
+        setBody(successBody);
+        setContentType("text/html");
+    }
+}
+
+void Response::handleDeleteRequest(const Request &req)
+{
+    (void)req;
+}
+
+/****************************************/
+/* utils Request Handling Member Funcs  */
+/****************************************/
 
 std::string Response::getMimeType(const std::string& filePath) const
 {
@@ -247,76 +351,114 @@ bool Response::loadPageContent(const std::string& filePath, std::string& content
     }
     return false;
 }
+/* ******************************** */
+/* exclusive utils for post request */
 
-void Response::handleGetRequest(const Request &req)
+std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
 {
-    std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
-    std::string filePath = resolveFilePath(locationNode, path);
-    std::string content;
+    std::vector<std::string>    split;
+    std::string                 content;
+    size_t                      start = 0;
+    size_t                      newStart;
+
+    while (true)
+    {
+        newStart = body.find(delim, start);
+        if (newStart == std::string::npos)
+        {
+            split.push_back(body.substr(start));
+            break;
+        }
+        content = body.substr(start, newStart - start);
+        split.push_back(content);
+        start = newStart + delim.length();
+    }
+    return split;
+}
+
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
+{
+    std::map<std::string, std::string>  parseHeader;
+    std::stringstream                   ss(content);
+    std::string                         line;
+
+    while(std::getline(ss, line))
+    {
+        if (line.empty() || line == "\r")
+            break;
+        size_t pos = line.find(":");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        value = trimString(value, " \t\n\r");
+        parseHeader[key] = value;
+    }
+    return parseHeader;
+}
+
+static std::string extractFilename(std::string content)
+{
+    size_t filepos = content.find("filename=\"");
+    if (filepos == std::string::npos)
+        return ("");
+    filepos += 10;
+    size_t endpos = content.find("\"", filepos);
+    if (endpos == std::string::npos)
+        return ("");
+
+    std::string filename = content.substr(filepos, endpos - filepos);
+
+    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
+        return "";
     
-    std::cout << "URL demandée: " << req.getPath() << std::endl;
-    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
-
-    if (filePath.empty())
-    {
-        status_code = "404 Not Found";
-        loadErrorPage("404", locationNode);
-    }
-    else if (loadPageContent(filePath, content))
-    {
-        setBody(content);
-        setContentType(getMimeType(filePath));
-    }
-    else
-    {
-        status_code = "403 Forbidden";
-        loadErrorPage("403", locationNode);
-    }
+    return filename;
 }
 
-void Response::handlePostRequest(const Request &req)
+bool    Response::saveFile(std::string filename, std::string body, std::string location)
 {
-    std::string contentType = req.getHeader("Content-Type");
-    std::string boundary;
-    size_t      pos = contentType.find("boundary=");
-    std::string end;
-    std::string delimiter;
-    std::string content;
-    std::map<std::string, std::string> bodyHeaders;
-    std::vector<std::string> bodies;
+    std::string path = location + "/" + filename;
+    std::ofstream file(path.c_str(), std::ios::binary);
+
+    std::cout << "path = " << path;
+
+    if (!file.is_open())
+    {
+        status_code = INTERNAL_ERROR;
+        return false;
+    }
+    
+    file.write(body.c_str(), body.size());
+    file.close();
+    
+    if (file.fail())
+    {
+        status_code = INTERNAL_ERROR; 
+        return false;
+    }
+    return true;
+}
+
+bool    Response::extractFileToSave(std::map<std::string, std::string> heads, std::string content, std::string location)
+{
+    std::string filename;
+    
+    if (!heads.count("Content-Disposition"))
+        return false;
+
+    size_t pos = heads.at("Content-Disposition").find("filename=");
+    if (pos == std::string::npos)
+        return false;
         
-    if (contentType.find("multipart/form-data") != std::string::npos)
-    {
-        content = req.getBody();
-        if (pos != std::string::npos)
-        {
-            boundary = contentType.substr(pos + 9);
-            delimiter = "--" + boundary;
-            end = delimiter + "--";
-        }
-        else
-        {
-            status_code = BAD_REQUEST;
-            return;
-        }
-        bodies = splitPostBody(content, delimiter);
-        for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
-        {
-            pos = it->find("\r\n\r\n");
-            if (pos != std::string::npos)
-            {
-                std::string headerPart = it->substr(0, pos);
-                std::string bodyPart = it->substr(pos + 4);
-                bodyHeaders = extractPostHeaders(headerPart);
-            }
-        }
-    }
-}
+    filename = extractFilename(heads.at("Content-Disposition"));
+    if (filename == "")
+        return false;
 
-void Response::handleDeleteRequest(const Request &req)
-{
-    (void)req;
+    if (!saveFile(filename, content, location))
+        return false;
+    
+    return true;
 }
 
 /**********************************/
@@ -436,48 +578,4 @@ std::string Response::build() const
     response << body;
 
     return response.str();
-}
-
-std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
-{
-    std::vector<std::string>    split;
-    std::string                 content;
-    size_t                      start = 0;
-    size_t                      newStart;
-
-    while (true)
-    {
-        newStart = body.find(delim, start);
-        if (newStart == std::string::npos)
-        {
-            split.push_back(body.substr(start));
-            break;
-        }
-        content = body.substr(start, newStart - start);
-        split.push_back(content);
-        start = newStart + delim.length();
-    }
-    return split;
-}
-
-std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
-{
-    std::map<std::string, std::string>  parseHeader;
-    std::stringstream                   ss(content);
-    std::string                         line;
-
-    while(std::getline(ss, line))
-    {
-        if (line.empty() || line == "\r")
-            break;
-        size_t pos = line.find(":");
-        if(pos == std::string::npos)
-            continue;
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        key = trimString(key, " \t\n\r");
-        value = trimString(value, " \t\n\r");
-        parseHeader[key] = value;
-    }
-    return parseHeader;
 }
