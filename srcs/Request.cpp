@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:35:56 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,7 @@ Request::Request(const Request &cpy) : fd(cpy.fd),
 
 Request &Request::operator=(const Request &rhs)
 {
-	if (&rhs != this)
-    {
+	if (&rhs != this) {
         fd = rhs.fd;                     
         statuscode = rhs.statuscode;
         method = rhs.method;
@@ -86,63 +85,45 @@ std::string Request::getHeader(const std::string &name) const
     return "";
 }
 
-void    Request::ReadFromSocket()
+void Request::ReadFromSocket()
 {
     char buffer[1025] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
 
-    if (bytes_received > 0)
-    {
+    if (bytes_received > 0) {
         buffer[bytes_received] = '\0';
-        this->raw_request.append(buffer); 
+        this->raw_request.append(buffer);
+        _bytesRead += bytes_received;
 
-        // Détection de fin de requête HTTP (double CRLF pour headers)
+        if (_bytesRead == bytes_received) {
+            size_t headerEnd = this->raw_request.find("\r\n\r\n");
+            if (headerEnd != std::string::npos) {
+                std::string headerPart = this->raw_request.substr(0, headerEnd + 4);
+                parseRequest(headerPart);
+            }
+        }
+
         size_t headerEnd = this->raw_request.find("\r\n\r\n");
-        if (headerEnd != std::string::npos)
-        {
-            // Parse juste les headers pour obtenir content-length
-            std::string headerPart = this->raw_request.substr(0, headerEnd + 4);
-            parseRequest(headerPart);
-            
-            // Pour POST, vérifier si on a tout le body
-            if (method == "POST" && headers.count("content-length"))
-            {
+        if (headerEnd != std::string::npos) {
+            if (method == "POST" && headers.count("content-length")) {
                 std::istringstream iss(headers["content-length"]);
                 int expected_length = 0;
                 iss >> expected_length;
                 
                 size_t current_body_length = this->raw_request.length() - (headerEnd + 4);
-                if (current_body_length >= static_cast<size_t>(expected_length))
-                {
-                    // On a tout le body, re-parser la requête complète
+                if (current_body_length >= static_cast<size_t>(expected_length)) {
                     parseRequest(this->raw_request);
                     _isEmptyInput = true;
-                }
-                else
-                {
-                    _isEmptyInput = false; // Attendre plus de données
-                }
-            }
-            else
-            {
-                // GET ou requête sans body
+                } else
+                    _isEmptyInput = false;
+            } else
                 _isEmptyInput = true;
-            }
-        }
-        else
-        {
+        } else
             _isEmptyInput = false;
-        }
-        _bytesRead += bytes_received;
-    }
-    else if (bytes_received == 0)
-    {
-        statuscode = ""; // Indicate disconnect
-    }
-    else
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
+    } else if (bytes_received == 0) {
+        statuscode = "";
+    } else {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
             statuscode = BAD_REQUEST;
             std::cerr << "recv error: " << strerror(errno) << std::endl;
         }
@@ -184,8 +165,7 @@ void	Request::parseFirstline(const std::string &line)
 {
 	std::istringstream firstline(line);
 
-	if (line.empty() || !(firstline >> method >> path >> version))
-	{
+	if (line.empty() || !(firstline >> method >> path >> version)) {
 		statuscode = BAD_REQUEST;
 		return;
 	}
@@ -226,8 +206,7 @@ void	Request::parseHeader(const std::string &line)
 //a faire en separant si la requete est POST ou DELETE
 void Request::parseBody(const std::string &raw_body)
 {
-	if (raw_body.empty() || !headers.count("content-length"))
-	{
+	if (raw_body.empty() || !headers.count("content-length")) {
 		this->body = "";
 		return;
 	}
@@ -235,21 +214,17 @@ void Request::parseBody(const std::string &raw_body)
 	std::istringstream iss(headers["content-length"]);
 	int body_length = 0;
 	
-	if (!(iss >> body_length) || body_length < 0)
-	{
+	if (!(iss >> body_length) || body_length < 0) {
 		this->body = "";
 		return;
 	}
 	
-	// Pour les requêtes POST, on doit lire exactement body_length caractères
-	if (body_length > 0)
-	{
+	if (body_length > 0) {
 		if (raw_body.length() >= static_cast<size_t>(body_length))
 			this->body = raw_body.substr(0, body_length);
 		else
-			this->body = raw_body; // Prendre ce qu'on a pour l'instant
-	}
-	else
+			this->body = raw_body;
+	} else
 		this->body = "";
 }
 
@@ -271,10 +246,9 @@ std::string trimString(std::string &str, const std::string &charset)
 
 bool Request::isComplete() const
 {
-    if (this->raw_request.find("\r\n\r\n") == std::string::npos) //check headers
+    if (this->raw_request.find("\r\n\r\n") == std::string::npos)
         return (false);
-    if (headers.count("content-length")) //check le body
-    {
+    if (headers.count("content-length")) {
         std::istringstream iss(getHeader("content-length"));
         size_t lenght;
         iss >> lenght;

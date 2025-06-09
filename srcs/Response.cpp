@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -249,6 +249,35 @@ bool Response::loadPageContent(const std::string& filePath, std::string& content
 }
 
 /**
+ * @brief Checks if a HTTP method is allowed for a given location
+ * @param method HTTP method to check (GET, POST, DELETE)
+ * @param locationNode Location node to search in hierarchy
+ * @return true if method is allowed, false otherwise
+ */
+bool Response::isMethodAllowed(const std::string& method, ConfigNode* locationNode) const
+{
+    ConfigNode* searchNode = locationNode;
+    HttpMethod methodEnum;
+
+    if (method == "GET")
+        methodEnum = METHOD_GET;
+    else if (method == "POST")
+        methodEnum = METHOD_POST;
+    else if (method == "DELETE")
+        methodEnum = METHOD_DELETE;
+    else
+        return false;
+    while (searchNode)
+    {
+        std::map<std::string, std::vector<std::string> >::iterator it = searchNode->directives.find("methods");
+        if (it != searchNode->directives.end())
+            return searchNode->allowedMethods[methodEnum];
+        searchNode = searchNode->parent;
+    }
+    return true;
+}
+
+/**
  * @brief Handles CGI request execution for both GET and POST
  * @param req The HTTP request
  * @param locationNode Configuration context node
@@ -323,9 +352,15 @@ void Response::handleGetRequest(const Request &req)
     std::cout << "URL demandée: " << req.getPath() << std::endl;
     std::cout << "Chemin complet du fichier: " << filePath << std::endl;
 
+    if (!isMethodAllowed("GET", locationNode))
+    {
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
+    }
     if (filePath.empty())
     {
-        status_code = "404 Not Found";
+        status_code = FILE_NOT_FOUND;
         loadErrorPage("404", locationNode);
         return;
     }
@@ -354,9 +389,15 @@ void Response::handlePostRequest(const Request &req)
     ConfigNode* locationNode = findBestLocation(path);
     std::string filePath = resolveFilePath(locationNode, path);
     
+    if (!isMethodAllowed("POST", locationNode))
+    {
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
+    }
     if (filePath.empty())
     {
-        status_code = "404 Not Found";
+        status_code = FILE_NOT_FOUND;
         loadErrorPage("404", locationNode);
         return;
     }
@@ -408,6 +449,15 @@ void Response::handlePostRequest(const Request &req)
 
 void Response::handleDeleteRequest(const Request &req)
 {
+    std::string path = req.getPath();
+    ConfigNode* locationNode = findBestLocation(path);
+
+    if (!isMethodAllowed("DELETE", locationNode))
+    {
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
+    }
     (void)req;
 }
 

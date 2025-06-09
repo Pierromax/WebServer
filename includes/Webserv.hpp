@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,17 @@ enum TokenType
     TOKEN_SYMBOL,  // {, }, ;
     TOKEN_ID,      // nombres, identifiants, chemins non quotés
     TOKEN_STRING   // chaînes entre guillemets
+};
+
+/**
+ * @brief Méthodes HTTP supportées
+ */
+enum HttpMethod
+{
+    METHOD_GET = 0,
+    METHOD_POST = 1,
+    METHOD_DELETE = 2,
+    METHOD_COUNT = 3
 };
 
 /**
@@ -100,9 +111,15 @@ struct ConfigNode
     std::vector<ConfigNode *> children;
     std::map<std::string, std::vector<std::string> > directives;
     std::size_t line;
+    bool allowedMethods[METHOD_COUNT]; // Tableau de booléens pour les méthodes autorisées
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
-        : type(t), value(v), parent(p), line(ln) {}
+        : type(t), value(v), parent(p), line(ln) 
+    {
+        // Par défaut, toutes les méthodes sont autorisées
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            allowedMethods[i] = true;
+    }
 
     ~ConfigNode()
     {
@@ -136,6 +153,7 @@ private:
     
     void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateDirectives(ConfigNode *node, const std::string &filename);
     void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);

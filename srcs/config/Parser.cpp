@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/07 16:58:10 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -322,7 +322,22 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
         }
         for (size_t i = 0; i < values.size(); ++i)
             currentNode->directives[key].push_back(values[i]);
-    }	
+    }
+    else if (key == "methods")
+    {
+        currentNode->directives[key] = values;
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            currentNode->allowedMethods[i] = false;
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            if (values[i] == "GET")
+                currentNode->allowedMethods[METHOD_GET] = true;
+            else if (values[i] == "POST")
+                currentNode->allowedMethods[METHOD_POST] = true;
+            else if (values[i] == "DELETE")
+                currentNode->allowedMethods[METHOD_DELETE] = true;
+        }
+    }
     else
         currentNode->directives[key] = values;
     return true;

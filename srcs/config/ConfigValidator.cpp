@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigValidator.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include <sstream>
+#include <set>
 
 /**
  * @brief Validates CGI directive format
@@ -27,6 +28,48 @@ void Webserv::validateCgiDirective(const std::vector<std::string> &values, const
         err << "directive \"cgi\" takes exactly 2 arguments in " 
             << filename << ":" << line;
         throw std::runtime_error(err.str());
+    }
+}
+
+/**
+ * @brief Validates methods directive format
+ * @param values Values for the methods directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ */
+void Webserv::validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
+{
+    std::set<std::string> validMethods;
+    std::set<std::string> usedMethods;
+
+    if (values.size() > 3)
+    {
+        std::stringstream err;
+        err << "directive \"methods\" takes at most 3 arguments in " 
+            << filename << ":" << line;
+        throw std::runtime_error(err.str());
+    }
+    validMethods.insert("GET");
+    validMethods.insert("POST");
+    validMethods.insert("DELETE");
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        const std::string& method = values[i];
+        if (validMethods.find(method) == validMethods.end())
+        {
+            std::stringstream err;
+            err << "invalid method \"" << method << "\" in directive \"methods\" in " 
+                << filename << ":" << line;
+            throw std::runtime_error(err.str());
+        }
+        if (usedMethods.find(method) != usedMethods.end())
+        {
+            std::stringstream err;
+            err << "duplicate method \"" << method << "\" in directive \"methods\" in " 
+                << filename << ":" << line;
+            throw std::runtime_error(err.str());
+        }
+        usedMethods.insert(method);
     }
 }
 
@@ -65,6 +108,8 @@ void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
     {
         if (it->first == "cgi")
             validateCgiDirective(it->second, filename, node->line);
+        else if (it->first == "methods")
+            validateMethodsDirective(it->second, filename, node->line);
     }
 }
 

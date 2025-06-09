@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,9 @@ class Response
         std::string resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const;
         std::string getMimeType(const std::string& filePath) const;
         bool        loadPageContent(const std::string& filePath, std::string& content) const;
+        
+        // --- Methods Handling ---
+        bool        isMethodAllowed(const std::string& method, ConfigNode* locationNode) const;
 
         // --- CGI Handling ---
         void        handleCgiRequest(const Request &req, ConfigNode* locationNode, const std::string& filePath);

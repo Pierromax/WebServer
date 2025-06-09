@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Tokenizer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ std::set<std::string> initKeywords()
     keywords.insert("client_max_body_size");
     keywords.insert("return");
     keywords.insert("cgi");
+    keywords.insert("methods");
     return keywords;
 }
 
