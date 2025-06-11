@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/09 16:29:43 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:24:06 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@ Response::Response(const Request &req, Server* server) : _server(server)
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
+
+    std::cout << method << std::endl;
         
     if (method == "GET")
         handleGetRequest(req);
@@ -157,7 +159,6 @@ void Response::handlePostRequest(const Request &req)
     std::string delimiter = "--" + boundary;
     std::string content = req.getBody();
 
-    std::cout << content << std::endl;
     if (content.empty())
     {
         status_code = BAD_REQUEST; 
@@ -442,18 +443,29 @@ bool    Response::saveFile(std::string filename, std::string body, std::string l
 
 bool    Response::extractFileToSave(std::map<std::string, std::string> heads, std::string content, std::string location)
 {
+
+    
     std::string filename;
     
-    if (!heads.count("Content-Disposition"))
+    if (!heads.count("content-disposition"))
+    {
+        std::cout << "no content-dispostion" << std::endl;
         return false;
+    }
 
-    size_t pos = heads.at("Content-Disposition").find("filename=");
+    size_t pos = heads.at("content-disposition").find("filename=");
     if (pos == std::string::npos)
+    {
+        std::cout << "filename noon found" << std::endl;     
         return false;
+    }
         
-    filename = extractFilename(heads.at("Content-Disposition"));
+    filename = extractFilename(heads.at("content-disposition"));
     if (filename == "")
+    {
+        
         return false;
+    }
 
     if (!saveFile(filename, content, location))
         return false;

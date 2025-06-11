@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/09 18:48:11 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:23:30 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,15 +91,16 @@ std::string Request::getHeader(const std::string &name) const
 
 void Request::ReadFromSocket()
 {
-    std::cout << "enter read from socket" << std::endl;
-    char buffer[1025] = {0};
+    char buffer[16384] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes_received > 0)
     {
-        buffer[bytes_received] = '\0';
-        this->raw_request.append(buffer);
+        this->raw_request.append(buffer, bytes_received);
+        _bytesRead += bytes_received;
 
+        std::string buf(buffer);
+        
         if (isComplete())
         {
             _isEmptyInput = true;
@@ -109,11 +110,12 @@ void Request::ReadFromSocket()
         {
             _isEmptyInput = false;
         }
-        _bytesRead += bytes_received;
     }
     else if (bytes_received == 0)
     {
         statuscode = ""; // Indicate disconnect
+        _isEmptyInput = true;
+
     }
     else
     {
@@ -121,13 +123,14 @@ void Request::ReadFromSocket()
         {
             statuscode = BAD_REQUEST;
             std::cerr << "recv error: " << strerror(errno) << std::endl;
+            _isEmptyInput = true;
+
         }
     }
 }
 
 void Request::parseRequest(const std::string &buffer)
 {
-    std::cout << "enter parsse request" << std::endl;
     std::istringstream raw_request(buffer);
     std::string line;
 
@@ -143,14 +146,10 @@ void Request::parseRequest(const std::string &buffer)
             break;
         Request::parseHeader(line);
     }
-
-    std::cout << "finish header parsing " << getMethod() << std::endl;
-
     size_t headerEndPos = buffer.find("\r\n\r\n");
     if (headerEndPos != std::string::npos && headers.count("Content-Length") && method != "GET")
     {
         size_t bodyStartPos = headerEndPos + 4; // +4 pour passer "\r\n\r\n"
-        std::cout << buffer.substr(bodyStartPos) << std::endl;
         Request::parseBody(buffer.substr(bodyStartPos));
     }
 }
@@ -202,13 +201,13 @@ void Request::parseHeader(const std::string &line)
 void Request::parseBody(const std::string &raw_body)
 {
     std::cout << "enter parse body" << std::endl;
-    if (raw_body.empty() || !headers.count("content-length"))
+    if (raw_body.empty() || !headers.count("Content-Length"))
     {
         this->body = "";
         return;
     }
 
-    std::istringstream iss(headers["content-length"]);
+    std::istringstream iss(headers["Content-Length"]);
     int body_length = 0;
 
     if (!(iss >> body_length) || body_length < 0)
@@ -220,7 +219,6 @@ void Request::parseBody(const std::string &raw_body)
         this->body = raw_body.substr(0, body_length);
     else
         this->body = raw_body;
-    std::cout << raw_body << std::endl;
 }
 
 std::string trimString(std::string &str, const std::string &charset)
@@ -244,7 +242,7 @@ bool Request::isComplete() const
     size_t headerEnd = this->raw_request.find("\r\n\r\n");
     if (headerEnd == std::string::npos)
         return (false);
-    size_t pos = raw_request.find("Content-Length:");
+    size_t pos = raw_request.find("Content-Length");
     if (pos == std::string::npos)
         return true;
 
@@ -256,10 +254,13 @@ bool Request::isComplete() const
 
     std::istringstream iss(strValue);
     size_t value;
+    
     iss >> value;
-
     if (value == 0)
+    {
+        std::cout << "value == 0" << std::endl;
         return true;
+    }
 
     size_t actualBodyLength = raw_request.length() - (headerEnd + 4);
 

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/09 18:43:52 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 14:58:24 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,7 +237,7 @@ void Webserv::handleClients(pollfd &it)
     if (it.revents & POLLIN)
     {
         clients[it.fd]->prepareRequest();
-        if (clients[it.fd]->isRequestValid())
+        if (clients[it.fd]->getState() == WRITING)
         {
             clients[it.fd]->prepareResponse();
             setPollEvent(it.fd, POLLOUT);
