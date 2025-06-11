@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:24:06 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 17:20:31 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,8 +141,6 @@ void Response::handlePostRequest(const Request &req)
     ConfigNode* locationNode = findBestLocation(req.getPath());
     std::string location = findEffectiveRoot(locationNode);
 
-
-    std::cout << "find multiform" << std::endl;
     if (contentType.find("multipart/form-data") == std::string::npos)
     {
         status_code = BAD_REQUEST; 
@@ -164,7 +162,6 @@ void Response::handlePostRequest(const Request &req)
         status_code = BAD_REQUEST; 
         return;
     }
-    std::cout << "content non empty" << std::endl;
     bodies = splitPostBody(content, delimiter);
 
     bool validFile = false;
@@ -175,6 +172,7 @@ void Response::handlePostRequest(const Request &req)
         {
             std::cout << "extarct info" << std::endl;
             std::string headerPart = it->substr(0, pos);
+            std::cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
             bodyHeaders = extractPostHeaders(headerPart);
             std::cout << "try to save" << std::endl;
@@ -186,17 +184,16 @@ void Response::handlePostRequest(const Request &req)
     std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
     if (validFile)
     {
-        // Succès - le status_code est déjà mis à "201 Created" dans saveFile
-        std::string successBody = 
-            "<html>"
-            "<head><title>Upload réussi</title></head>"
-            "<body>"
-            "<h1>Fichier uploadé avec succès !</h1>"
-            "<p>Votre fichier a été sauvegardé sur le serveur.</p>"
-            "</body>"
-            "</html>";
-        setBody(successBody);
-        setContentType("text/html");
+        status_code = "201 Created";
+        std::string successPagePath = location + "/upload/201.html";
+        std::string pageContent;
+        std::cout << "Tentative de chargement: " << successPagePath << std::endl;
+        if (loadPageContent(successPagePath, pageContent))
+        {
+            std::cout << "Page 201.html chargée avec succès" << std::endl;
+            setBody(pageContent);
+            setContentType(getMimeType(successPagePath));
+        }
     }
 }
 
@@ -371,29 +368,37 @@ std::vector<std::string> Response::splitPostBody(std::string body, std::string d
             break;
         }
         content = body.substr(start, newStart - start);
-        split.push_back(content);
+        if (!content.empty())
+            split.push_back(content);
         start = newStart + delim.length();
     }
     return split;
 }
 
-std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string &content)
 {
     std::map<std::string, std::string>  parseHeader;
     std::stringstream                   ss(content);
-    std::string                         line;
+    std::string                  line;
 
+       std::cout << "=== PARSING MANUEL ===" << std::endl;
+    std::cout << "Contenu: '" << content << "'" << std::endl;
+
+    
     while(std::getline(ss, line))
     {
+        std::cout << "=== line parsed : " << line << "===" << std::endl;
         if (line.empty() || line == "\r")
-            break;
+            continue;
         size_t pos = line.find(":");
         if(pos == std::string::npos)
             continue;
         std::string key = line.substr(0, pos);
         std::string value = line.substr(pos + 1);
         key = trimString(key, " \t\n\r");
+        std::cout << "key = " << key << std::endl;
         value = trimString(value, " \t\n\r");
+        std::cout << "value = " << value << std::endl ;
         parseHeader[key] = value;
     }
     return parseHeader;
@@ -417,7 +422,7 @@ static std::string extractFilename(std::string content)
     return filename;
 }
 
-bool    Response::saveFile(std::string filename, std::string body, std::string location)
+bool    Response::saveFile(std::string &filename, std::string &body, std::string location)
 {
     std::string path = location + "/" + filename;
     std::ofstream file(path.c_str(), std::ios::binary);
@@ -441,26 +446,30 @@ bool    Response::saveFile(std::string filename, std::string body, std::string l
     return true;
 }
 
-bool    Response::extractFileToSave(std::map<std::string, std::string> heads, std::string content, std::string location)
+bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, std::string &content, std::string location)
 {
+    std::string filename;
 
     
-    std::string filename;
+    for(std::map<std::string, std::string>::iterator it = heads.begin(); it != heads.end(); it++)
+    {
+        std::cout << "key : " << it->first << ", value = " << it->second << std::endl;
+    }
     
-    if (!heads.count("content-disposition"))
+    if (!heads.count("Content-Disposition"))
     {
         std::cout << "no content-dispostion" << std::endl;
         return false;
     }
 
-    size_t pos = heads.at("content-disposition").find("filename=");
+    size_t pos = heads.at("Content-Disposition").find("filename=");
     if (pos == std::string::npos)
     {
         std::cout << "filename noon found" << std::endl;     
         return false;
     }
         
-    filename = extractFilename(heads.at("content-disposition"));
+    filename = extractFilename(heads.at("Content-Disposition"));
     if (filename == "")
     {
         

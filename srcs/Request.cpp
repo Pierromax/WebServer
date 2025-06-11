@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:23:30 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 16:09:43 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,7 @@ std::string Request::getHeader(const std::string &name) const
 
 void Request::ReadFromSocket()
 {
-    char buffer[16384] = {0};
+    char buffer[2048] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes_received > 0)

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webserv</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Fichier Uploader avec Succes !</h1>
+    <div class="upload-rediretion">
+        <button type="button" class="select-button" id="uploadButton">Upload</button>
+    </div>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function()
+    {
+        var uButton = document.getElementById('uploadButton');
+        uButton.addEventListener('click', function()
+        {
+        window.location.href = '/upload';
+        });
+    });
+
+</script>
+</html>
