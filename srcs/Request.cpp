@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:23:30 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:34:08 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,12 +99,36 @@ void Request::ReadFromSocket()
         this->raw_request.append(buffer, bytes_received);
         _bytesRead += bytes_received;
 
-        std::string buf(buffer);
-        
         if (isComplete())
         {
-            _isEmptyInput = true;
-            parseRequest(this->raw_request);
+            // Parse juste les headers pour obtenir content-length
+            std::string headerPart = this->raw_request.substr(0, headerEnd + 4);
+            parseRequest(headerPart);
+            
+            // Pour POST, vérifier si on a tout le body
+            if (method == "POST" && headers.count("content-length"))
+            {
+                std::istringstream iss(headers["content-length"]);
+                int expected_length = 0;
+                iss >> expected_length;
+                
+                size_t current_body_length = this->raw_request.length() - (headerEnd + 4);
+                if (current_body_length >= static_cast<size_t>(expected_length))
+                {
+                    // On a tout le body, re-parser la requête complète
+                    parseRequest(this->raw_request);
+                    _isEmptyInput = true;
+                }
+                else
+                {
+                    _isEmptyInput = false; // Attendre plus de données
+                }
+            }
+            else
+            {
+                // GET ou requête sans body
+                _isEmptyInput = true;
+            }
         }
         else
         {

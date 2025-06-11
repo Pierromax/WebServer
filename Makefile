@@ -17,6 +17,7 @@ SRCS = $(SRCS_DIR)/Webserv.cpp \
        $(SRCS_DIR)/Request.cpp \
        $(SRCS_DIR)/Response.cpp \
        $(SRCS_DIR)/Client.cpp \
+       $(SRCS_DIR)/CGIsHandling.cpp \
        $(SRCS_DIR)/config/Tokenizer.cpp \
        $(SRCS_DIR)/config/Parser.cpp \
        $(SRCS_DIR)/config/ConfigValidator.cpp \

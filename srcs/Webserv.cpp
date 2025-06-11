@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 14:58:24 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:35:56 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ Webserv::Webserv() : rootConfig(NULL)
     pollfd newfd;
     newfd.fd = newServer->getfd();
     newfd.events = POLLIN;
+    newfd.revents = 0;
     fds.push_back(newfd);
     servers[newfd.fd] = newServer;
     std::cout << "Serveur ajouté à la map avec fd = " << newfd.fd << std::endl;
@@ -128,6 +129,7 @@ void Webserv::acceptNewClient(Server *server)
     std::cout << "client accepted" << std::endl;
     newfd.fd = client_fd;
     newfd.events = POLLIN;
+    newfd.revents = 0;
     fds.push_back(newfd);
     clients[client_fd] = newclient;
 }
@@ -197,6 +199,8 @@ void Webserv::run()
         {
             if (it->fd == -1)
                 continue;
+            if (it->revents == 0)  // Pas d'événements sur ce fd
+                continue;
             if (servers.count(it->fd))
                 handleServers(*it);
             else if (clients.count(it->fd))
@@ -227,7 +231,6 @@ void Webserv::handleServers(pollfd &it)
 void Webserv::handleClients(pollfd &it)
 {
     bool closeConn = false;
-    time_t  currentTime;
 
     if (it.revents & (POLLERR | POLLHUP))
     {
@@ -299,6 +302,7 @@ void Webserv::launchServers()
             pollfd newfd;
             newfd.fd = newServer->getfd();
             newfd.events = POLLIN;
+            newfd.revents = 0;
             fds.push_back(newfd);
             servers[newfd.fd] = newServer;
             std::cout << "Server added on fd = " << newfd.fd 
@@ -312,6 +316,7 @@ void Webserv::launchServers()
         pollfd newfd;
         newfd.fd = defaultServer->getfd();
         newfd.events = POLLIN;
+        newfd.revents = 0;
         fds.push_back(newfd);
         servers[newfd.fd] = defaultServer;
         std::cout << "Default server added on fd = " << newfd.fd << std::endl;

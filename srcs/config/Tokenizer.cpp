@@ -27,6 +27,7 @@ std::set<std::string> initKeywords()
     keywords.insert("error_page");
     keywords.insert("client_max_body_size");
     keywords.insert("return");
+    keywords.insert("cgi");
     return keywords;
 }
 
