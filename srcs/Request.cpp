@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 16:09:43 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 17:22:29 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,8 +98,6 @@ void Request::ReadFromSocket()
     {
         this->raw_request.append(buffer, bytes_received);
         _bytesRead += bytes_received;
-
-        std::string buf(buffer);
         
         if (isComplete())
         {
