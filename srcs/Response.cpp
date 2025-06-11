@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:52:57 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:53:56 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,7 +166,6 @@ void Response::handlePostRequest(const Request &req)
     std::string contentType = req.getHeader("Content-Type");
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
-    ConfigNode* locationNode = findBestLocation(req.getPath());
     std::string location = findEffectiveRoot(locationNode);
 
 

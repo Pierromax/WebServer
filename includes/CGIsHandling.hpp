@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGIsHandling.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/04 10:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/06 21:25:21 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/11 15:54:11 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <unistd.h>
 
 struct ConfigNode;
 

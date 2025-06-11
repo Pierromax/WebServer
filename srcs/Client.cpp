@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 13:29:00 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:55:39 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ Client::Client(int client_fd, Server* server) : fd(client_fd)
         if (flags != -1)
             fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
     }
+    state = READING;
 }
 
 
@@ -75,10 +76,7 @@ void    Client::prepareResponse()
 void    Client::prepareRequest()
 {
     if (!this->request)
-    {
         this->request = new Request(fd);
-        state = READING;
-    }
     if (state == READING)
     {
         this->request->ReadFromSocket();
