@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/11 19:01:01 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,6 +281,7 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
 bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode)
 {
     std::string key = tokens[index].value;
+    std::size_t directiveLine = tokens[index].line; // Stocker le numéro de ligne de la directive
     index++;
     std::vector<std::string> values;
     
@@ -311,13 +312,16 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
     }
     index++;
 
+    // Stocker le numéro de ligne de la directive
+    currentNode->directiveLines[key] = directiveLine;
+
     if (key == "listen")
     {
         if (currentNode->type != "server")
         {
             std::stringstream err;
             err << "\"listen\" directive is not allowed here in " 
-                << tokens[index-1].filename << ":" << tokens[index-1].line;
+                << tokens[index-1].filename << ":" << directiveLine;
             throw std::runtime_error(err.str());
         }
         for (size_t i = 0; i < values.size(); ++i)

@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/11 19:01:01 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,13 +110,14 @@ struct ConfigNode
     ConfigNode *parent;
     std::vector<ConfigNode *> children;
     std::map<std::string, std::vector<std::string> > directives;
+    std::map<std::string, std::size_t> directiveLines; 
     std::size_t line;
-    bool allowedMethods[METHOD_COUNT]; // Tableau de booléens pour les méthodes autorisées
+    bool allowedMethods[METHOD_COUNT];
+    size_t client_max_body_size;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
-        : type(t), value(v), parent(p), line(ln) 
+        : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576)
     {
-        // Par défaut, toutes les méthodes sont autorisées
         for (int i = 0; i < METHOD_COUNT; ++i)
             allowedMethods[i] = true;
     }
@@ -154,6 +155,9 @@ private:
     void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateListenDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateClientMaxBodySizeDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
     void validateDirectives(ConfigNode *node, const std::string &filename);
     void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);
@@ -189,5 +193,7 @@ public:
 
     void setPollEvent(int fd, short events);
 };
+
+bool isPortAvailable(int port);
 
 #endif
