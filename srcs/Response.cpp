@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:40:00 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 15:52:57 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,10 +116,18 @@ void Response::handleGetRequest(const Request &req)
     std::cout << "URL demandée: " << req.getPath() << std::endl;
     std::cout << "Chemin complet du fichier: " << filePath << std::endl;
 
-    if (filePath.empty())
+    while (true)
     {
         status_code = "404 Not Found";
         loadErrorPage("404", locationNode);
+        return;
+    }
+
+    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
+    if (cgiHandler)
+    {
+        delete cgiHandler;
+        handleCgiRequest(req, locationNode, filePath);
     }
     else if (loadPageContent(filePath, content))
     {
@@ -135,6 +143,26 @@ void Response::handleGetRequest(const Request &req)
 
 void Response::handlePostRequest(const Request &req)
 {
+
+    std::string path = req.getPath();
+    ConfigNode* locationNode = findBestLocation(path);
+    std::string filePath = resolveFilePath(locationNode, path);
+    
+    if (filePath.empty())
+    {
+        status_code = "404 Not Found";
+        loadErrorPage("404", locationNode);
+        return;
+    }
+
+    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
+    if (cgiHandler)
+    {
+        delete cgiHandler;
+        handleCgiRequest(req, locationNode, filePath);
+        return;
+    }
+
     std::string contentType = req.getHeader("Content-Type");
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
@@ -418,102 +446,126 @@ void Response::handleCgiRequest(const Request &req, ConfigNode* locationNode, co
     }
 }
 
-void Response::handleGetRequest(const Request &req)
+/* ******************************** */
+/* exclusive utils for post request */
+/********************************** */
+
+std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
 {
-    std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
-    std::string filePath = resolveFilePath(locationNode, path);
-    std::string content;
-    
-    std::cout << "URL demandée: " << req.getPath() << std::endl;
-    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
+    std::vector<std::string>    split;
+    std::string                 content;
+    size_t                      start = 0;
+    size_t                      newStart;
 
     while (true)
     {
-        status_code = "404 Not Found";
-        loadErrorPage("404", locationNode);
-        return;
+        newStart = body.find(delim, start);
+        if (newStart == std::string::npos)
+        {
+            split.push_back(body.substr(start));
+            break;
+        }
+        content = body.substr(start, newStart - start);
+        split.push_back(content);
+        start = newStart + delim.length();
     }
-
-    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
-    if (cgiHandler)
-    {
-        delete cgiHandler;
-        handleCgiRequest(req, locationNode, filePath);
-    }
-    else if (loadPageContent(filePath, content))
-    {
-        setBody(content);
-        setContentType(getMimeType(filePath));
-    }
-    else
-    {
-        status_code = "403 Forbidden";
-        loadErrorPage("403", locationNode);
-    }
+    return split;
 }
 
-void Response::handlePostRequest(const Request &req)
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
 {
-    std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
-    std::string filePath = resolveFilePath(locationNode, path);
+    std::map<std::string, std::string>  parseHeader;
+    std::stringstream                   ss(content);
+    std::string                         line;
+
+    while(std::getline(ss, line))
+    {
+        if (line.empty() || line == "\r")
+            break;
+        size_t pos = line.find(":");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        value = trimString(value, " \t\n\r");
+        parseHeader[key] = value;
+    }
+    return parseHeader;
+}
+
+static std::string extractFilename(std::string content)
+{
+    size_t filepos = content.find("filename=\"");
+    if (filepos == std::string::npos)
+        return ("");
+    filepos += 10;
+    size_t endpos = content.find("\"", filepos);
+    if (endpos == std::string::npos)
+        return ("");
+
+    std::string filename = content.substr(filepos, endpos - filepos);
+
+    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
+        return "";
     
-    if (filePath.empty())
-    {
-        status_code = "404 Not Found";
-        loadErrorPage("404", locationNode);
-        return;
-    }
-
-    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
-    if (cgiHandler)
-    {
-        delete cgiHandler;
-        handleCgiRequest(req, locationNode, filePath);
-        return;
-    }
-
-    std::string contentType = req.getHeader("Content-Type");
-    std::string boundary;
-    size_t      pos = contentType.find("boundary=");
-    std::string end;
-    std::string delimiter;
-    std::string content;
-    std::map<std::string, std::string> bodyHeaders;
-    std::vector<std::string> bodies;
-        
-    if (contentType.find("multipart/form-data") != std::string::npos)
-    {
-        content = req.getBody();
-        if (pos != std::string::npos)
-        {
-            boundary = contentType.substr(pos + 9);
-            delimiter = "--" + boundary;
-            end = delimiter + "--";
-        }
-        else
-        {
-            status_code = BAD_REQUEST;
-            return;
-        }
-        bodies = splitPostBody(content, delimiter);
-        for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
-        {
-            pos = it->find("\r\n\r\n");
-            if (pos != std::string::npos)
-            {
-                std::string headerPart = it->substr(0, pos);
-                std::string bodyPart = it->substr(pos + 4);
-                bodyHeaders = extractPostHeaders(headerPart);
-            }
-        }
-    }
+    return filename;
 }
 
-void Response::handleDeleteRequest(const Request &req)
+bool    Response::saveFile(std::string filename, std::string body, std::string location)
 {
-    (void)req;
+    std::string path = location + "/" + filename;
+    std::ofstream file(path.c_str(), std::ios::binary);
+
+    std::cout << "path = " << path;
+
+    if (!file.is_open())
+    {
+        status_code = INTERNAL_ERROR;
+        return false;
+    }
+    
+    file.write(body.c_str(), body.size());
+    file.close();
+    
+    if (file.fail())
+    {
+        status_code = INTERNAL_ERROR; 
+        return false;
+    }
+    return true;
+}
+
+bool    Response::extractFileToSave(std::map<std::string, std::string> heads, std::string content, std::string location)
+{
+
+    
+    std::string filename;
+    
+    if (!heads.count("content-disposition"))
+    {
+        std::cout << "no content-dispostion" << std::endl;
+        return false;
+    }
+
+    size_t pos = heads.at("content-disposition").find("filename=");
+    if (pos == std::string::npos)
+    {
+        std::cout << "filename noon found" << std::endl;     
+        return false;
+    }
+        
+    filename = extractFilename(heads.at("content-disposition"));
+    if (filename == "")
+    {
+        
+        return false;
+    }
+
+    if (!saveFile(filename, content, location))
+        return false;
+    
+    return true;
 }
 
 /**********************************/
