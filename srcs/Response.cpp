@@ -200,7 +200,7 @@ std::string Response::tryIndexFiles(const std::string& directoryPath, const std:
     return "";
 }
 
-std::string Response::resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const
+std::string Response::buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const
 {
     if (!locationNode)
         return "";
@@ -216,6 +216,15 @@ std::string Response::resolveFilePath(ConfigNode* locationNode, const std::strin
         fullPath += "/" + requestPath;
     else
         fullPath += requestPath;
+
+    return fullPath;
+}
+
+std::string Response::resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const
+{
+    std::string fullPath = buildFullPath(locationNode, requestPath);
+    if (fullPath.empty())
+        return "";
 
     struct stat path_stat;
     if (stat(fullPath.c_str(), &path_stat) == 0)
@@ -362,24 +371,19 @@ void Response::handleGetRequest(const Request &req)
 
     if (filePath.empty())
     {
-        struct stat path_stat;
-        std::string root = findEffectiveRoot(locationNode);
-        std::string fullPath = root;
-        if (!fullPath.empty() && !path.empty() && fullPath[fullPath.length() - 1] == '/' && path[0] == '/')
-            fullPath += path.substr(1);
-        else if (!fullPath.empty() && !path.empty() && fullPath[fullPath.length() - 1] != '/' && path[0] != '/')
-            fullPath += "/" + path;
-        else
-            fullPath += path;
-
-        if (stat(fullPath.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
+        std::string fullPath = buildFullPath(locationNode, path);
+        if (!fullPath.empty())
         {
-            if (shouldGenerateAutoindex(locationNode, fullPath))
+            struct stat path_stat;
+            if (stat(fullPath.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
             {
-                std::string directoryListing = generateDirectoryListing(fullPath, path);
-                setBody(directoryListing);
-                setContentType("text/html");
-                return;
+                if (shouldGenerateAutoindex(locationNode, fullPath))
+                {
+                    std::string directoryListing = generateDirectoryListing(fullPath, path);
+                    setBody(directoryListing);
+                    setContentType("text/html");
+                    return;
+                }
             }
         }
         status_code = FILE_NOT_FOUND;

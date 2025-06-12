@@ -58,6 +58,9 @@ class Response
         bool        checkForRedirect(ConfigNode* locationNode, const std::string& requestPath);
         bool        shouldGenerateAutoindex(ConfigNode* locationNode, const std::string& directoryPath) const;
         std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const;
+        
+        // --- Path Resolution Helper ---
+        std::string buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const;
         std::string getHttpStatusMessage(const std::string& statusCode) const;
 
         // --- CGI Handling ---
