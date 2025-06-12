@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 17:47:26 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -377,7 +377,7 @@ void Response::handleGetRequest(const Request &req)
             struct stat path_stat;
             if (stat(fullPath.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
             {
-                if (shouldGenerateAutoindex(locationNode, fullPath))
+                if (shouldGenerateAutoindex(locationNode))
                 {
                     std::string directoryListing = generateDirectoryListing(fullPath, path);
                     setBody(directoryListing);
@@ -674,7 +674,7 @@ bool Response::checkForRedirect(ConfigNode* locationNode, const std::string& req
     return false;
 }
 
-bool Response::shouldGenerateAutoindex(ConfigNode* locationNode, const std::string& directoryPath) const
+bool Response::shouldGenerateAutoindex(ConfigNode* locationNode) const
 {
     ConfigNode* searchNode = locationNode;
     while (searchNode)

@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 17:47:16 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ class Response
 
         // --- Redirect & Autoindex Helpers ---
         bool        checkForRedirect(ConfigNode* locationNode, const std::string& requestPath);
-        bool        shouldGenerateAutoindex(ConfigNode* locationNode, const std::string& directoryPath) const;
+        bool        shouldGenerateAutoindex(ConfigNode* locationNode) const;
         std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const;
         
         // --- Path Resolution Helper ---
