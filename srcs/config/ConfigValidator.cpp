@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/12 14:28:54 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 15:17:54 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -234,17 +234,26 @@ void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &fil
     std::map<std::string, std::vector<std::string> >::iterator it = serverNode->directives.find("listen");
     if (it == serverNode->directives.end() || it->second.empty())
         return;
-    std::stringstream ss(it->second[0]);
-    int port;
-    if (!(ss >> port))
-        return;
-    std::map<int, size_t>::iterator portIt = usedPorts.find(port);
-    if (portIt != usedPorts.end()) {
-        std::stringstream err;
-        err << "duplicate listen port " << port << " (first defined at line " << portIt->second << ")";
-        throw ParsingError(err.str(), filename, serverNode->line);
+    
+    std::set<int> serverPorts;
+    for (size_t i = 0; i < it->second.size(); ++i) {
+        std::stringstream ss(it->second[i]);
+        int port;
+        if (!(ss >> port))
+            continue;
+        
+        if (serverPorts.find(port) != serverPorts.end())
+            throw ParsingError("duplicate listen port " + it->second[i] + " in same server", filename, serverNode->line);
+        serverPorts.insert(port);
+        
+        std::map<int, size_t>::iterator portIt = usedPorts.find(port);
+        if (portIt != usedPorts.end()) {
+            std::stringstream err;
+            err << "duplicate listen port " << port << " (first defined at line " << portIt->second << ")";
+            throw ParsingError(err.str(), filename, serverNode->line);
+        }
+        usedPorts[port] = serverNode->line;
     }
-    usedPorts[port] = serverNode->line;
 }
 
 /**
