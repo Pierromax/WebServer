@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/12 15:17:54 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 16:53:33 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,22 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <sys/stat.h>
+
+/**
+ * @brief Initializes valid HTTP status codes
+ * @return Set containing all valid HTTP status codes
+ */
+std::set<std::string> initValidCodes()
+{
+    std::set<std::string> codes;
+    const char* validCodes[] = {VALID_CODES_LIST};
+    size_t count = sizeof(validCodes) / sizeof(validCodes[0]);
+    for (size_t i = 0; i < count; ++i)
+        codes.insert(validCodes[i]);
+    return codes;
+}
+
+static const std::set<std::string> VALID_HTTP_CODES = initValidCodes();
 
 /**
  * @brief Validates CGI directive format
@@ -75,16 +91,8 @@ void Webserv::validateErrorPageDirective(const std::vector<std::string> &values,
     if (values.size() != 2)
         throw ParsingError("directive \"error_page\" takes exactly 2 arguments", filename, line);
 
-    std::set<std::string> validCodes;
-    validCodes.insert("200");
-    validCodes.insert("400");
-    validCodes.insert("404");
-    validCodes.insert("405");
-    validCodes.insert("413");
-    validCodes.insert("500");
-
     const std::string& errorCode = values[0];
-    if (validCodes.find(errorCode) == validCodes.end())
+    if (VALID_HTTP_CODES.find(errorCode) == VALID_HTTP_CODES.end())
         throw ParsingError("invalid error code \"" + errorCode + "\" in directive \"error_page\"", filename, line);
 }
 
@@ -106,8 +114,8 @@ void Webserv::validateListenDirective(const std::vector<std::string> &values, co
             throw ParsingError("invalid port \"" + portStr + "\" in directive \"listen\"", filename, line);
         if (port < 1024 || port > 65535)
             throw ParsingError("port " + portStr + " out of range (1024-65535) in directive \"listen\"", filename, line);
-        if (!isPortAvailable(port))
-            throw ParsingError("port " + portStr + " is not available in directive \"listen\"", filename, line);
+        // if (!isPortAvailable(port))
+        //     throw ParsingError("port " + portStr + " is not available in directive \"listen\"", filename, line);
     }
 }
 
@@ -144,6 +152,46 @@ void Webserv::validateClientMaxBodySizeDirective(const std::vector<std::string> 
     if (baseSize < 1)
         throw ParsingError("size must be at least 1 byte in directive \"client_max_body_size\"", filename, line);
     node->client_max_body_size = baseSize;
+}
+
+/**
+ * @brief Validates autoindex directive format
+ * @param values Values for the autoindex directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ * @param node ConfigNode to store the parsed value
+ */
+void Webserv::validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
+{
+    if (values.size() != 1)
+        throw ParsingError("directive \"autoindex\" takes exactly 1 argument", filename, line);
+    if (node->parent == NULL || node->parent->type != "server")
+        throw ParsingError("directive \"autoindex\" is not allowed in server context", filename, line);
+
+    const std::string& value = values[0];
+    if (value != "on" && value != "off")
+        throw ParsingError("invalid value \"" + value + "\" in directive \"autoindex\", must be \"on\" or \"off\"", filename, line);
+    
+    node->autoindex = (value == "on");
+}
+
+/**
+ * @brief Validates return directive format
+ * @param values Values for the return directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ * @param node ConfigNode to store the parsed value
+ */
+void Webserv::validateRedirectDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
+{
+    if (values.size() != 2)
+        throw ParsingError("directive \"return\" takes exactly 2 arguments", filename, line);
+    if (node->parent == NULL || node->parent->type != "server")
+        throw ParsingError("directive \"return\" is not allowed in server context", filename, line);
+
+    const std::string& statusCode = values[0];
+    if (VALID_HTTP_CODES.find(statusCode) == VALID_HTTP_CODES.end())
+        throw ParsingError("invalid status code \"" + statusCode + "\" in directive \"return\"", filename, line);
 }
 
 /**
@@ -189,6 +237,10 @@ void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
             validateListenDirective(it->second, filename, directiveLine);
         else if (it->first == "client_max_body_size")
             validateClientMaxBodySizeDirective(it->second, filename, directiveLine, node);
+        else if (it->first == "autoindex")
+            validateAutoindexDirective(it->second, filename, directiveLine, node);
+        else if (it->first == "return")
+            validateRedirectDirective(it->second, filename, directiveLine, node);
     }
 }
 

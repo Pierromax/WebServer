@@ -25,6 +25,7 @@
 #include <fstream>
 #include <vector>
 #include <sys/stat.h> // For stat()
+#include <dirent.h>   // For opendir/readdir
 #include <map>        // Added for getMimeType
 
 // Forward declarations
@@ -52,6 +53,12 @@ class Response
         
         // --- Methods Handling ---
         bool        isMethodAllowed(const std::string& method, ConfigNode* locationNode) const;
+
+        // --- Redirect & Autoindex Helpers ---
+        bool        checkForRedirect(ConfigNode* locationNode, const std::string& requestPath);
+        bool        shouldGenerateAutoindex(ConfigNode* locationNode, const std::string& directoryPath) const;
+        std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const;
+        std::string getHttpStatusMessage(const std::string& statusCode) const;
 
         // --- CGI Handling ---
         void        handleCgiRequest(const Request &req, ConfigNode* locationNode, const std::string& filePath);

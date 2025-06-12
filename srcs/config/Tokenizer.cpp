@@ -29,6 +29,8 @@ std::set<std::string> initKeywords()
     keywords.insert("return");
     keywords.insert("cgi");
     keywords.insert("methods");
+    keywords.insert("autoindex");
+    keywords.insert("redirect");
     return keywords;
 }
 

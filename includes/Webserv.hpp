@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/12 15:17:54 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 16:06:56 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,11 @@
 #endif
 
 #define DEFAULT_PORT 8080
+
+#define VALID_CODES_LIST \
+    "200", "301", "302", "400", "404", "405", "413", "500"
+// valid codes string array
+#define VALID_CODES {"200", "404", "500", "400", "405", "413"}
 
 /**
  * @brief Types de tokens pour le parseur
@@ -115,9 +120,10 @@ struct ConfigNode
     std::size_t line;
     bool allowedMethods[METHOD_COUNT];
     size_t client_max_body_size;
+    bool autoindex;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
-        : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576)
+        : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576), autoindex(false)
     {
         for (int i = 0; i < METHOD_COUNT; ++i)
             allowedMethods[i] = true;
@@ -198,6 +204,8 @@ private:
     void validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateListenDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateClientMaxBodySizeDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
+    void validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
+    void validateRedirectDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
     void validateDirectives(ConfigNode *node, const std::string &filename);
     void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);

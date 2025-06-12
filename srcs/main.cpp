@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:03:07 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/12 15:15:10 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 16:50:33 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int main(int ac, char **av)
     }
     catch (const std::runtime_error &e)
     {
-        return (v(R RED "Error: " R RED << e.what()), 1);
+        return (v(e.what()), 1);
     }
     catch (...)
     {
