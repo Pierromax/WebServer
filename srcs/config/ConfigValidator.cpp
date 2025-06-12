@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/11 19:16:06 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 14:28:54 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <sys/stat.h>
 
 /**
  * @brief Validates CGI directive format
@@ -26,12 +27,26 @@
  */
 void Webserv::validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
 {
-    if (values.size() != 2)
-    {
+    if (values.size() != 2) {
         std::stringstream err;
         err << "directive \"cgi\" takes exactly 2 arguments in " 
             << filename << ":" << line;
         throw std::runtime_error(err.str());
+    }
+    if (access(values[1].c_str(), F_OK | X_OK) != 0) {
+        std::stringstream err;
+        err << "cgi executable \"" << values[1] << "\" is not accessible in directive \"cgi\" in " 
+            << filename << ":" << line;
+        throw std::runtime_error(err.str());
+    }
+    struct stat fileStat;
+    if (stat(values[1].c_str(), &fileStat) == 0) {
+        if (S_ISDIR(fileStat.st_mode)) {
+            std::stringstream err;
+            err << "cgi path \"" << values[1] << "\" is a directory, not an executable in directive \"cgi\" in " 
+                << filename << ":" << line;
+            throw std::runtime_error(err.str());
+        }
     }
 }
 
