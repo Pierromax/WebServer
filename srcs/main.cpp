@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:03:07 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/08 17:14:05 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 15:15:10 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,13 +19,7 @@ int main(int ac, char **av)
     {   
         std::string config_file = "config/webserv.conf";
         if (ac > 2)
-        {
-			std::cerr
-				<< B RED "Usage: " R RED << av[0] << B " [config_file] " R RED << std::endl
-				<< "       " I D "(no arguments uses by default " B << config_file 
-				<< R I D RED ")" R << std::endl;
-            return 1;
-        }
+            return (v(B RED "Usage: " R RED << av[0] << B " [config_file]" R RED), 1);
         if (ac == 2)
             config_file = av[1];
         Webserv webserver(config_file);
@@ -34,9 +28,17 @@ int main(int ac, char **av)
 		if (!CONFIG_TESTER)
         	webserver.run();
     }
-    catch (const std::exception &e)
+    catch (const Webserv::ParsingError &e)
     {
-        std::cerr << B RED "Error: " R RED << e.what() << R << std::endl;
-        return (1);
+        return (v(e.what()), 1);
+    }
+    catch (const std::runtime_error &e)
+    {
+        return (v(R RED "Error: " R RED << e.what()), 1);
+    }
+    catch (...)
+    {
+        return (v(R RED "An unknown error occurred." R), 1);
     }
 }
+

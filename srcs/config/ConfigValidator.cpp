@@ -27,26 +27,14 @@
  */
 void Webserv::validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
 {
-    if (values.size() != 2) {
-        std::stringstream err;
-        err << "directive \"cgi\" takes exactly 2 arguments in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
-    if (access(values[1].c_str(), F_OK | X_OK) != 0) {
-        std::stringstream err;
-        err << "cgi executable \"" << values[1] << "\" is not accessible in directive \"cgi\" in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+    if (values.size() != 2)
+        throw ParsingError("directive \"cgi\" takes exactly 2 arguments", filename, line);
+    if (access(values[1].c_str(), F_OK | X_OK) != 0)
+        throw ParsingError("cgi executable \"" + values[1] + "\" is not accessible in directive \"cgi\"", filename, line);
     struct stat fileStat;
     if (stat(values[1].c_str(), &fileStat) == 0) {
-        if (S_ISDIR(fileStat.st_mode)) {
-            std::stringstream err;
-            err << "cgi path \"" << values[1] << "\" is a directory, not an executable in directive \"cgi\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+        if (S_ISDIR(fileStat.st_mode))
+            throw ParsingError("cgi path \"" + values[1] + "\" is a directory, not an executable in directive \"cgi\"", filename, line);
     }
 }
 
@@ -62,32 +50,16 @@ void Webserv::validateMethodsDirective(const std::vector<std::string> &values, c
     std::set<std::string> usedMethods;
 
     if (values.size() > 3)
-    {
-        std::stringstream err;
-        err << "directive \"methods\" takes at most 3 arguments in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("directive \"methods\" takes at most 3 arguments", filename, line);
     validMethods.insert("GET");
     validMethods.insert("POST");
     validMethods.insert("DELETE");
-    for (size_t i = 0; i < values.size(); ++i)
-    {
+    for (size_t i = 0; i < values.size(); ++i) {
         const std::string& method = values[i];
         if (validMethods.find(method) == validMethods.end())
-        {
-            std::stringstream err;
-            err << "invalid method \"" << method << "\" in directive \"methods\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+            throw ParsingError("invalid method \"" + method + "\" in directive \"methods\"", filename, line);
         if (usedMethods.find(method) != usedMethods.end())
-        {
-            std::stringstream err;
-            err << "duplicate method \"" << method << "\" in directive \"methods\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+            throw ParsingError("duplicate method \"" + method + "\" in directive \"methods\"", filename, line);
         usedMethods.insert(method);
     }
 }
@@ -100,12 +72,8 @@ void Webserv::validateMethodsDirective(const std::vector<std::string> &values, c
  */
 void Webserv::validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
 {
-    if (values.size() != 2) {
-        std::stringstream err;
-        err << "directive \"error_page\" takes exactly 2 arguments in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+    if (values.size() != 2)
+        throw ParsingError("directive \"error_page\" takes exactly 2 arguments", filename, line);
 
     std::set<std::string> validCodes;
     validCodes.insert("200");
@@ -116,12 +84,8 @@ void Webserv::validateErrorPageDirective(const std::vector<std::string> &values,
     validCodes.insert("500");
 
     const std::string& errorCode = values[0];
-    if (validCodes.find(errorCode) == validCodes.end()) {
-        std::stringstream err;
-        err << "invalid error code \"" << errorCode << "\" in directive \"error_page\" in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+    if (validCodes.find(errorCode) == validCodes.end())
+        throw ParsingError("invalid error code \"" + errorCode + "\" in directive \"error_page\"", filename, line);
 }
 
 /**
@@ -138,24 +102,12 @@ void Webserv::validateListenDirective(const std::vector<std::string> &values, co
         int port;
         std::string remaining;
 
-        if (!(ss >> port) || ss >> remaining) {
-            std::stringstream err;
-            err << "invalid port \"" << portStr << "\" in directive \"listen\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
-        if (port < 1024 || port > 65535) {
-            std::stringstream err;
-            err << "port " << port << " out of range (1024-65535) in directive \"listen\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
-        if (!isPortAvailable(port)) {
-            std::stringstream err;
-            err << "port " << port << " is not available in directive \"listen\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+        if (!(ss >> port) || ss >> remaining)
+            throw ParsingError("invalid port \"" + portStr + "\" in directive \"listen\"", filename, line);
+        if (port < 1024 || port > 65535)
+            throw ParsingError("port " + portStr + " out of range (1024-65535) in directive \"listen\"", filename, line);
+        if (!isPortAvailable(port))
+            throw ParsingError("port " + portStr + " is not available in directive \"listen\"", filename, line);
     }
 }
 
@@ -168,53 +120,30 @@ void Webserv::validateListenDirective(const std::vector<std::string> &values, co
  */
 void Webserv::validateClientMaxBodySizeDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
 {
-    if (values.size() != 1) {
-        std::stringstream err;
-        err << "directive \"client_max_body_size\" takes exactly 1 argument in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+    if (values.size() != 1)
+        throw ParsingError("directive \"client_max_body_size\" takes exactly 1 argument", filename, line);
 
     const std::string& sizeStr = values[0];
     std::stringstream ss(sizeStr);
     long long baseSize;
     std::string remaining;
 
-    if (!(ss >> baseSize)) {
-        std::stringstream err;
-        err << "invalid size \"" << sizeStr << "\" in directive \"client_max_body_size\" in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+    if (!(ss >> baseSize))
+        throw ParsingError("invalid size \"" + sizeStr + "\" in directive \"client_max_body_size\"", filename, line);
     if (ss >> remaining) {
-        if (remaining.length() != 1) {
-            std::stringstream err;
-            err << "invalid size format \"" << sizeStr << "\" in directive \"client_max_body_size\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+        if (remaining.length() != 1)
+            throw ParsingError("invalid size format \"" + sizeStr + "\" in directive \"client_max_body_size\"", filename, line);
         char unit = remaining[0];
         if (unit == 'M' || unit == 'm')
             baseSize *= 1000000;
         else if (unit == 'K' || unit == 'k')
             baseSize *= 1000;
-        else {
-            std::stringstream err;
-            err << "invalid size unit \"" << unit << "\" in directive \"client_max_body_size\" in " 
-                << filename << ":" << line;
-            throw std::runtime_error(err.str());
-        }
+        else
+            throw ParsingError("invalid size unit \"" + std::string(1, unit) + "\" in directive \"client_max_body_size\"", filename, line);
     } 
     if (baseSize < 1)
-    {
-        std::stringstream err;
-        err << "size must be at least 1 byte in directive \"client_max_body_size\" in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("size must be at least 1 byte in directive \"client_max_body_size\"", filename, line);
     node->client_max_body_size = baseSize;
-    std::cout << "Taille: " <<  node->client_max_body_size;
-    
 }
 
 /**
@@ -230,12 +159,7 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
     if (!node)
         return;
     if (depth > 1 && node->type == "server")
-    {
-        std::stringstream err;
-        err << "\"server\" directive is not allowed here in " 
-            << filename << ":" << node->line;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("\"server\" directive is not allowed here", filename, node->line);
     validateDirectives(node, filename);
     validateChildNodes(node, filename, depth, usedPorts);
 }
@@ -284,23 +208,13 @@ void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, 
         ConfigNode *child = node->children[i];
         
         if (node->type == "server" && child->type == "server")
-        {
-            std::stringstream err;
-            err << "\"server\" directive is not allowed here in " 
-                << filename << ":" << child->line;
-            throw std::runtime_error(err.str());
-        }
+            throw ParsingError("\"server\" directive is not allowed here", filename, child->line);
         if (child->type == "location")
         {
             std::string path = child->value;
             std::map<std::string, size_t>::iterator it = locationPaths.find(path);
             if (it != locationPaths.end())
-            {
-                std::stringstream err;
-                err << "duplicate location \"" << path << "\" in " << filename 
-                    << ":" << child->line;
-                throw std::runtime_error(err.str());
-            }
+                throw ParsingError("duplicate location \"" + path + "\"", filename, child->line);
             locationPaths[path] = child->line;
         }
         if (child->type == "server")
@@ -325,13 +239,10 @@ void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &fil
     if (!(ss >> port))
         return;
     std::map<int, size_t>::iterator portIt = usedPorts.find(port);
-    if (portIt != usedPorts.end())
-    {
+    if (portIt != usedPorts.end()) {
         std::stringstream err;
-        err << "duplicate listen port " << port << " in " 
-            << filename << ":" << serverNode->line 
-            << " (first defined at line " << portIt->second << ")";
-        throw std::runtime_error(err.str());
+        err << "duplicate listen port " << port << " (first defined at line " << portIt->second << ")";
+        throw ParsingError(err.str(), filename, serverNode->line);
     }
     usedPorts[port] = serverNode->line;
 }

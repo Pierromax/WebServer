@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <map>
@@ -134,6 +135,45 @@ struct ConfigNode
  */
 class Webserv
 {
+public:
+    /**
+     * @brief Exception class for parsing errors
+     */
+    class ParsingError : public std::exception
+    {
+    private:
+        std::string message;
+
+    public:
+        ParsingError(const std::string& error, const std::string& filename, std::size_t line)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << " in " << filename << ":" << line << R;
+            message = ss.str();
+        }
+
+        ParsingError(const std::string& error, const std::string& filename)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << " in " << filename << R;
+            message = ss.str();
+        }
+
+        ParsingError(const std::string& error)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << R;
+            message = ss.str();
+        }
+
+        virtual ~ParsingError() throw() {}
+
+        virtual const char* what() const throw()
+        {
+            return message.c_str();
+        }
+    };
+
 private:
     int sockfd;
     sockaddr_in adress;
