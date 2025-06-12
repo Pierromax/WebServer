@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/09 19:30:29 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 17:44:30 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,55 @@ bool Webserv::isKeyword(const std::string &str) const
 }
 
 /**
+ * @brief Ajoute un token en attente s'il n'est pas vide
+ * @param pendingToken Token en cours de construction
+ * @param tokens Vector où stocker les tokens
+ * @param lineNum Numéro de la ligne
+ */
+void Webserv::flushPendingToken(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum)
+{
+    if (!pendingToken.empty())
+    {
+        TokenType type = isKeyword(pendingToken) ? TOKEN_KEYWORD : TOKEN_ID;
+        tokens.push_back(Token(pendingToken, type, lineNum));
+        pendingToken.clear();
+    }
+}
+
+/**
+ * @brief Gère les guillemets (simples ou doubles) dans la tokenisation
+ * @param pendingToken Token en cours de construction
+ * @param tokens Vector où stocker les tokens
+ * @param lineNum Numéro de la ligne
+ * @param inQuote État des guillemets (référence vers inQuoteSingle ou inQuoteDouble)
+ */
+void Webserv::handleQuote(std::string &pendingToken, std::vector<Token> &tokens, 
+                          std::size_t lineNum, bool &inQuote)
+{
+    if (inQuote)
+    {
+        tokens.push_back(Token(pendingToken, TOKEN_STRING, lineNum));
+        pendingToken.clear();
+    }
+    else
+        flushPendingToken(pendingToken, tokens, lineNum);
+    inQuote = !inQuote;
+}
+
+/**
+ * @brief Gère les symboles spéciaux ({, }, ;)
+ * @param c Caractère à traiter
+ * @param pendingToken Token en cours de construction
+ * @param tokens Vector où stocker les tokens
+ * @param lineNum Numéro de la ligne
+ */
+void Webserv::handleSymbol(char c, std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum)
+{
+    flushPendingToken(pendingToken, tokens, lineNum);
+    tokens.push_back(Token(std::string(1, c), TOKEN_SYMBOL, lineNum));
+}
+
+/**
  * @brief Tokenize une ligne du fichier de configuration
  * @param line Ligne à analyser
  * @param lineNum Numéro de la ligne
@@ -61,42 +110,15 @@ void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum, std::ve
     for (std::size_t i = 0; i < line.length(); ++i)
     {
         char c = line[i];
+        
         if (c == '"' && !inQuoteSingle)
         {
-            if (inQuoteDouble)
-            {
-                tokens.push_back(Token(pendingToken, TOKEN_STRING, lineNum));
-                pendingToken.clear();
-            }
-            else
-            {
-                if (!pendingToken.empty())
-                {
-                    TokenType type = isKeyword(pendingToken) ? TOKEN_KEYWORD : TOKEN_ID;
-                    tokens.push_back(Token(pendingToken, type, lineNum));
-                    pendingToken.clear();
-                }
-            }
-            inQuoteDouble = !inQuoteDouble;
+            handleQuote(pendingToken, tokens, lineNum, inQuoteDouble);
             continue;
         }
         else if (c == '\'' && !inQuoteDouble)
         {
-            if (inQuoteSingle)
-            {
-                tokens.push_back(Token(pendingToken, TOKEN_STRING, lineNum));
-                pendingToken.clear();
-            }
-            else
-            {
-                if (!pendingToken.empty())
-                {
-                    TokenType type = isKeyword(pendingToken) ? TOKEN_KEYWORD : TOKEN_ID;
-                    tokens.push_back(Token(pendingToken, type, lineNum));
-                    pendingToken.clear();
-                }
-            }
-            inQuoteSingle = !inQuoteSingle;
+            handleQuote(pendingToken, tokens, lineNum, inQuoteSingle);
             continue;
         }
         if (inQuoteSingle || inQuoteDouble)
@@ -107,24 +129,9 @@ void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum, std::ve
         if (c == '#')
             break;
         if (c == '{' || c == '}' || c == ';')
-        {
-            if (!pendingToken.empty())
-            {
-                TokenType type = isKeyword(pendingToken) ? TOKEN_KEYWORD : TOKEN_ID;
-                tokens.push_back(Token(pendingToken, type, lineNum));
-                pendingToken.clear();
-            }
-            tokens.push_back(Token(std::string(1, c), TOKEN_SYMBOL, lineNum));
-        }
+            handleSymbol(c, pendingToken, tokens, lineNum);
         else if (isspace(c))
-        {
-            if (!pendingToken.empty())
-            {
-                TokenType type = isKeyword(pendingToken) ? TOKEN_KEYWORD : TOKEN_ID;
-                tokens.push_back(Token(pendingToken, type, lineNum));
-                pendingToken.clear();
-            }
-        }
+            flushPendingToken(pendingToken, tokens, lineNum);
         else
             pendingToken += c;
     }

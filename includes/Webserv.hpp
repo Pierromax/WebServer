@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/12 16:06:56 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,6 +223,11 @@ private:
     void cleanInvalidFileDescriptors();
     std::string processRequest(int client_fd);
     void closeClientConnection(int clientFd);
+
+    // Tokenizer helper functions
+    void flushPendingToken(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
+    void handleQuote(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum, bool &inQuote);
+    void handleSymbol(char c, std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
 
 public:
     Webserv();
