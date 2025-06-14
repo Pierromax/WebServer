@@ -276,7 +276,13 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
     // Stocker le numéro de ligne de la directive
     currentNode->directiveLines[key] = directiveLine;
 
-    if (key == "listen")
+    if (key == "cgi")
+    {
+        if (values.size() != 2)
+            throw ParsingError("directive \"cgi\" takes exactly 2 arguments", tokens[index-1].filename, directiveLine);
+        currentNode->cgiHandlers[values[0]] = values[1];
+    }
+    else if (key == "listen")
     {
         if (currentNode->type != "server")
             throw ParsingError("\"listen\" directive is not allowed here", tokens[index-1].filename, directiveLine);

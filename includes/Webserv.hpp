@@ -121,6 +121,7 @@ struct ConfigNode
     bool allowedMethods[METHOD_COUNT];
     size_t client_max_body_size;
     bool autoindex;
+    std::map<std::string, std::string> cgiHandlers;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
         : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576), autoindex(false)

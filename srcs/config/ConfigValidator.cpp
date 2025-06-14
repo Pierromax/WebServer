@@ -163,11 +163,10 @@ void Webserv::validateClientMaxBodySizeDirective(const std::vector<std::string> 
  */
 void Webserv::validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
 {
-    if (values.size() != 1)
+	if (node->type == "server")
+		throw ParsingError("directive \"autoindex\" is not allowed in server context", filename, line);
+	if (values.size() != 1)
         throw ParsingError("directive \"autoindex\" takes exactly 1 argument", filename, line);
-    if (node->parent == NULL || node->parent->type != "server")
-        throw ParsingError("directive \"autoindex\" is not allowed in server context", filename, line);
-
     const std::string& value = values[0];
     if (value != "on" && value != "off")
         throw ParsingError("invalid value \"" + value + "\" in directive \"autoindex\", must be \"on\" or \"off\"", filename, line);
@@ -222,14 +221,11 @@ void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
     for (std::map<std::string, std::vector<std::string> >::iterator it = node->directives.begin(); 
          it != node->directives.end(); ++it)
     {
-        std::size_t directiveLine = node->line; // Valeur par défaut
+        std::size_t directiveLine = node->line;
         std::map<std::string, std::size_t>::iterator lineIt = node->directiveLines.find(it->first);
         if (lineIt != node->directiveLines.end())
             directiveLine = lineIt->second;
-
-        if (it->first == "cgi")
-            validateCgiDirective(it->second, filename, directiveLine);
-        else if (it->first == "methods")
+        if (it->first == "methods")
             validateMethodsDirective(it->second, filename, directiveLine);
         else if (it->first == "error_page")
             validateErrorPageDirective(it->second, filename, directiveLine);
@@ -241,6 +237,18 @@ void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
             validateAutoindexDirective(it->second, filename, directiveLine, node);
         else if (it->first == "return")
             validateRedirectDirective(it->second, filename, directiveLine, node);
+    }
+    for (std::map<std::string, std::string>::iterator it = node->cgiHandlers.begin(); 
+         it != node->cgiHandlers.end(); ++it)
+    {
+        std::vector<std::string> values;
+        values.push_back(it->first);
+        values.push_back(it->second);
+        std::size_t directiveLine = node->line;
+        std::map<std::string, std::size_t>::iterator lineIt = node->directiveLines.find("cgi");
+        if (lineIt != node->directiveLines.end())
+            directiveLine = lineIt->second;
+        validateCgiDirective(values, filename, directiveLine);
     }
 }
 

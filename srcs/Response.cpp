@@ -130,28 +130,30 @@ ConfigNode* Response::findBestLocation(const std::string& requestPath) const
 {
     if (!_server || !_server->getConfigNode())
         return NULL;
-
     ConfigNode* serverNode = _server->getConfigNode();
-    ConfigNode* bestMatch = serverNode;
-    size_t longestMatchLen = 0;
+    return findBestLocationRecursive(requestPath, serverNode, serverNode, "");
+}
 
-    for (size_t i = 0; i < serverNode->children.size(); ++i)
+ConfigNode* Response::findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const
+{
+    if (!currentNode)
+        return bestMatch;
+    size_t currentBestLen = (bestMatch->type == "location") ? bestMatch->value.length() : 0;
+    for (size_t i = 0; i < currentNode->children.size(); ++i)
     {
-        ConfigNode* location = serverNode->children[i];
+        ConfigNode* location = currentNode->children[i];
         if (location->type != "location")
             continue;
-
-        const std::string& locationPath = location->value;
-        if (requestPath.rfind(locationPath, 0) == 0)
+        std::string fullLocationPath = currentPath + location->value;
+        if (requestPath.rfind(fullLocationPath, 0) == 0)
         {
-            bool fullMatch = (requestPath.length() == locationPath.length()) ||
-                             (locationPath == "/") ||
-                             (requestPath.length() > locationPath.length() && requestPath[locationPath.length()] == '/');
-
-            if (fullMatch && locationPath.length() >= longestMatchLen)
+            bool fullMatch = (requestPath.length() == fullLocationPath.length()) ||
+                             (fullLocationPath == "/") ||
+                             (requestPath.length() > fullLocationPath.length() && requestPath[fullLocationPath.length()] == '/');
+            if (fullMatch && fullLocationPath.length() >= currentBestLen)
             {
-                longestMatchLen = locationPath.length();
                 bestMatch = location;
+                bestMatch = findBestLocationRecursive(requestPath, location, bestMatch, fullLocationPath);
             }
         }
     }

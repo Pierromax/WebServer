@@ -350,6 +350,11 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
             std::cout << values[i] << " ";
         std::cout << ";" << std::endl;
     }
+    for (std::map<std::string, std::string>::const_iterator it = 
+        node->cgiHandlers.begin(); it != node->cgiHandlers.end(); ++it)
+    {
+        std::cout << indent << "    cgi " << it->first << " " << it->second << " ;" << std::endl;
+    }
     for (size_t i = 0; i < node->children.size(); ++i)
         displayConfig(node->children[i], depth + 1);
     std::cout << indent << "}" << std::endl;

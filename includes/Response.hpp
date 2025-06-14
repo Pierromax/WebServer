@@ -44,6 +44,7 @@ class Response
 
         // --- Request Handling Helpers ---
         ConfigNode* findBestLocation(const std::string& requestPath) const;
+        ConfigNode* findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const;
         std::string findEffectiveRoot(ConfigNode* contextNode) const;
         std::vector<std::string>    findEffectiveIndexFiles(ConfigNode* contextNode) const;
         std::string tryIndexFiles(const std::string& directoryPath, const std::vector<std::string>& indexFiles) const;

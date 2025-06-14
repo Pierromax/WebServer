@@ -1,5 +1,5 @@
 <?php
-// Test CGI pour Webserv - École 42
+// Test CGI pour Webserv
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -207,7 +207,7 @@
         ?>
         
         <div class="info">
-            <p><strong>Test CGI pour Webserv - École 42</strong></p>
+            <p><strong>Test CGI pour Webserv</strong></p>
             <p>Timestamp: <?php echo date('Y-m-d H:i:s'); ?></p>
             <p>Méthode: <?php echo isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'UNDEFINED'; ?></p>
             <?php if (isset($_SERVER['SERVER_SOFTWARE'])): ?>
