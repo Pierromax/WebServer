@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:00:35 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 18:26:10 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,13 +77,13 @@ void    Client::prepareResponse()
 void    Client::prepareRequest()
 {
     if (!this->request)
-        this->request = new Request(fd);
+        this->request = new Request(fd, _server);
     if (state == READING)
     {
         if (request->isComplete())
             this->request->reset();
         this->request->ReadFromSocket();
-        if (request->isComplete())
+        if (request->isComplete() || request->getStatusCode() == PAYLOAD_TOO_LARGE)
             state = WRITING;
     }
 }

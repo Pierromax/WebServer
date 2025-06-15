@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 18:22:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,11 @@
 #include <cstring>
 #include <fcntl.h>
 #include <signal.h>
-#include <csignal> // Pour sig_atomic_t
+#include <csignal> 
+#include <set>
+#include <cstdlib>
+#include <sys/stat.h>
+
 
 #ifndef CONFIG_TESTER
 # define CONFIG_TESTER 0
@@ -249,5 +253,9 @@ public:
 };
 
 bool isPortAvailable(int port);
+
+// --- Location Finding Helpers (moved from Response) ---
+ConfigNode* findBestLocation(const std::string& requestPath, Server* server);
+ConfigNode* findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath);
 
 #endif

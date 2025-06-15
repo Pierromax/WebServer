@@ -6,17 +6,19 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:15:33 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 19:20:55 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 #include "Utils.hpp"
 #include "Webserv.hpp"
+#include "Server.hpp"
 #include <cerrno>  // For errno
 #include <cstring> // For strerror
 
-Request::Request(int client_fd) : fd(client_fd),
+Request::Request(int client_fd, Server* server) : fd(client_fd),
+                                  _server(server),
                                   statuscode("200 OK"),
                                   method(""),
                                   path(""),
@@ -24,11 +26,15 @@ Request::Request(int client_fd) : fd(client_fd),
                                   headers(),
                                   body(""),
                                   raw_request(""),
-                                  _bytesRead(0)
+                                  _bytesRead(0),
+                                  _maxBodySize(server ? 1048576 : 1048576), // 1MB par défaut, sera mis à jour
+                                  _step(0),
+                                  _headerSize(0)
 {
 }
 
 Request::Request(const Request &cpy) : fd(cpy.fd),
+                                       _server(cpy._server),
                                        statuscode(cpy.statuscode),
                                        method(cpy.method),
                                        path(cpy.path),
@@ -36,7 +42,10 @@ Request::Request(const Request &cpy) : fd(cpy.fd),
                                        headers(cpy.headers),
                                        body(cpy.body),
                                        raw_request(cpy.raw_request),
-                                       _bytesRead(cpy._bytesRead)
+                                       _bytesRead(cpy._bytesRead),
+                                       _maxBodySize(cpy._maxBodySize),
+                                       _step(cpy._step),
+                                       _headerSize(cpy._headerSize)
 {
 }
 
@@ -45,6 +54,7 @@ Request &Request::operator=(const Request &rhs)
     if (&rhs != this)
     {
         fd = rhs.fd;
+        _server = rhs._server;
         statuscode = rhs.statuscode;
         method = rhs.method;
         path = rhs.path;
@@ -52,6 +62,9 @@ Request &Request::operator=(const Request &rhs)
         headers = rhs.headers;
         body = rhs.body;
         _bytesRead = rhs._bytesRead;
+        _maxBodySize = rhs._maxBodySize;
+        _step = rhs._step;
+        _headerSize = rhs._headerSize;
     }
     return (*this);
 }
@@ -70,6 +83,9 @@ void Request::reset()
     body = "";
     raw_request = "";
     _bytesRead = 0;
+    _step = 0;
+    _headerSize = 0;
+    // _maxBodySize reste inchangé car il dépend du serveur
 }
 
 int Request::getfd() const { return fd; }
@@ -97,6 +113,134 @@ std::string Request::getHeader(const std::string &name) const
     return "";
 }
 
+/**
+ * @brief Trouve la taille des headers HTTP
+ * @return Taille des headers + 4 (pour \r\n\r\n), ou 0 si non trouvé
+ */
+size_t Request::findHeaderSize()
+{
+    size_t headerEnd = raw_request.find("\r\n\r\n");
+    if (headerEnd != std::string::npos)
+        return headerEnd + 4;
+    return 0;
+}
+
+/**
+ * @brief Extrait temporairement le path de la première ligne
+ * @return Le path extrait ou une string vide
+ */
+std::string Request::extractTempPath()
+{
+    size_t firstLineEnd = raw_request.find("\r\n");
+    if (firstLineEnd == std::string::npos)
+        return "";
+    
+    std::string firstLine = raw_request.substr(0, firstLineEnd);
+    std::istringstream iss(firstLine);
+    std::string tempMethod, tempPath, tempVersion;
+    
+    if (iss >> tempMethod >> tempPath >> tempVersion)
+    {
+        std::cout << "Temporary path extracted: " << tempPath << std::endl;
+        return tempPath;
+    }
+    return "";
+}
+
+/**
+ * @brief Met à jour _maxBodySize selon le path trouvé
+ * @param tempPath Le path temporaire extrait
+ */
+void Request::updateMaxBodySize(const std::string& tempPath)
+{
+    if (!_server)
+        return;
+    
+    ConfigNode* locationNode = findBestLocation(tempPath, _server);
+    if (locationNode)
+        _maxBodySize = locationNode->client_max_body_size;
+    std::cout << "Max body size for this request: " << _maxBodySize << " bytes." << std::endl;
+}
+
+/**
+ * @brief Extrait la valeur Content-Length des headers
+ * @return La valeur Content-Length ou 0 si non trouvé
+ */
+size_t Request::extractContentLength()
+{
+    size_t contentLengthPos = raw_request.find("Content-Length:");
+    if (contentLengthPos == std::string::npos)
+        return 0;
+    
+    size_t start = raw_request.find(":", contentLengthPos) + 1;
+    size_t end = raw_request.find("\r\n", start);
+    if (start == std::string::npos || end == std::string::npos)
+        return 0;
+    
+    std::string contentLengthStr = raw_request.substr(start, end - start);
+    contentLengthStr = trimString(contentLengthStr, " \t");
+    
+    std::istringstream iss(contentLengthStr);
+    size_t contentLength;
+    if (iss >> contentLength)
+        return contentLength;
+    return 0;
+}
+
+/**
+ * @brief Vérifie si Content-Length dépasse la limite
+ * @param contentLength La valeur de Content-Length
+ * @return true si dépasse la limite
+ */
+bool Request::checkContentLengthLimit(size_t contentLength)
+{
+    if (contentLength > _maxBodySize)
+    {
+        std::cout << "Content-Length (" << contentLength << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Vérifie si la taille du body actuel dépasse la limite
+ * @return true si dépasse la limite
+ */
+bool Request::checkCurrentBodySize()
+{
+    if (static_cast<int>(_bytesRead) - static_cast<int>(_headerSize) > static_cast<int>(_maxBodySize))
+    {
+        std::cout << "Body size (" << (_bytesRead - _headerSize) << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Vérifie si la taille de la requête dépasse la limite maximale maxBodySize
+ * @return true si la requête est trop longue, false sinon
+ */
+bool Request::isRequestTooLong()
+{
+    std::cout << "Step " << _step << ": Checking request length." << std::endl;
+
+    if (_step == 0)
+    {
+        _headerSize = findHeaderSize();
+        if (_headerSize == 0)
+            return false;
+        updateMaxBodySize(extractTempPath());
+        size_t contentLength = extractContentLength();
+        if (contentLength > 0)
+            return checkContentLengthLimit(contentLength);
+    }
+    else
+        return checkCurrentBodySize();
+    
+    return false;
+}
+
+
 void Request::ReadFromSocket()
 {
     char buffer[2048] = {0};
@@ -104,9 +248,17 @@ void Request::ReadFromSocket()
 
     if (bytes_received > 0)
     {
-        this->raw_request.append(buffer, bytes_received);
         _bytesRead += bytes_received;
-        
+        this->raw_request.append(buffer, bytes_received);
+        if (isRequestTooLong())
+        {
+            std::cerr << "Request too long: " << _bytesRead << " bytes received, max allowed: " << _maxBodySize << " bytes." << std::endl;
+            statuscode = PAYLOAD_TOO_LARGE;
+             _step++;
+            parseRequest(this->raw_request);
+            return;
+        }
+        _step++;
         if (isComplete())
             parseRequest(this->raw_request);
     }
@@ -237,7 +389,7 @@ bool Request::isComplete() const
     size_t end = raw_request.find("\r\n", start);
 
     std::string strValue = raw_request.substr(start, end - start);
-    trimString(strValue, " \t");
+    strValue = trimString(strValue, " \t");
 
     std::istringstream iss(strValue);
     size_t value;
@@ -248,10 +400,7 @@ bool Request::isComplete() const
         std::cout << "value == 0" << std::endl;
         return true;
     }
-
-    size_t actualBodyLength = raw_request.length() - (headerEnd + 4);
-
-    if (actualBodyLength < value)
+    if (raw_request.length() - (headerEnd + 4) < value)
         return false;
     return true;
 }
