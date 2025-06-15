@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 14:52:13 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 14:55:58 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,10 +132,6 @@ void Response::handlePostRequest(const Request &req)
         handleUploading(req, locationNode);
 }
 
-void Response::handleDeleteRequest(const Request &req)
-{
-    (void)req;
-}
 
 void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
 {
@@ -642,69 +638,6 @@ void Response::handleGetRequest(const Request &req)
     }
 }
 
-void Response::handlePostRequest(const Request &req)
-{
-    std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
-    std::string filePath = resolveFilePath(locationNode, path);
-    
-    if (!isMethodAllowed("POST", locationNode))
-    {
-        status_code = METHOD_NOT_ALLOWED;
-        loadErrorPage("405", locationNode);
-        return;
-    }
-    if (filePath.empty())
-    {
-        status_code = FILE_NOT_FOUND;
-        loadErrorPage("404", locationNode);
-        return;
-    }
-
-    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
-    if (cgiHandler)
-    {
-        delete cgiHandler;
-        handleCgiRequest(req, locationNode, filePath);
-        return;
-    }
-
-    std::string contentType = req.getHeader("Content-Type");
-    std::string boundary;
-    size_t      pos = contentType.find("boundary=");
-    std::string end;
-    std::string delimiter;
-    std::string content;
-    std::map<std::string, std::string> bodyHeaders;
-    std::vector<std::string> bodies;
-        
-    if (contentType.find("multipart/form-data") != std::string::npos)
-    {
-        content = req.getBody();
-        if (pos != std::string::npos)
-        {
-            boundary = contentType.substr(pos + 9);
-            delimiter = "--" + boundary;
-            end = delimiter + "--";
-        }
-        else
-        {
-            status_code = BAD_REQUEST;
-            return;
-        }
-        bodies = splitPostBody(content, delimiter);
-        for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
-        {
-            pos = it->find("\r\n\r\n");
-            if (pos != std::string::npos)
-            {
-                std::string headerPart = it->substr(0, pos);
-                std::string bodyPart = it->substr(pos + 4);
-                bodyHeaders = extractPostHeaders(headerPart);
-            }
-        }
-    }
-}
 
 void Response::handleDeleteRequest(const Request &req)
 {
@@ -840,3 +773,130 @@ std::string Response::build() const
 }
 
 
+bool Response::shouldGenerateAutoindex(ConfigNode* locationNode) const
+{
+    ConfigNode* searchNode = locationNode;
+    while (searchNode)
+    {
+        if (searchNode->autoindex)
+            return true;
+        searchNode = searchNode->parent;
+    }
+    return false;
+}
+
+std::string Response::generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const
+{
+    std::stringstream html;
+    html << "<!DOCTYPE html>\n";
+    html << "<html>\n<head>\n";
+    html << "<title>Index of " << requestPath << "</title>\n";
+    html << "<style>\n";
+    html << "body { font-family: Arial, sans-serif; margin: 40px; }\n";
+    html << "h1 { color: #333; }\n";
+    html << "table { border-collapse: collapse; width: 100%; }\n";
+    html << "th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #ddd; }\n";
+    html << "th { background-color: #f5f5f5; }\n";
+    html << "a { text-decoration: none; color: #0066cc; }\n";
+    html << "a:hover { text-decoration: underline; }\n";
+    html << ".size { text-align: right; }\n";
+    html << ".date { font-family: monospace; }\n";
+    html << "</style>\n";
+    html << "</head>\n<body>\n";
+    html << "<h1>Index of " << requestPath << "</h1>\n";
+    html << "<table>\n";
+    html << "<tr><th>Name</th><th>Last modified</th><th>Size</th></tr>\n";
+    
+    if (requestPath != "/")
+    {
+        std::string parentPath = requestPath;
+        if (parentPath.length() > 1 && parentPath[parentPath.length() - 1] == '/')
+            parentPath = parentPath.substr(0, parentPath.length() - 1);
+        size_t lastSlash = parentPath.rfind('/');
+        if (lastSlash != std::string::npos)
+            parentPath = parentPath.substr(0, lastSlash + 1);
+        else
+            parentPath = "/";
+        html << "<tr><td><a href=\"" << parentPath << "\">../</a></td><td>-</td><td>-</td></tr>\n";
+    }
+    
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir)
+    {
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            
+            std::string fullPath = directoryPath;
+            if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/')
+                fullPath += "/";
+            fullPath += entry->d_name;
+            
+            struct stat fileStat;
+            std::string linkPath = requestPath;
+            if (!linkPath.empty() && linkPath[linkPath.length() - 1] != '/')
+                linkPath += "/";
+            linkPath += entry->d_name;
+            
+            if (stat(fullPath.c_str(), &fileStat) == 0)
+            {
+                char timeStr[256];
+                struct tm* timeinfo = localtime(&fileStat.st_mtime);
+                strftime(timeStr, sizeof(timeStr), "%d-%b-%Y %H:%M", timeinfo);
+                
+                if (S_ISDIR(fileStat.st_mode))
+                {
+                    html << "<tr><td><a href=\"" << linkPath << "/\">" << entry->d_name << "/</a></td>";
+                    html << "<td class=\"date\">" << timeStr << "</td>";
+                    html << "<td class=\"size\">-</td></tr>\n";
+                }
+                else
+                {
+                    html << "<tr><td><a href=\"" << linkPath << "\">" << entry->d_name << "</a></td>";
+                    html << "<td class=\"date\">" << timeStr << "</td>";
+                    html << "<td class=\"size\">" << fileStat.st_size << "</td></tr>\n";
+                }
+            }
+        }
+        closedir(dir);
+    }
+    
+    html << "</table>\n";
+    html << "<hr>\n";
+    html << "<address>Webserv/1.0 Server</address>\n";
+    html << "</body>\n</html>\n";
+    
+    return html.str();
+}
+
+std::string Response::getHttpStatusMessage(const std::string& statusCode) const
+{
+    if (statusCode == "301") return "Moved Permanently";
+    if (statusCode == "302") return "Found";
+    if (statusCode == "303") return "See Other";
+    if (statusCode == "307") return "Temporary Redirect";
+    if (statusCode == "308") return "Permanent Redirect";
+    return "Found";
+}
+
+bool Response::checkForRedirect(ConfigNode* locationNode, const std::string& requestPath)
+{
+    (void)requestPath;
+    if (!locationNode)
+        return false;
+    
+    std::map<std::string, std::vector<std::string> >::iterator it = locationNode->directives.find("return");
+    if (it != locationNode->directives.end() && it->second.size() == 2)
+    {
+        const std::string& statusCode = it->second[0];
+        const std::string& redirectUrl = it->second[1];
+        
+        status_code = statusCode + " " + getHttpStatusMessage(statusCode);
+        setHeaders("Location", redirectUrl);
+        setBody("");
+        return true;
+    }
+    return false;
+}
