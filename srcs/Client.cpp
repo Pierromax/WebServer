@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:00:35 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 16:28:22 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,29 +86,6 @@ void    Client::prepareRequest()
         if (request->isComplete())
             state = WRITING;
     }
-}
-
-bool    Client::isRequestValid() const
-{
-    ssize_t bytesRead = request->getBytesRead();
-            
-    if (bytesRead <= 0)
-    {
-        if (bytesRead == 0)
-        {
-            std::cout << "Client fd = " << fd << " disconnected." << std::endl;
-           return false;
-        }
-        else
-        {
-            if (errno != EAGAIN && errno != EWOULDBLOCK)
-            {
-                std::cerr << "Recv error on client fd = " << fd << ": " << strerror(errno) << std::endl;
-               return false;
-            }
-        }
-    }
-    return true;
 }
 
 void Client::sendResponse() const

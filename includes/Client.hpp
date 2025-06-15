@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:00:40 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 16:28:27 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,6 @@ class Client
         void        setState(ClientState newState);
         void        prepareRequest();
         void        prepareResponse();
-        bool        isRequestValid() const;
         void        sendResponse() const;
         bool        isTimeout() const;
 };
