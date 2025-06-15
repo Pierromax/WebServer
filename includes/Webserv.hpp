@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/05/14 17:39:55 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <map>
@@ -40,6 +41,11 @@
 
 #define DEFAULT_PORT 8080
 
+#define VALID_CODES_LIST \
+    "200", "301", "302", "400", "404", "405", "413", "500"
+// valid codes string array
+#define VALID_CODES {"200", "404", "500", "400", "405", "413"}
+
 /**
  * @brief Types de tokens pour le parseur
  */
@@ -49,6 +55,17 @@ enum TokenType
     TOKEN_SYMBOL,  // {, }, ;
     TOKEN_ID,      // nombres, identifiants, chemins non quotés
     TOKEN_STRING   // chaînes entre guillemets
+};
+
+/**
+ * @brief Méthodes HTTP supportées
+ */
+enum HttpMethod
+{
+    METHOD_GET = 0,
+    METHOD_POST = 1,
+    METHOD_DELETE = 2,
+    METHOD_COUNT = 3
 };
 
 /**
@@ -99,10 +116,19 @@ struct ConfigNode
     ConfigNode *parent;
     std::vector<ConfigNode *> children;
     std::map<std::string, std::vector<std::string> > directives;
+    std::map<std::string, std::size_t> directiveLines; 
     std::size_t line;
+    bool allowedMethods[METHOD_COUNT];
+    size_t client_max_body_size;
+    bool autoindex;
+    std::map<std::string, std::string> cgiHandlers;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
-        : type(t), value(v), parent(p), line(ln) {}
+        : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576), autoindex(false)
+    {
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            allowedMethods[i] = true;
+    }
 
     ~ConfigNode()
     {
@@ -116,6 +142,45 @@ struct ConfigNode
  */
 class Webserv
 {
+public:
+    /**
+     * @brief Exception class for parsing errors
+     */
+    class ParsingError : public std::exception
+    {
+    private:
+        std::string message;
+
+    public:
+        ParsingError(const std::string& error, const std::string& filename, std::size_t line)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << " in " << filename << ":" << line << R;
+            message = ss.str();
+        }
+
+        ParsingError(const std::string& error, const std::string& filename)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << " in " << filename << R;
+            message = ss.str();
+        }
+
+        ParsingError(const std::string& error)
+        {
+            std::stringstream ss;
+            ss << B RED "Parsing Error: " R RED << error << R;
+            message = ss.str();
+        }
+
+        virtual ~ParsingError() throw() {}
+
+        virtual const char* what() const throw()
+        {
+            return message.c_str();
+        }
+    };
+
 private:
     int sockfd;
     sockaddr_in adress;
@@ -134,9 +199,17 @@ private:
     ConfigNode* parseTokens(std::vector<Token> &tokens, const std::string &filename);
     void validateServers(ConfigNode *root, const std::string &filename);
     
-    // Nouvelle fonction de validation fusionnée
-    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth);
+    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
     void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateListenDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
+    void validateClientMaxBodySizeDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
+    void validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
+    void validateRedirectDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
+    void validateDirectives(ConfigNode *node, const std::string &filename);
+    void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
+    void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);
 
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);
@@ -151,6 +224,11 @@ private:
     void cleanInvalidFileDescriptors();
     std::string processRequest(int client_fd);
     void closeClientConnection(int clientFd);
+
+    // Tokenizer helper functions
+    void flushPendingToken(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
+    void handleQuote(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum, bool &inQuote);
+    void handleSymbol(char c, std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
 
 public:
     Webserv();
@@ -169,5 +247,7 @@ public:
 
     void setPollEvent(int fd, short events);
 };
+
+bool isPortAvailable(int port);
 
 #endif

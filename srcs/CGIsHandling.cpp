@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGIsHandling.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/04 10:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/06 21:38:26 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 17:20:49 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 /**
  * @brief Default constructor
  */
-CGIsHandling::CGIsHandling() : extension(""), cgiPath(""), scriptPath("")
+CGIsHandling::CGIsHandling() : scriptPath("")
 {
 }
 
@@ -44,8 +44,7 @@ CGIsHandling &CGIsHandling::operator=(const CGIsHandling &other)
 {
     if (this != &other)
     {
-        extension = other.extension;
-        cgiPath = other.cgiPath;
+        cgiHandlers = other.cgiHandlers;
         scriptPath = other.scriptPath;
         envVars = other.envVars;
     }
@@ -64,9 +63,27 @@ CGIsHandling::~CGIsHandling()
  * @param ext File extension to handle
  * @param path Path to CGI executable
  */
-CGIsHandling::CGIsHandling(const std::string &ext, const std::string &path)
-    : extension(ext), cgiPath(path), scriptPath("")
+CGIsHandling::CGIsHandling(const std::string &ext, const std::string &path) : scriptPath("")
 {
+    cgiHandlers[ext] = path;
+}
+
+/**
+ * @brief Constructor with map of handlers
+ * @param handlers Map of extension to CGI path
+ */
+CGIsHandling::CGIsHandling(const std::map<std::string, std::string> &handlers) : cgiHandlers(handlers), scriptPath("")
+{
+}
+
+/**
+ * @brief Adds a CGI handler for an extension
+ * @param ext File extension to handle
+ * @param path Path to CGI executable
+ */
+void CGIsHandling::addCgiHandler(const std::string &ext, const std::string &path)
+{
+    cgiHandlers[ext] = path;
 }
 
 /**
@@ -89,6 +106,23 @@ void CGIsHandling::setEnvironmentVariable(const std::string &key, const std::str
 }
 
 /**
+ * @brief Gets the CGI path for a given file
+ * @param filePath Path to the file
+ * @return CGI executable path or empty string if not found
+ */
+std::string CGIsHandling::getCgiPath(const std::string &filePath) const
+{
+    size_t dotPos = filePath.rfind('.');
+    if (dotPos == std::string::npos)
+        return "";
+    std::string ext = filePath.substr(dotPos + 1);
+    std::map<std::string, std::string>::const_iterator it = cgiHandlers.find(ext);
+    if (it != cgiHandlers.end())
+        return it->second;
+    return "";
+}
+
+/**
  * @brief Executes the CGI script and returns output
  * @return CGI script output as string
  */
@@ -98,7 +132,9 @@ std::string CGIsHandling::execute()
     int pipefdIn[2];
     int pipefdErr[2];
     pid_t pid;
-
+    std::string cgiPath = getCgiPath(scriptPath);
+    if (cgiPath.empty())
+        throw std::runtime_error("No CGI handler found for file: " + scriptPath);
     createPipes(pipefdOut, pipefdIn, pipefdErr);
     pid = fork();
     if (pid == -1)
@@ -108,7 +144,7 @@ std::string CGIsHandling::execute()
     }
     if (pid == 0)
     {
-        executeChildProcess(pipefdOut, pipefdIn, pipefdErr);
+        executeChildProcess(pipefdOut, pipefdIn, pipefdErr, cgiPath);
         exit(EXIT_FAILURE);
     }
     else
@@ -150,16 +186,14 @@ void CGIsHandling::closeAllPipes(int pipefdOut[2], int pipefdIn[2], int pipefdEr
  * @param pipefdOut Pipe for stdout
  * @param pipefdIn Pipe for stdin
  * @param pipefdErr Pipe for stderr
+ * @param cgiPath Path to the CGI executable
  */
-void CGIsHandling::executeChildProcess(int pipefdOut[2], int pipefdIn[2], int pipefdErr[2])
+void CGIsHandling::executeChildProcess(int pipefdOut[2], int pipefdIn[2], int pipefdErr[2], const std::string &cgiPath)
 {
     setupChildRedirection(pipefdOut, pipefdIn, pipefdErr);
-    
     std::vector<char*> envp = prepareEnvironment();
     char *args[] = {const_cast<char*>(cgiPath.c_str()), 
                    const_cast<char*>(scriptPath.c_str()), NULL};
-    // close sockets
-    
     execve(cgiPath.c_str(), args, &envp[0]);
     std::cerr << "CGI execution failed: " << strerror(errno) << std::endl;
     cleanupEnvironment(envp);
@@ -319,17 +353,17 @@ std::string CGIsHandling::formatFinalOutput(const std::string& output, const std
 }
 
 /**
- * @brief Checks if file path has the correct extension
+ * @brief Checks if file path has a supported extension
  * @param filePath Path to check
- * @return true if extension matches
+ * @return true if extension is supported
  */
 bool CGIsHandling::isValidExtension(const std::string &filePath) const
 {
     size_t dotPos = filePath.rfind('.');
-    
     if (dotPos == std::string::npos)
         return false;
-    return filePath.substr(dotPos + 1) == extension;
+    std::string ext = filePath.substr(dotPos + 1);
+    return cgiHandlers.find(ext) != cgiHandlers.end();
 }
 
 /**
@@ -341,20 +375,22 @@ bool CGIsHandling::isValidExtension(const std::string &filePath) const
 CGIsHandling* CGIsHandling::findCgiHandler(const std::string &filePath, ConfigNode* contextNode)
 {
     ConfigNode* searchNode = contextNode;
-    
+    std::map<std::string, std::string> allHandlers;
     while (searchNode)
     {
-        std::map<std::string, std::vector<std::string> >::iterator it = searchNode->directives.find("cgi");
-        if (it != searchNode->directives.end() && it->second.size() == 2)
+        for (std::map<std::string, std::string>::iterator it = searchNode->cgiHandlers.begin();
+             it != searchNode->cgiHandlers.end(); ++it)
         {
-            std::string ext = it->second[0];
-            std::string path = it->second[1];
-            CGIsHandling* handler = new CGIsHandling(ext, path);
-            if (handler->isValidExtension(filePath))
-                return handler;
-            delete handler;
+            if (allHandlers.find(it->first) == allHandlers.end())
+                allHandlers[it->first] = it->second;
         }
         searchNode = searchNode->parent;
     }
+    if (allHandlers.empty())
+        return NULL;
+    CGIsHandling* handler = new CGIsHandling(allHandlers);
+    if (handler->isValidExtension(filePath))
+        return handler;
+    delete handler;
     return NULL;
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/04 09:51:28 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 15:17:54 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ std::vector<Token> Webserv::tokenizeConfigFile(const std::string &filename)
         tokens.push_back(Token(pendingToken, type, lineNum));
     }
     if (inQuoteSingle || inQuoteDouble)
-        throw std::runtime_error("Unterminated quoted string at end of file");
+        throw ParsingError("Unterminated quoted string at end of file", filename);
     return tokens;
 }
 
@@ -66,7 +66,7 @@ std::vector<Token> Webserv::filterTokens(const std::vector<Token> &tokens, const
         }
     }
     if (filteredTokens.empty())
-        throw std::runtime_error("No valid configuration directives found in file");
+        throw ParsingError("No valid configuration directives found in file", filename);
     return filteredTokens;
 }
 
@@ -88,12 +88,7 @@ ConfigNode* Webserv::parseTokens(std::vector<Token> &tokens, const std::string &
             if (tokens[index].type != TOKEN_KEYWORD || tokens[index].value != "server")
             {
                 if (tokens[index].type == TOKEN_ID)
-                {
-                    std::stringstream err;
-                    err << "unknown directive \"" << tokens[index].value
-                        << "\" in " << filename << ":" << tokens[index].line;
-                    throw std::runtime_error(err.str());
-                }
+                    throw ParsingError("unknown directive \"" + tokens[index].value + "\"", filename, tokens[index].line);
                 index++;
                 continue;
             }
@@ -102,7 +97,7 @@ ConfigNode* Webserv::parseTokens(std::vector<Token> &tokens, const std::string &
                 root->children.push_back(serverNode);
         }
         if (root->children.empty())
-            throw std::runtime_error("No server config found");
+            throw ParsingError("No server config found", filename);
         return root;
     }
     catch (const std::exception &e)
@@ -122,14 +117,9 @@ ConfigNode* Webserv::parseTokens(std::vector<Token> &tokens, const std::string &
 ConfigNode* Webserv::initConfigNode(std::vector<Token> &tokens, size_t &index, ConfigNode *parent)
 {
     if (index >= tokens.size())
-        throw std::runtime_error("Unexpected end of configuration file");
+        throw ParsingError("Unexpected end of configuration file", tokens[index-1].filename);
     if (tokens[index].type != TOKEN_KEYWORD)
-    {
-        std::stringstream err;
-        err << "Expected keyword in " << tokens[index].filename << ":" 
-            << tokens[index].line << ", got " << tokens[index].value;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("Expected keyword, got " + tokens[index].value, tokens[index].filename, tokens[index].line);
     std::size_t lineNumber = tokens[index].line;
     ConfigNode *node = new ConfigNode(tokens[index].value, "", parent, lineNumber);
     index++;
@@ -147,12 +137,7 @@ void Webserv::handleLocationDirective(ConfigNode *node, std::vector<Token> &toke
     if (node->type != "location")
         return;
     if (index >= tokens.size() || tokens[index].type != TOKEN_ID)
-    {
-        std::stringstream err;
-        err << "Expected path after 'location' in " 
-            << tokens[index].filename << ":" << tokens[index - 1].line;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("Expected path after 'location'", tokens[index].filename, tokens[index - 1].line);
     node->value = tokens[index].value;
     index++;
 }
@@ -169,12 +154,7 @@ void Webserv::checkOpeningBrace(std::vector<Token> &tokens, size_t &index,
 {
     if (index >= tokens.size() || tokens[index].type != TOKEN_SYMBOL || 
         tokens[index].value != "{")
-    {
-        std::stringstream err;
-        err << "directive \"" << keyword << "\" has no opening \"{\" in " 
-            << tokens[index].filename << ":" << lineNumber;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("directive \"" + keyword + "\" has no opening \"{\"", tokens[index].filename, lineNumber);
     index++;
 }
 
@@ -190,12 +170,7 @@ bool Webserv::handleServerDirective(std::vector<Token> &tokens, size_t &index, C
     if (tokens[index].value != "server")
         return false;
     if (node->parent != rootConfig)
-    {
-        std::stringstream err;
-        err << "\"server\" directive is not allowed here in " 
-            << tokens[index].filename << ":" << tokens[index].line;
-        throw std::runtime_error(err.str());
-    }
+        throw ParsingError("\"server\" directive is not allowed here", tokens[index].filename, tokens[index].line);
     ConfigNode *child = parseConfigBlock(tokens, index, node);
     if (child)
         node->children.push_back(child);
@@ -250,17 +225,12 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
                     handleLocationDirective(tokens, index, node))
                     continue;
                 if (!parseDirective(tokens, index, node))
-                    throw std::runtime_error("Failed to parse directive");
+                    throw ParsingError("Failed to parse directive", tokens[index].filename, tokens[index].line);
             }
             else
-            {
-                std::stringstream err;
-                err << "Unknown directive '" << tokens[index].value << "' in " 
-                    << tokens[index].filename << ":" << tokens[index].line;
-                throw std::runtime_error(err.str());
-            }
+                throw ParsingError("Unknown directive '" + tokens[index].value + "'", tokens[index].filename, tokens[index].line);
         }
-        throw std::runtime_error("Missing closing brace '}'");
+        throw ParsingError("Missing closing brace '}'", tokens[index-1].filename, tokens[index-1].line);
     }
     catch (const std::exception &e)
     {
@@ -281,6 +251,7 @@ ConfigNode *Webserv::parseConfigBlock(std::vector<Token> &tokens, size_t &index,
 bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode)
 {
     std::string key = tokens[index].value;
+    std::size_t directiveLine = tokens[index].line; // Stocker le numéro de ligne de la directive
     index++;
     std::vector<std::string> values;
     
@@ -290,26 +261,50 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
         if (tokens[index].type == TOKEN_ID || tokens[index].type == TOKEN_STRING)
             values.push_back(tokens[index].value);
         else if (tokens[index].type == TOKEN_SYMBOL && tokens[index].value == "{")
-        {
-            std::stringstream err;
-            err << "Unexpected '{' in directive in " << tokens[index].filename 
-                << ":" << tokens[index].line;
-            throw std::runtime_error(err.str());
-        }
+            throw ParsingError("Unexpected '{' in directive", tokens[index].filename, tokens[index].line);
         index++;
     }
-    if (index >= tokens.size() || tokens[index].value != ";")
-    {
-        std::stringstream err;
+    if (index >= tokens.size() || tokens[index].value != ";") {
         std::string file = index < tokens.size() ? 
             tokens[index].filename : tokens[index-1].filename;
         std::size_t line = index < tokens.size() ? 
             tokens[index].line : tokens[index-1].line;
-        err << "Missing semicolon ';' for directive '" << key << "' in " 
-            << file << ":" << line;
-        throw std::runtime_error(err.str());
+        throw ParsingError("Missing semicolon ';' for directive '" + key + "'", file, line);
     }
     index++;
-    currentNode->directives[key] = values;
+
+    // Stocker le numéro de ligne de la directive
+    currentNode->directiveLines[key] = directiveLine;
+
+    if (key == "cgi")
+    {
+        if (values.size() != 2)
+            throw ParsingError("directive \"cgi\" takes exactly 2 arguments", tokens[index-1].filename, directiveLine);
+        currentNode->cgiHandlers[values[0]] = values[1];
+    }
+    else if (key == "listen")
+    {
+        if (currentNode->type != "server")
+            throw ParsingError("\"listen\" directive is not allowed here", tokens[index-1].filename, directiveLine);
+        for (size_t i = 0; i < values.size(); ++i)
+            currentNode->directives[key].push_back(values[i]);
+    }
+    else if (key == "methods")
+    {
+        currentNode->directives[key] = values;
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            currentNode->allowedMethods[i] = false;
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            if (values[i] == "GET")
+                currentNode->allowedMethods[METHOD_GET] = true;
+            else if (values[i] == "POST")
+                currentNode->allowedMethods[METHOD_POST] = true;
+            else if (values[i] == "DELETE")
+                currentNode->allowedMethods[METHOD_DELETE] = true;
+        }
+    }
+    else
+        currentNode->directives[key] = values;
     return true;
 }

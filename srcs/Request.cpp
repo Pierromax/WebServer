@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:53:50 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 15:11:34 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,18 +91,18 @@ std::string Request::getHeader(const std::string &name) const
 
 void Request::ReadFromSocket()
 {
-    char buffer[16384] = {0};
+    char buffer[2048] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes_received > 0)
     {
         this->raw_request.append(buffer, bytes_received);
         _bytesRead += bytes_received;
-
+        
         if (isComplete())
         {
-            parseRequest(this->raw_request);
             _isEmptyInput = true;
+            parseRequest(this->raw_request);
         }
         else
         {

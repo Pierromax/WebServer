@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/04/08 17:11:21 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 15:09:13 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #define D "\033[2m"
 #define I "\033[3m"
 
+#define v(x) (std::cerr << x << std::endl)
 /**
  * @brief Deletes a pointer and sets it to NULL
  * @tparam T Pointer type

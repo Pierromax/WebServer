@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:35:56 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 15:12:13 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -288,7 +288,7 @@ void Webserv::launchServers()
     
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
-    servers.clear();
+    servers.clear();    
     fds.clear();
     if (rootConfig && !rootConfig->children.empty())
     {
@@ -347,6 +347,11 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
         for (size_t i = 0; i < values.size(); ++i)
             std::cout << values[i] << " ";
         std::cout << ";" << std::endl;
+    }
+    for (std::map<std::string, std::string>::const_iterator it = 
+        node->cgiHandlers.begin(); it != node->cgiHandlers.end(); ++it)
+    {
+        std::cout << indent << "    cgi " << it->first << " " << it->second << " ;" << std::endl;
     }
     for (size_t i = 0; i < node->children.size(); ++i)
         displayConfig(node->children[i], depth + 1);

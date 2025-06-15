@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/09 14:57:57 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 14:45:38 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <fstream>
 #include <vector>
 #include <sys/stat.h> // For stat()
+#include <dirent.h>   // For opendir/readdir
 #include <map>        // Added for getMimeType
 
 // Forward declarations
@@ -43,12 +44,25 @@ class Response
 
         // --- Request Handling Helpers ---
         ConfigNode* findBestLocation(const std::string& requestPath) const;
+        ConfigNode* findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const;
         std::string findEffectiveRoot(ConfigNode* contextNode) const;
         std::vector<std::string>    findEffectiveIndexFiles(ConfigNode* contextNode) const;
         std::string tryIndexFiles(const std::string& directoryPath, const std::vector<std::string>& indexFiles) const;
         std::string resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const;
         std::string getMimeType(const std::string& filePath) const;
         bool        loadPageContent(const std::string& filePath, std::string& content) const;
+        
+        // --- Methods Handling ---
+        bool        isMethodAllowed(const std::string& method, ConfigNode* locationNode) const;
+
+        // --- Redirect & Autoindex Helpers ---
+        bool        checkForRedirect(ConfigNode* locationNode, const std::string& requestPath);
+        bool        shouldGenerateAutoindex(ConfigNode* locationNode) const;
+        std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const;
+        
+        // --- Path Resolution Helper ---
+        std::string buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const;
+        std::string getHttpStatusMessage(const std::string& statusCode) const;
 
         // --- CGI Handling ---
         void        handleCgiRequest(const Request &req, ConfigNode* locationNode, const std::string& filePath);
@@ -63,10 +77,11 @@ class Response
         void                                handleGetRequest(const Request &req);
         void                                handlePostRequest(const Request &req);
         void                                handleDeleteRequest(const Request &req);
+        void                                handleUploading(const Request &req,   ConfigNode* locationNode);
         std::vector<std::string>            splitPostBody(std::string body, std::string delim);
-        std::map<std::string, std::string>  extractPostHeaders(std::string content);
-        bool                                extractFileToSave(std::map<std::string, std::string> headers, std::string content, std::string location);
-        bool                                saveFile(std::string filename, std::string body, std::string location);
+        std::map<std::string, std::string>  extractPostHeaders(std::string &content);
+        bool                                extractFileToSave(std::map<std::string, std::string> &headers, std::string &content, std::string location);
+        bool                                saveFile(std::string &filename, std::string &body, std::string location);
 
     public:
         Response();

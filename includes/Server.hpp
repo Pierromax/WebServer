@@ -3,10 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/11 15:40:12 by ple-guya         ###   ########.fr       */
+<<<<<<<<< Temporary merge branch 1
+/*   Updated: 2025/06/04 09:55:18 by cezou            ###   ########.fr       */
+=========
+/*   Updated: 2025/06/09 15:03:59 by ple-guya         ###   ########.fr       */
+>>>>>>>>> Temporary merge branch 2
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,17 +33,6 @@
 // Forward declaration
 struct ConfigNode;
 
-struct t_Route
-{
-	std::vector<std::string> allowedMethods;
-	std::string 			redirect;
-	std::string 			root;
-	std::string 			defaultFile;
-	std::string 			cgiExtension;
-	std::string 			uploadDirectory;
-	bool 					allowUploads;
-	bool 					directoryListing;
-};
 
 class Server
 {
@@ -60,7 +53,6 @@ public:
 	bool isDefault;
 	std::map<int, std::string> errorPages;
 	size_t maxBodySize;
-	std::map<std::string, t_Route> routes;
 	ConfigNode* getConfigNode() const; // Getter for the config node
 
 private:

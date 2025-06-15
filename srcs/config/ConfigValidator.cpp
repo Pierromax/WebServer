@@ -3,15 +3,37 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigValidator.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:10 by cezou             #+#    #+#             */
-/*   Updated: 2025/04/08 15:46:40 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 17:40:41 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 #include <sstream>
+#include <set>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <cstdlib>
+#include <sys/stat.h>
+
+/**
+ * @brief Initializes valid HTTP status codes
+ * @return Set containing all valid HTTP status codes
+ */
+std::set<std::string> initValidCodes()
+{
+    std::set<std::string> codes;
+    const char* validCodes[] = {VALID_CODES_LIST};
+    size_t count = sizeof(validCodes) / sizeof(validCodes[0]);
+    for (size_t i = 0; i < count; ++i)
+        codes.insert(validCodes[i]);
+    return codes;
+}
+
+static const std::set<std::string> VALID_HTTP_CODES = initValidCodes();
 
 /**
  * @brief Validates CGI directive format
@@ -22,12 +44,153 @@
 void Webserv::validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
 {
     if (values.size() != 2)
-    {
-        std::stringstream err;
-        err << "directive \"cgi\" takes exactly 2 arguments in " 
-            << filename << ":" << line;
-        throw std::runtime_error(err.str());
+        throw ParsingError("directive \"cgi\" takes exactly 2 arguments", filename, line);
+    if (access(values[1].c_str(), F_OK | X_OK) != 0)
+        throw ParsingError("cgi executable \"" + values[1] + "\" is not accessible in directive \"cgi\"", filename, line);
+    struct stat fileStat;
+    if (stat(values[1].c_str(), &fileStat) == 0) {
+        if (S_ISDIR(fileStat.st_mode))
+            throw ParsingError("cgi path \"" + values[1] + "\" is a directory, not an executable in directive \"cgi\"", filename, line);
     }
+}
+
+/**
+ * @brief Validates methods directive format
+ * @param values Values for the methods directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ */
+void Webserv::validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
+{
+    std::set<std::string> validMethods;
+    std::set<std::string> usedMethods;
+
+    if (values.size() > 3)
+        throw ParsingError("directive \"methods\" takes at most 3 arguments", filename, line);
+    validMethods.insert("GET");
+    validMethods.insert("POST");
+    validMethods.insert("DELETE");
+    for (size_t i = 0; i < values.size(); ++i) {
+        const std::string& method = values[i];
+        if (validMethods.find(method) == validMethods.end())
+            throw ParsingError("invalid method \"" + method + "\" in directive \"methods\"", filename, line);
+        if (usedMethods.find(method) != usedMethods.end())
+            throw ParsingError("duplicate method \"" + method + "\" in directive \"methods\"", filename, line);
+        usedMethods.insert(method);
+    }
+}
+
+/**
+ * @brief Validates error_page directive format
+ * @param values Values for the error_page directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ */
+void Webserv::validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
+{
+    if (values.size() != 2)
+        throw ParsingError("directive \"error_page\" takes exactly 2 arguments", filename, line);
+
+    const std::string& errorCode = values[0];
+    if (VALID_HTTP_CODES.find(errorCode) == VALID_HTTP_CODES.end())
+        throw ParsingError("invalid error code \"" + errorCode + "\" in directive \"error_page\"", filename, line);
+}
+
+/**
+ * @brief Validates listen directive format
+ * @param values Values for the listen directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ */
+void Webserv::validateListenDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
+{
+    for (size_t i = 0; i < values.size(); ++i) {
+        const std::string& portStr = values[i];
+        std::stringstream ss(portStr);
+        int port;
+        std::string remaining;
+
+        if (!(ss >> port) || ss >> remaining)
+            throw ParsingError("invalid port \"" + portStr + "\" in directive \"listen\"", filename, line);
+        if (port < 1024 || port > 65535)
+            throw ParsingError("port " + portStr + " out of range (1024-65535) in directive \"listen\"", filename, line);
+        // if (!isPortAvailable(port))
+        //     throw ParsingError("port " + portStr + " is not available in directive \"listen\"", filename, line);
+    }
+}
+
+/**
+ * @brief Validates client_max_body_size directive format
+ * @param values Values for the client_max_body_size directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ * @param node ConfigNode to store the parsed value
+ */
+void Webserv::validateClientMaxBodySizeDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
+{
+    if (values.size() != 1)
+        throw ParsingError("directive \"client_max_body_size\" takes exactly 1 argument", filename, line);
+
+    const std::string& sizeStr = values[0];
+    std::stringstream ss(sizeStr);
+    long long baseSize;
+    std::string remaining;
+
+    if (!(ss >> baseSize))
+        throw ParsingError("invalid size \"" + sizeStr + "\" in directive \"client_max_body_size\"", filename, line);
+    if (ss >> remaining) {
+        if (remaining.length() != 1)
+            throw ParsingError("invalid size format \"" + sizeStr + "\" in directive \"client_max_body_size\"", filename, line);
+        char unit = remaining[0];
+        if (unit == 'M' || unit == 'm')
+            baseSize *= 1000000;
+        else if (unit == 'K' || unit == 'k')
+            baseSize *= 1000;
+        else
+            throw ParsingError("invalid size unit \"" + std::string(1, unit) + "\" in directive \"client_max_body_size\"", filename, line);
+    } 
+    if (baseSize < 1)
+        throw ParsingError("size must be at least 1 byte in directive \"client_max_body_size\"", filename, line);
+    node->client_max_body_size = baseSize;
+}
+
+/**
+ * @brief Validates autoindex directive format
+ * @param values Values for the autoindex directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ * @param node ConfigNode to store the parsed value
+ */
+void Webserv::validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
+{
+	if (node->type == "server")
+		throw ParsingError("directive \"autoindex\" is not allowed in server context", filename, line);
+	if (values.size() != 1)
+        throw ParsingError("directive \"autoindex\" takes exactly 1 argument", filename, line);
+    const std::string& value = values[0];
+    if (value != "on" && value != "off")
+        throw ParsingError("invalid value \"" + value + "\" in directive \"autoindex\", must be \"on\" or \"off\"", filename, line);
+    
+    node->autoindex = (value == "on");
+}
+
+/**
+ * @brief Validates return directive format
+ * @param values Values for the return directive
+ * @param filename Configuration filename (for error reporting)
+ * @param line Line number (for error reporting)
+ * @param node ConfigNode to store the parsed value
+ */
+void Webserv::validateRedirectDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node)
+{
+    if (values.size() != 2)
+        throw ParsingError("directive \"return\" takes exactly 2 arguments", filename, line);
+    if (node->parent == NULL || node->parent->type != "server")
+        throw ParsingError("directive \"return\" is not allowed in server context", filename, line);
+
+    const std::string& statusCode = values[0];
+    if (VALID_HTTP_CODES.find(statusCode) == VALID_HTTP_CODES.end())
+        throw ParsingError("invalid status code \"" + statusCode + "\" in directive \"return\"", filename, line);
 }
 
 /**
@@ -35,58 +198,143 @@ void Webserv::validateCgiDirective(const std::vector<std::string> &values, const
  * @param node Node to check
  * @param filename Configuration filename (for error reporting)
  * @param depth Current depth in tree (0 for root)
+ * @param usedPorts Map to track duplicate ports across servers
  * @throw std::runtime_error if configuration errors are detected
  */
-void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth)
+void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
 {
     if (!node)
         return;
-    std::map<std::string, size_t> locationPaths;
-    
     if (depth > 1 && node->type == "server")
-    {
-        std::stringstream err;
-        err << "\"server\" directive is not allowed here in " 
-            << filename << ":" << node->line;
-        throw std::runtime_error(err.str());
-    }
-    
+        throw ParsingError("\"server\" directive is not allowed here", filename, node->line);
+    validateDirectives(node, filename);
+    validateChildNodes(node, filename, depth, usedPorts);
+}
+
+/**
+ * @brief Validates directives within a node
+ * @param node Node to validate
+ * @param filename Configuration filename (for error reporting)
+ */
+void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
+{
     for (std::map<std::string, std::vector<std::string> >::iterator it = node->directives.begin(); 
          it != node->directives.end(); ++it)
     {
-        if (it->first == "cgi")
-            validateCgiDirective(it->second, filename, node->line);
+        std::size_t directiveLine = node->line;
+        std::map<std::string, std::size_t>::iterator lineIt = node->directiveLines.find(it->first);
+        if (lineIt != node->directiveLines.end())
+            directiveLine = lineIt->second;
+        if (it->first == "methods")
+            validateMethodsDirective(it->second, filename, directiveLine);
+        else if (it->first == "error_page")
+            validateErrorPageDirective(it->second, filename, directiveLine);
+        else if (it->first == "listen")
+            validateListenDirective(it->second, filename, directiveLine);
+        else if (it->first == "client_max_body_size")
+            validateClientMaxBodySizeDirective(it->second, filename, directiveLine, node);
+        else if (it->first == "autoindex")
+            validateAutoindexDirective(it->second, filename, directiveLine, node);
+        else if (it->first == "return")
+            validateRedirectDirective(it->second, filename, directiveLine, node);
     }
+    for (std::map<std::string, std::string>::iterator it = node->cgiHandlers.begin(); 
+         it != node->cgiHandlers.end(); ++it)
+    {
+        std::vector<std::string> values;
+        values.push_back(it->first);
+        values.push_back(it->second);
+        std::size_t directiveLine = node->line;
+        std::map<std::string, std::size_t>::iterator lineIt = node->directiveLines.find("cgi");
+        if (lineIt != node->directiveLines.end())
+            directiveLine = lineIt->second;
+        validateCgiDirective(values, filename, directiveLine);
+    }
+}
+
+/**
+ * @brief Validates child nodes and checks for duplicates
+ * @param node Parent node
+ * @param filename Configuration filename (for error reporting) 
+ * @param depth Current depth in tree
+ * @param usedPorts Map to track duplicate ports across servers
+ */
+void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
+{
+    std::map<std::string, size_t> locationPaths;
     
     for (size_t i = 0; i < node->children.size(); ++i)
     {
         ConfigNode *child = node->children[i];
         
         if (node->type == "server" && child->type == "server")
-        {
-            std::stringstream err;
-            err << "\"server\" directive is not allowed here in " 
-                << filename << ":" << child->line;
-            throw std::runtime_error(err.str());
-        }
-        
+            throw ParsingError("\"server\" directive is not allowed here", filename, child->line);
         if (child->type == "location")
         {
             std::string path = child->value;
             std::map<std::string, size_t>::iterator it = locationPaths.find(path);
             if (it != locationPaths.end())
-            {
-                std::stringstream err;
-                err << "duplicate location \"" << path << "\" in " << filename 
-                    << ":" << child->line;
-                throw std::runtime_error(err.str());
-            }
+                throw ParsingError("duplicate location \"" + path + "\"", filename, child->line);
             locationPaths[path] = child->line;
         }
+        if (child->type == "server")
+            validateServerPorts(child, filename, usedPorts);
+        validateConfigTree(child, filename, depth + 1, usedPorts);
     }
+}
+
+/**
+ * @brief Validates server ports for duplicates
+ * @param serverNode Server node to validate
+ * @param filename Configuration filename (for error reporting)
+ * @param usedPorts Map to track duplicate ports
+ */
+void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts)
+{
+    std::map<std::string, std::vector<std::string> >::iterator it = serverNode->directives.find("listen");
+    if (it == serverNode->directives.end() || it->second.empty())
+        return;
     
-    for (size_t i = 0; i < node->children.size(); ++i)
-        validateConfigTree(node->children[i], filename, depth + 1);
+    std::set<int> serverPorts;
+    for (size_t i = 0; i < it->second.size(); ++i) {
+        std::stringstream ss(it->second[i]);
+        int port;
+        if (!(ss >> port))
+            continue;
+        
+        if (serverPorts.find(port) != serverPorts.end())
+            throw ParsingError("duplicate listen port " + it->second[i] + " in same server", filename, serverNode->line);
+        serverPorts.insert(port);
+        
+        std::map<int, size_t>::iterator portIt = usedPorts.find(port);
+        if (portIt != usedPorts.end()) {
+            std::stringstream err;
+            err << "duplicate listen port " << port << " (first defined at line " << portIt->second << ")";
+            throw ParsingError(err.str(), filename, serverNode->line);
+        }
+        usedPorts[port] = serverNode->line;
+    }
+}
+
+/**
+ * @brief Checks if a port is available for binding
+ * @param port Port number to check
+ * @return true if port is available, false otherwise
+ */
+bool isPortAvailable(int port)
+{
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+        return false;
+
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+
+    bool available = (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == 0);
+    close(sockfd);
+    return available;
 }
 
 /**
@@ -96,7 +344,8 @@ void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, 
  */
 void Webserv::validateServers(ConfigNode *root, const std::string &filename)
 {
-    validateConfigTree(root, filename, 0);
+    std::map<int, size_t> usedPorts;
+    validateConfigTree(root, filename, 0, usedPorts);
     displayConfig(root);
 }
 

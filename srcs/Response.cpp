@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:53:56 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 15:12:07 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,6 @@ Response::Response(const Request &req, Server* server) : _server(server)
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
-
-    std::cout << method << std::endl;
         
     if (method == "GET")
         handleGetRequest(req);
@@ -102,55 +100,22 @@ void Response::setBody(const std::string &body)
     this->body = body;
 }
 
-/**************************************/
-/* main Request Handling Member Funcs */
-/**************************************/
-
-void Response::handleGetRequest(const Request &req)
-{
-    std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
-    std::string filePath = resolveFilePath(locationNode, path);
-    std::string content;
-    
-    std::cout << "URL demandée: " << req.getPath() << std::endl;
-    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
-
-    while (true)
-    {
-        status_code = "404 Not Found";
-        loadErrorPage("404", locationNode);
-        return;
-    }
-
-    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
-    if (cgiHandler)
-    {
-        delete cgiHandler;
-        handleCgiRequest(req, locationNode, filePath);
-    }
-    else if (loadPageContent(filePath, content))
-    {
-        setBody(content);
-        setContentType(getMimeType(filePath));
-    }
-    else
-    {
-        status_code = "403 Forbidden";
-        loadErrorPage("403", locationNode);
-    }
-}
-
 void Response::handlePostRequest(const Request &req)
 {
-
+    this->content_type = req.getHeader("Content-Type");
     std::string path = req.getPath();
     ConfigNode* locationNode = findBestLocation(path);
     std::string filePath = resolveFilePath(locationNode, path);
     
+    if (!isMethodAllowed("POST", locationNode))
+    {
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
+    }
     if (filePath.empty())
     {
-        status_code = "404 Not Found";
+        status_code = FILE_NOT_FOUND;
         loadErrorPage("404", locationNode);
         return;
     }
@@ -163,26 +128,25 @@ void Response::handlePostRequest(const Request &req)
         return;
     }
 
-    std::string contentType = req.getHeader("Content-Type");
+    if (this->content_type.find("multipart/form-data") != std::string::npos)
+        handleUploading(req, locationNode);
+}
+
+
+void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
+{
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
     std::string location = findEffectiveRoot(locationNode);
-
-
-    std::cout << "find multiform" << std::endl;
-    if (contentType.find("multipart/form-data") == std::string::npos)
-    {
-        status_code = BAD_REQUEST; 
-        return;
-    }
     std::cout << "find boundary " << std::endl;
-    size_t pos = contentType.find("boundary=");
+    size_t pos = content_type.find("boundary=");
+    
     if (pos == std::string::npos)
     {
         status_code = BAD_REQUEST; 
         return;
     }
-    std::string boundary = contentType.substr(pos + 9);
+    std::string boundary = content_type.substr(pos + 9);
     std::string delimiter = "--" + boundary;
     std::string content = req.getBody();
 
@@ -191,17 +155,16 @@ void Response::handlePostRequest(const Request &req)
         status_code = BAD_REQUEST; 
         return;
     }
-    std::cout << "content non empty" << std::endl;
     bodies = splitPostBody(content, delimiter);
-
     bool validFile = false;
     for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
     {
         pos = it->find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            std::cout << "extarct info" << std::endl;
+            std::cout << "extract info" << std::endl;
             std::string headerPart = it->substr(0, pos);
+            std::cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
             bodyHeaders = extractPostHeaders(headerPart);
             std::cout << "try to save" << std::endl;
@@ -213,28 +176,157 @@ void Response::handlePostRequest(const Request &req)
     std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
     if (validFile)
     {
-        // Succès - le status_code est déjà mis à "201 Created" dans saveFile
-        std::string successBody = 
-            "<html>"
-            "<head><title>Upload réussi</title></head>"
-            "<body>"
-            "<h1>Fichier uploadé avec succès !</h1>"
-            "<p>Votre fichier a été sauvegardé sur le serveur.</p>"
-            "</body>"
-            "</html>";
-        setBody(successBody);
-        setContentType("text/html");
+        status_code = "201 Created";
+        std::string successPagePath = location + "/upload/201.html";
+        std::string pageContent;
+        std::cout << "Tentative de chargement: " << successPagePath << std::endl;
+        if (loadPageContent(successPagePath, pageContent))
+        {
+            std::cout << "Page 201.html chargée avec succès" << std::endl;
+            setBody(pageContent);
+            setContentType(getMimeType(successPagePath));
+        }
     }
 }
 
-void Response::handleDeleteRequest(const Request &req)
+/* ******************************** */
+/* exclusive utils for post request */
+/********************************** */
+
+std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
 {
-    (void)req;
+    std::vector<std::string>    split;
+    std::string                 content;
+    size_t                      start = 0;
+    size_t                      newStart;
+
+    while (true)
+    {
+        newStart = body.find(delim, start);
+        if (newStart == std::string::npos)
+        {
+            split.push_back(body.substr(start));
+            break;
+        }
+        content = body.substr(start, newStart - start);
+        if (!content.empty())
+            split.push_back(content);
+        start = newStart + delim.length();
+    }
+    return split;
 }
 
-/****************************************/
-/* utils Request Handling Member Funcs  */
-/****************************************/
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string &content)
+{
+    std::map<std::string, std::string>  parseHeader;
+    std::stringstream                   ss(content);
+    std::string                  line;
+
+       std::cout << "=== PARSING MANUEL ===" << std::endl;
+    std::cout << "Contenu: '" << content << "'" << std::endl;
+
+    
+    while(std::getline(ss, line))
+    {
+        std::cout << "=== line parsed : " << line << "===" << std::endl;
+        if (line.empty() || line == "\r")
+            continue;
+        size_t pos = line.find(":");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        std::cout << "key = " << key << std::endl;
+        value = trimString(value, " \t\n\r");
+        std::cout << "value = " << value << std::endl ;
+        parseHeader[key] = value;
+    }
+    return parseHeader;
+}
+
+static std::string extractFilename(std::string content)
+{
+    size_t filepos = content.find("filename=\"");
+    if (filepos == std::string::npos)
+        return ("");
+    filepos += 10;
+    size_t endpos = content.find("\"", filepos);
+    if (endpos == std::string::npos)
+        return ("");
+
+    std::string filename = content.substr(filepos, endpos - filepos);
+
+    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
+        return "";
+    
+    return filename;
+}
+
+bool    Response::saveFile(std::string &filename, std::string &body, std::string location)
+{
+    std::string path = location + "/" + filename;
+    std::ofstream file(path.c_str(), std::ios::binary);
+
+    std::cout << "path = " << path;
+
+    if (!file.is_open())
+    {
+        status_code = INTERNAL_ERROR;
+        return false;
+    }
+    
+    file.write(body.c_str(), body.size());
+    file.close();
+    
+    if (file.fail())
+    {
+        status_code = INTERNAL_ERROR; 
+        return false;
+    }
+    return true;
+}
+
+bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, std::string &content, std::string location)
+{
+    std::string filename;
+
+    
+    for(std::map<std::string, std::string>::iterator it = heads.begin(); it != heads.end(); it++)
+    {
+        std::cout << "key : " << it->first << ", value = " << it->second << std::endl;
+    }
+    
+    if (!heads.count("Content-Disposition"))
+    {
+        std::cout << "no content-dispostion" << std::endl;
+        return false;
+    }
+
+    size_t pos = heads.at("Content-Disposition").find("filename=");
+    if (pos == std::string::npos)
+    {
+        std::cout << "filename noon found" << std::endl;     
+        return false;
+    }
+        
+    filename = extractFilename(heads.at("Content-Disposition"));
+    if (filename == "")
+    {
+        
+        return false;
+    }
+
+    if (!saveFile(filename, content, location))
+        return false;
+    
+    return true;
+}
+
+
+/**********************************/
+/* Request Handling Member Funcs  */
+/**********************************/
 
 std::string Response::getMimeType(const std::string& filePath) const
 {
@@ -265,28 +357,30 @@ ConfigNode* Response::findBestLocation(const std::string& requestPath) const
 {
     if (!_server || !_server->getConfigNode())
         return NULL;
-
     ConfigNode* serverNode = _server->getConfigNode();
-    ConfigNode* bestMatch = serverNode;
-    size_t longestMatchLen = 0;
+    return findBestLocationRecursive(requestPath, serverNode, serverNode, "");
+}
 
-    for (size_t i = 0; i < serverNode->children.size(); ++i)
+ConfigNode* Response::findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const
+{
+    if (!currentNode)
+        return bestMatch;
+    size_t currentBestLen = (bestMatch->type == "location") ? bestMatch->value.length() : 0;
+    for (size_t i = 0; i < currentNode->children.size(); ++i)
     {
-        ConfigNode* location = serverNode->children[i];
+        ConfigNode* location = currentNode->children[i];
         if (location->type != "location")
             continue;
-
-        const std::string& locationPath = location->value;
-        if (requestPath.rfind(locationPath, 0) == 0)
+        std::string fullLocationPath = currentPath + location->value;
+        if (requestPath.rfind(fullLocationPath, 0) == 0)
         {
-            bool fullMatch = (requestPath.length() == locationPath.length()) ||
-                             (locationPath == "/") ||
-                             (requestPath.length() > locationPath.length() && requestPath[locationPath.length()] == '/');
-
-            if (fullMatch && locationPath.length() >= longestMatchLen) // Use >= to prefer more specific matches
+            bool fullMatch = (requestPath.length() == fullLocationPath.length()) ||
+                             (fullLocationPath == "/") ||
+                             (requestPath.length() > fullLocationPath.length() && requestPath[fullLocationPath.length()] == '/');
+            if (fullMatch && fullLocationPath.length() >= currentBestLen)
             {
-                longestMatchLen = locationPath.length();
                 bestMatch = location;
+                bestMatch = findBestLocationRecursive(requestPath, location, bestMatch, fullLocationPath);
             }
         }
     }
@@ -335,7 +429,7 @@ std::string Response::tryIndexFiles(const std::string& directoryPath, const std:
     return "";
 }
 
-std::string Response::resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const
+std::string Response::buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const
 {
     if (!locationNode)
         return "";
@@ -351,6 +445,15 @@ std::string Response::resolveFilePath(ConfigNode* locationNode, const std::strin
         fullPath += "/" + requestPath;
     else
         fullPath += requestPath;
+
+    return fullPath;
+}
+
+std::string Response::resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const
+{
+    std::string fullPath = buildFullPath(locationNode, requestPath);
+    if (fullPath.empty())
+        return "";
 
     struct stat path_stat;
     if (stat(fullPath.c_str(), &path_stat) == 0)
@@ -378,6 +481,35 @@ bool Response::loadPageContent(const std::string& filePath, std::string& content
         return true;
     }
     return false;
+}
+
+/**
+ * @brief Checks if a HTTP method is allowed for a given location
+ * @param method HTTP method to check (GET, POST, DELETE)
+ * @param locationNode Location node to search in hierarchy
+ * @return true if method is allowed, false otherwise
+ */
+bool Response::isMethodAllowed(const std::string& method, ConfigNode* locationNode) const
+{
+    ConfigNode* searchNode = locationNode;
+    HttpMethod methodEnum;
+
+    if (method == "GET")
+        methodEnum = METHOD_GET;
+    else if (method == "POST")
+        methodEnum = METHOD_POST;
+    else if (method == "DELETE")
+        methodEnum = METHOD_DELETE;
+    else
+        return false;
+    while (searchNode)
+    {
+        std::map<std::string, std::vector<std::string> >::iterator it = searchNode->directives.find("methods");
+        if (it != searchNode->directives.end())
+            return searchNode->allowedMethods[methodEnum];
+        searchNode = searchNode->parent;
+    }
+    return true;
 }
 
 /**
@@ -445,126 +577,80 @@ void Response::handleCgiRequest(const Request &req, ConfigNode* locationNode, co
     }
 }
 
-/* ******************************** */
-/* exclusive utils for post request */
-/********************************** */
-
-std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
+void Response::handleGetRequest(const Request &req)
 {
-    std::vector<std::string>    split;
-    std::string                 content;
-    size_t                      start = 0;
-    size_t                      newStart;
+    std::string path = req.getPath();
+    ConfigNode* locationNode = findBestLocation(path);
+    std::string content;
+    
+    std::cout << "URL demandée: " << req.getPath() << std::endl;
 
-    while (true)
+    if (!isMethodAllowed("GET", locationNode))
     {
-        newStart = body.find(delim, start);
-        if (newStart == std::string::npos)
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
+    }
+
+    if (checkForRedirect(locationNode, path))
+        return;
+
+    std::string filePath = resolveFilePath(locationNode, path);
+    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
+
+    if (filePath.empty())
+    {
+        std::string fullPath = buildFullPath(locationNode, path);
+        if (!fullPath.empty())
         {
-            split.push_back(body.substr(start));
-            break;
+            struct stat path_stat;
+            if (stat(fullPath.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
+            {
+                if (shouldGenerateAutoindex(locationNode))
+                {
+                    std::string directoryListing = generateDirectoryListing(fullPath, path);
+                    setBody(directoryListing);
+                    setContentType("text/html");
+                    return;
+                }
+            }
         }
-        content = body.substr(start, newStart - start);
-        split.push_back(content);
-        start = newStart + delim.length();
+        status_code = FILE_NOT_FOUND;
+        loadErrorPage("404", locationNode);
+        return;
     }
-    return split;
+
+    CGIsHandling* cgiHandler = CGIsHandling::findCgiHandler(filePath, locationNode);
+    if (cgiHandler)
+    {
+        delete cgiHandler;
+        handleCgiRequest(req, locationNode, filePath);
+    }
+    else if (loadPageContent(filePath, content))
+    {
+        setBody(content);
+        setContentType(getMimeType(filePath));
+    }
+    else
+    {
+        status_code = "403 Forbidden";
+        loadErrorPage("403", locationNode);
+    }
 }
 
-std::map<std::string, std::string>  Response::extractPostHeaders(std::string content)
+
+void Response::handleDeleteRequest(const Request &req)
 {
-    std::map<std::string, std::string>  parseHeader;
-    std::stringstream                   ss(content);
-    std::string                         line;
+    std::string path = req.getPath();
+    ConfigNode* locationNode = findBestLocation(path);
 
-    while(std::getline(ss, line))
+    if (!isMethodAllowed("DELETE", locationNode))
     {
-        if (line.empty() || line == "\r")
-            break;
-        size_t pos = line.find(":");
-        if(pos == std::string::npos)
-            continue;
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        key = trimString(key, " \t\n\r");
-        value = trimString(value, " \t\n\r");
-        parseHeader[key] = value;
+        status_code = METHOD_NOT_ALLOWED;
+        loadErrorPage("405", locationNode);
+        return;
     }
-    return parseHeader;
-}
-
-static std::string extractFilename(std::string content)
-{
-    size_t filepos = content.find("filename=\"");
-    if (filepos == std::string::npos)
-        return ("");
-    filepos += 10;
-    size_t endpos = content.find("\"", filepos);
-    if (endpos == std::string::npos)
-        return ("");
-
-    std::string filename = content.substr(filepos, endpos - filepos);
-
-    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
-        return "";
-    
-    return filename;
-}
-
-bool    Response::saveFile(std::string filename, std::string body, std::string location)
-{
-    std::string path = location + "/" + filename;
-    std::ofstream file(path.c_str(), std::ios::binary);
-
-    std::cout << "path = " << path;
-
-    if (!file.is_open())
-    {
-        status_code = INTERNAL_ERROR;
-        return false;
-    }
-    
-    file.write(body.c_str(), body.size());
-    file.close();
-    
-    if (file.fail())
-    {
-        status_code = INTERNAL_ERROR; 
-        return false;
-    }
-    return true;
-}
-
-bool    Response::extractFileToSave(std::map<std::string, std::string> heads, std::string content, std::string location)
-{
-
-    
-    std::string filename;
-    
-    if (!heads.count("content-disposition"))
-    {
-        std::cout << "no content-dispostion" << std::endl;
-        return false;
-    }
-
-    size_t pos = heads.at("content-disposition").find("filename=");
-    if (pos == std::string::npos)
-    {
-        std::cout << "filename noon found" << std::endl;     
-        return false;
-    }
-        
-    filename = extractFilename(heads.at("content-disposition"));
-    if (filename == "")
-    {
-        
-        return false;
-    }
-
-    if (!saveFile(filename, content, location))
-        return false;
-    
-    return true;
+    (void)req;
 }
 
 /**********************************/
@@ -684,4 +770,133 @@ std::string Response::build() const
     response << body;
 
     return response.str();
+}
+
+
+bool Response::shouldGenerateAutoindex(ConfigNode* locationNode) const
+{
+    ConfigNode* searchNode = locationNode;
+    while (searchNode)
+    {
+        if (searchNode->autoindex)
+            return true;
+        searchNode = searchNode->parent;
+    }
+    return false;
+}
+
+std::string Response::generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const
+{
+    std::stringstream html;
+    html << "<!DOCTYPE html>\n";
+    html << "<html>\n<head>\n";
+    html << "<title>Index of " << requestPath << "</title>\n";
+    html << "<style>\n";
+    html << "body { font-family: Arial, sans-serif; margin: 40px; }\n";
+    html << "h1 { color: #333; }\n";
+    html << "table { border-collapse: collapse; width: 100%; }\n";
+    html << "th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #ddd; }\n";
+    html << "th { background-color: #f5f5f5; }\n";
+    html << "a { text-decoration: none; color: #0066cc; }\n";
+    html << "a:hover { text-decoration: underline; }\n";
+    html << ".size { text-align: right; }\n";
+    html << ".date { font-family: monospace; }\n";
+    html << "</style>\n";
+    html << "</head>\n<body>\n";
+    html << "<h1>Index of " << requestPath << "</h1>\n";
+    html << "<table>\n";
+    html << "<tr><th>Name</th><th>Last modified</th><th>Size</th></tr>\n";
+    
+    if (requestPath != "/")
+    {
+        std::string parentPath = requestPath;
+        if (parentPath.length() > 1 && parentPath[parentPath.length() - 1] == '/')
+            parentPath = parentPath.substr(0, parentPath.length() - 1);
+        size_t lastSlash = parentPath.rfind('/');
+        if (lastSlash != std::string::npos)
+            parentPath = parentPath.substr(0, lastSlash + 1);
+        else
+            parentPath = "/";
+        html << "<tr><td><a href=\"" << parentPath << "\">../</a></td><td>-</td><td>-</td></tr>\n";
+    }
+    
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir)
+    {
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            
+            std::string fullPath = directoryPath;
+            if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/')
+                fullPath += "/";
+            fullPath += entry->d_name;
+            
+            struct stat fileStat;
+            std::string linkPath = requestPath;
+            if (!linkPath.empty() && linkPath[linkPath.length() - 1] != '/')
+                linkPath += "/";
+            linkPath += entry->d_name;
+            
+            if (stat(fullPath.c_str(), &fileStat) == 0)
+            {
+                char timeStr[256];
+                struct tm* timeinfo = localtime(&fileStat.st_mtime);
+                strftime(timeStr, sizeof(timeStr), "%d-%b-%Y %H:%M", timeinfo);
+                
+                if (S_ISDIR(fileStat.st_mode))
+                {
+                    html << "<tr><td><a href=\"" << linkPath << "/\">" << entry->d_name << "/</a></td>";
+                    html << "<td class=\"date\">" << timeStr << "</td>";
+                    html << "<td class=\"size\">-</td></tr>\n";
+                }
+                else
+                {
+                    html << "<tr><td><a href=\"" << linkPath << "\">" << entry->d_name << "</a></td>";
+                    html << "<td class=\"date\">" << timeStr << "</td>";
+                    html << "<td class=\"size\">" << fileStat.st_size << "</td></tr>\n";
+                }
+            }
+        }
+        closedir(dir);
+    }
+    
+    html << "</table>\n";
+    html << "<hr>\n";
+    html << "<address>Webserv/1.0 Server</address>\n";
+    html << "</body>\n</html>\n";
+    
+    return html.str();
+}
+
+std::string Response::getHttpStatusMessage(const std::string& statusCode) const
+{
+    if (statusCode == "301") return "Moved Permanently";
+    if (statusCode == "302") return "Found";
+    if (statusCode == "303") return "See Other";
+    if (statusCode == "307") return "Temporary Redirect";
+    if (statusCode == "308") return "Permanent Redirect";
+    return "Found";
+}
+
+bool Response::checkForRedirect(ConfigNode* locationNode, const std::string& requestPath)
+{
+    (void)requestPath;
+    if (!locationNode)
+        return false;
+    
+    std::map<std::string, std::vector<std::string> >::iterator it = locationNode->directives.find("return");
+    if (it != locationNode->directives.end() && it->second.size() == 2)
+    {
+        const std::string& statusCode = it->second[0];
+        const std::string& redirectUrl = it->second[1];
+        
+        status_code = statusCode + " " + getHttpStatusMessage(statusCode);
+        setHeaders("Location", redirectUrl);
+        setBody("");
+        return true;
+    }
+    return false;
 }

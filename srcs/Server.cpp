@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/04/07 17:02:52 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/12 17:46:07 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,6 @@ Server &Server::operator=(const Server &other)
 		isDefault = other.isDefault;
 		errorPages = other.errorPages;
 		maxBodySize = other.maxBodySize;
-		routes = other.routes;
 		_configNode = other._configNode; // Copy config node pointer
 	}
 	return *this;
