@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:12:13 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 16:00:38 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -250,7 +250,10 @@ void Webserv::handleClients(pollfd &it)
     {
         clients[it.fd]->sendResponse();
         if (clients[it.fd]->response->getConnectionType() == "keep-alive")
+        {
+            clients[it.fd]->setState(READING);
             setPollEvent(it.fd, POLLIN);
+        }
         else
             closeConn = true;
     }

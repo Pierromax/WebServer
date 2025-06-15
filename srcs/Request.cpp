@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:11:34 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 16:15:33 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,7 @@ Request::Request(int client_fd) : fd(client_fd),
                                   headers(),
                                   body(""),
                                   raw_request(""),
-                                  _bytesRead(0),
-                                  _isEmptyInput(false)
+                                  _bytesRead(0)
 {
 }
 
@@ -37,8 +36,7 @@ Request::Request(const Request &cpy) : fd(cpy.fd),
                                        headers(cpy.headers),
                                        body(cpy.body),
                                        raw_request(cpy.raw_request),
-                                       _bytesRead(cpy._bytesRead),
-                                       _isEmptyInput(cpy._isEmptyInput)
+                                       _bytesRead(cpy._bytesRead)
 {
 }
 
@@ -54,13 +52,24 @@ Request &Request::operator=(const Request &rhs)
         headers = rhs.headers;
         body = rhs.body;
         _bytesRead = rhs._bytesRead;
-        _isEmptyInput = rhs._isEmptyInput;
     }
     return (*this);
 }
 
 Request::~Request()
 {
+}
+
+void Request::reset()
+{
+    statuscode = "200 OK";
+    method = "";
+    path = "";
+    version = "";
+    headers.clear();
+    body = "";
+    raw_request = "";
+    _bytesRead = 0;
 }
 
 int Request::getfd() const { return fd; }
@@ -73,7 +82,6 @@ std::string Request::getStatusCode() const { return statuscode; }
 
 ssize_t Request::getBytesRead() const { return _bytesRead; }
 
-bool Request::isEmptyInput() const { return _isEmptyInput; }
 
 std::string Request::getBody() const
 {
@@ -100,31 +108,12 @@ void Request::ReadFromSocket()
         _bytesRead += bytes_received;
         
         if (isComplete())
-        {
-            _isEmptyInput = true;
             parseRequest(this->raw_request);
-        }
-        else
-        {
-            _isEmptyInput = false;
-        }
     }
     else if (bytes_received == 0)
-    {
         statuscode = ""; // Indicate disconnect
-        _isEmptyInput = true;
-
-    }
     else
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            statuscode = BAD_REQUEST;
-            std::cerr << "recv error: " << strerror(errno) << std::endl;
-            _isEmptyInput = true;
-
-        }
-    }
+        statuscode = BAD_REQUEST;
 }
 
 void Request::parseRequest(const std::string &buffer)
@@ -219,7 +208,7 @@ void Request::parseBody(const std::string &raw_body)
         this->body = raw_body;
 }
 
-std::string trimString(std::string &str, const std::string &charset)
+std::string trimString(const std::string &str, const std::string &charset)
 {
     if (str.empty())
         return "";
@@ -248,7 +237,7 @@ bool Request::isComplete() const
     size_t end = raw_request.find("\r\n", start);
 
     std::string strValue = raw_request.substr(start, end - start);
-    strValue = trimString(strValue, " \t");
+    trimString(strValue, " \t");
 
     std::istringstream iss(strValue);
     size_t value;

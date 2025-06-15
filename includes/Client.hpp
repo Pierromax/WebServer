@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 13:04:04 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 16:00:40 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ class Client
         time_t      getLastActivity() const;
         Server*     getServer() const;
         ClientState getState() const;
+        void        setState(ClientState newState);
         void        prepareRequest();
         void        prepareResponse();
         bool        isRequestValid() const;

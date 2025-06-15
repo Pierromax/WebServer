@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 15:55:39 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/15 16:00:35 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ time_t  Client::getLastActivity() const {return this->lastActivity;}
 
 ClientState     Client::getState() const {return state;}
 
+void            Client::setState(ClientState newState) {state = newState;}
 
 bool Client::isTimeout() const
 {
@@ -79,6 +80,8 @@ void    Client::prepareRequest()
         this->request = new Request(fd);
     if (state == READING)
     {
+        if (request->isComplete())
+            this->request->reset();
         this->request->ReadFromSocket();
         if (request->isComplete())
             state = WRITING;

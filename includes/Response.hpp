@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 14:45:38 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 15:46:41 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,19 @@ class Response
         bool        checkForRedirect(ConfigNode* locationNode, const std::string& requestPath);
         bool        shouldGenerateAutoindex(ConfigNode* locationNode) const;
         std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) const;
+        
+        // --- Directory Listing Helpers ---
+        void        generateHtmlHeader(std::stringstream& html, const std::string& requestPath) const;
+        void        generateTableHeader(std::stringstream& html) const;
+        void        generateParentDirectoryLink(std::stringstream& html, const std::string& requestPath) const;
+        std::string calculateParentPath(const std::string& requestPath) const;
+        void        generateDirectoryEntries(std::stringstream& html, const std::string& directoryPath, const std::string& requestPath) const;
+        void        generateSingleEntry(std::stringstream& html, const std::string& directoryPath, const std::string& requestPath, const std::string& entryName) const;
+        std::string buildEntryFullPath(const std::string& directoryPath, const std::string& entryName) const;
+        std::string buildEntryLinkPath(const std::string& requestPath, const std::string& entryName) const;
+        std::string formatFileTime(time_t mtime) const;
+        void        generateEntryRow(std::stringstream& html, const std::string& linkPath, const std::string& entryName, const std::string& timeStr, bool isDirectory, off_t fileSize) const;
+        void        generateHtmlFooter(std::stringstream& html) const;
         
         // --- Path Resolution Helper ---
         std::string buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const;

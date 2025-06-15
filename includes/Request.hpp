@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 14:31:48 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 16:13:39 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,6 @@ class Request
         std::string body;
         std::string raw_request;
         ssize_t     _bytesRead; // Store the result of recv()
-        bool        _isEmptyInput; // Flag for whitespace-only input
 
         void        parseRequest(const std::string &buffer);
         void        parseFirstline(const std::string &line);
@@ -54,18 +53,19 @@ class Request
         Request &operator=(const Request &rhs);
         ~Request();
 
+        // --- Getters ---
         int         getfd() const;
         std::string getMethod() const;
         std::string getPath() const;
         std::string getStatusCode() const;
-        std::string getHeader(const std::string &name) const;
         std::string getBody() const;
+        std::string getHeader(const std::string &name) const;
         ssize_t     getBytesRead() const;
-        bool        isEmptyInput() const;
         bool        isComplete() const;
         void        ReadFromSocket();
+        void        reset(); // Reset pour les connexions keep-alive
 };
 
-std::string trimString(std::string &str, const std::string &charset);
+std::string trimString(const std::string &str, const std::string &charset);
 
 #endif
