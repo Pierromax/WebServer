@@ -15,13 +15,23 @@ INC = -I $(INCLUDES_DIR)
 SRCS = $(SRCS_DIR)/Webserv.cpp \
        $(SRCS_DIR)/Server.cpp \
        $(SRCS_DIR)/Request.cpp \
-       $(SRCS_DIR)/Response.cpp \
        $(SRCS_DIR)/Client.cpp \
        $(SRCS_DIR)/CGIsHandling.cpp \
+       $(SRCS_DIR)/ParsingError.cpp \
        $(SRCS_DIR)/config/Tokenizer.cpp \
        $(SRCS_DIR)/config/Parser.cpp \
        $(SRCS_DIR)/config/ConfigValidator.cpp \
+       $(SRCS_DIR)/response/Response.cpp \
+       $(SRCS_DIR)/response/directoryListing.cpp \
+       $(SRCS_DIR)/response/errorPage.cpp \
+       $(SRCS_DIR)/response/handleCGI.cpp \
+       $(SRCS_DIR)/response/handleDelete.cpp \
+       $(SRCS_DIR)/response/handleGet.cpp \
+       $(SRCS_DIR)/response/handlePost.cpp \
+       $(SRCS_DIR)/response/pathHandling.cpp \
+       $(SRCS_DIR)/response/redirect.cpp \
        $(SRCS_DIR)/main.cpp
+
 
 #.o files
 OBJS = $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
