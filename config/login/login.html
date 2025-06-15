@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - WebServ</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 50px; }
+        .login-form { max-width: 400px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .login-form h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .login-btn { width: 100%; background: #4CAF50; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .login-btn:hover { background: #45a049; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+        .links { text-align: center; margin-top: 20px; }
+        .links a { color: #45a049; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="login-form">
+        <h1>Connexion</h1>
+        
+        <div id="error-message" class="error" style="display: none;">
+            Identifiants incorrects. Veuillez réessayer.
+        </div>
+        
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur :</label>
+                <input type="text" id="username" name="username" required 
+                       placeholder="Entrez votre nom d'utilisateur">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe :</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Entrez votre mot de passe">
+            </div>
+            
+            <button type="submit" class="login-btn">Se connecter</button>
+        </form>
+        
+        <div class="links">
+            <a href="/">Retour à l'accueil</a>
+            <br><br>
+            <small>Comptes de test : admin/admin123, user/password, webserv/42school</small>
+        </div>
+    </div>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'invalid') {
+            document.getElementById('error-message').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

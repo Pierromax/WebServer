@@ -1,4 +1,3 @@
-
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
@@ -35,7 +34,6 @@ void Response::handlePostRequest(const Request &req)
         handleUploading(req, locationNode);
 }
 
-
 void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
 {
     std::map<std::string, std::string> bodyHeaders;
@@ -70,10 +68,8 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
             std::cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
             bodyHeaders = extractPostHeaders(headerPart);
-            std::cout << "try to save" << std::endl;
             if (extractFileToSave(bodyHeaders, bodyPart, location))
                 validFile = true;
-            std::cout << "after saving file" << std::endl;
         }
     }
     std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
@@ -92,9 +88,11 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
     }
 }
 
-/* ******************************** */
-/* exclusive utils for post request */
-/********************************** */
+
+
+/* ********************************** */
+/* exclusive utils for upload request */
+/* ********************************** */
 
 std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
 {
@@ -123,15 +121,10 @@ std::map<std::string, std::string>  Response::extractPostHeaders(std::string &co
 {
     std::map<std::string, std::string>  parseHeader;
     std::stringstream                   ss(content);
-    std::string                  line;
-
-       std::cout << "=== PARSING MANUEL ===" << std::endl;
-    std::cout << "Contenu: '" << content << "'" << std::endl;
-
+    std::string                         line;
     
     while(std::getline(ss, line))
     {
-        std::cout << "=== line parsed : " << line << "===" << std::endl;
         if (line.empty() || line == "\r")
             continue;
         size_t pos = line.find(":");
@@ -140,13 +133,13 @@ std::map<std::string, std::string>  Response::extractPostHeaders(std::string &co
         std::string key = line.substr(0, pos);
         std::string value = line.substr(pos + 1);
         key = trimString(key, " \t\n\r");
-        std::cout << "key = " << key << std::endl;
         value = trimString(value, " \t\n\r");
-        std::cout << "value = " << value << std::endl ;
         parseHeader[key] = value;
     }
     return parseHeader;
 }
+
+
 
 static std::string extractFilename(std::string content)
 {
@@ -171,8 +164,6 @@ bool    Response::saveFile(std::string &filename, std::string &body, std::string
     std::string path = location + "/" + filename;
     std::ofstream file(path.c_str(), std::ios::binary);
 
-    std::cout << "path = " << path;
-
     if (!file.is_open())
     {
         status_code = INTERNAL_ERROR;
@@ -193,12 +184,6 @@ bool    Response::saveFile(std::string &filename, std::string &body, std::string
 bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, std::string &content, std::string location)
 {
     std::string filename;
-
-    
-    for(std::map<std::string, std::string>::iterator it = heads.begin(); it != heads.end(); it++)
-    {
-        std::cout << "key : " << it->first << ", value = " << it->second << std::endl;
-    }
     
     if (!heads.count("Content-Disposition"))
     {
@@ -209,7 +194,7 @@ bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, s
     size_t pos = heads.at("Content-Disposition").find("filename=");
     if (pos == std::string::npos)
     {
-        std::cout << "filename noon found" << std::endl;     
+        std::cout << "filename non found" << std::endl;     
         return false;
     }
         
@@ -223,3 +208,35 @@ bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, s
     return true;
 }
 
+/* ********************* */
+/*   Cookie gestion      */
+/* ********************* */
+
+void     Response::extractCookie(std::string &cookie)
+{
+    std::map<std::string, std::string>  splitCookie;
+    std::stringstream                   ss(cookie);
+    std::string                         line;
+    
+    while(std::getline(ss, line, ';'))
+    {
+        if (line.empty())
+            continue;
+        size_t pos = line.find("=");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        value = trimString(value, " \t\n\r");
+        splitCookie[key] = value;
+    }
+    this->Cookies = splitCookie;
+}
+
+void    Response::deleteCookie()
+{
+    std::map<std::string, std::string>::iterator it;
+    for (it = this->Cookies.begin(); it != this->Cookies.end(); it++)
+        this->Cookies.erase(it);
+}

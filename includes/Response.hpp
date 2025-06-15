@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:46:41 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 18:41:12 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class Response
         int         fd;
         std::string status_code;
         std::map <std::string, std::string> headers;
+        std::map <std::string, std::string> Cookies;
         std::string connection_type;
         std::string content_type;
         std::string body;
@@ -51,7 +52,7 @@ class Response
         std::string resolveFilePath(ConfigNode* locationNode, const std::string& requestPath) const;
         std::string getMimeType(const std::string& filePath) const;
         bool        loadPageContent(const std::string& filePath, std::string& content) const;
-        
+
         // --- Methods Handling ---
         bool        isMethodAllowed(const std::string& method, ConfigNode* locationNode) const;
 
@@ -85,6 +86,11 @@ class Response
         std::string resolveErrorPagePath(const std::string& errorPageUri, ConfigNode* directiveContext) const;
         void        generateDefaultErrorPage(const std::string& errorCode);
         void        loadErrorPage(const std::string& errorCode, ConfigNode* locationNode = NULL);
+
+        // Cookies Gestion
+        void        extractCookie(std::string &cookie);
+        void        setCookie(std::string &key, std::string &value);
+        void        deleteCookie();  
 
         // CreateReponse function
         void                                handleGetRequest(const Request &req);
