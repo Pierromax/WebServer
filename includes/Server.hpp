@@ -6,11 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-<<<<<<<<< Temporary merge branch 1
-/*   Updated: 2025/06/04 09:55:18 by cezou            ###   ########.fr       */
-=========
-/*   Updated: 2025/06/09 15:03:59 by ple-guya         ###   ########.fr       */
->>>>>>>>> Temporary merge branch 2
+/*   Updated: 2025/06/15 15:12:37 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
