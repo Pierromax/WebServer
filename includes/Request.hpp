@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/09 19:22:39 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 14:31:48 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #define PAYLOAD_TOO_LARGE "413 Payload Too Large"
 #define INTERNAL_SERVER_ERROR "500 Internal Server Error"
 
+#define INTERNAL_ERROR "500 Internal Server Error"
 
 class Request
 {

@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/12 17:47:16 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 14:32:34 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,10 +77,12 @@ class Response
         void                                handleGetRequest(const Request &req);
         void                                handlePostRequest(const Request &req);
         void                                handleDeleteRequest(const Request &req);
+        void                                handleUploading(const Request &req);
         std::vector<std::string>            splitPostBody(std::string body, std::string delim);
-        std::map<std::string, std::string>  extractPostHeaders(std::string content);
-        bool                                isFilename(std::map<std::string, std::string> headers);
-        
+        std::map<std::string, std::string>  extractPostHeaders(std::string &content);
+        bool                                extractFileToSave(std::map<std::string, std::string> &headers, std::string &content, std::string location);
+        bool                                saveFile(std::string &filename, std::string &body, std::string location);
+
     public:
         Response();
         Response(const Request &req, Server* server);

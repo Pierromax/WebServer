@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/29 13:12:45 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 13:04:04 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,19 @@ class Server;
 class Response;
 class Request;
 
+enum ClientState {
+    READING,
+    WRITING,
+};
+
 class Client
 {
     private:
         int         fd;
         sockaddr_in address;
         Server*     _server; // Pointer to the server that accepted this client
-        time_t      lastActivity;        
+        ClientState state;
+        time_t      lastActivity;
 
     public:
         Request     *request;
@@ -50,13 +56,14 @@ class Client
         Client(int clientFD, Server* server); // Updated constructor
         ~Client();
 
-        time_t  getLastActivity() const;
-        Server* getServer() const;
-        void    prepareRequest();
-        void    prepareResponse();
-        bool    isRequestValid() const;
-        void    sendResponse() const;
-        bool    isTimeout() const;
+        time_t      getLastActivity() const;
+        Server*     getServer() const;
+        ClientState getState() const;
+        void        prepareRequest();
+        void        prepareResponse();
+        bool        isRequestValid() const;
+        void        sendResponse() const;
+        bool        isTimeout() const;
 };
 
 

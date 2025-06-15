@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cezou <cezou@student.42.fr>                +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/07 16:33:23 by cezou            ###   ########.fr       */
+/*   Updated: 2025/06/15 14:52:36 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -240,13 +240,11 @@ void Webserv::handleClients(pollfd &it)
     if (it.revents & POLLIN)
     {
         clients[it.fd]->prepareRequest();
-        if (clients[it.fd]->isRequestValid())
+        if (clients[it.fd]->getState() == WRITING)
         {
             clients[it.fd]->prepareResponse();
             setPollEvent(it.fd, POLLOUT);
         }
-        else
-            closeConn = true;
     }
     else if (it.revents & POLLOUT && clients[it.fd]->response && !closeConn)
     {

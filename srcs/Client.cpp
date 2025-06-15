@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/05/30 16:18:59 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/11 13:29:00 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ Client::~Client()
 
 time_t  Client::getLastActivity() const {return this->lastActivity;}
 
+ClientState     Client::getState() const {return state;}
+
 
 bool Client::isTimeout() const
 {
@@ -72,10 +74,17 @@ void    Client::prepareResponse()
 
 void    Client::prepareRequest()
 {
-    if (this->request)
-        delete this->request;
-    this->request = new Request(fd);
-    this->request->ReadFromSocket();
+    if (!this->request)
+    {
+        this->request = new Request(fd);
+        state = READING;
+    }
+    if (state == READING)
+    {
+        this->request->ReadFromSocket();
+        if (request->isComplete())
+            state = WRITING;
+    }
 }
 
 bool    Client::isRequestValid() const
@@ -103,10 +112,13 @@ bool    Client::isRequestValid() const
 
 void Client::sendResponse() const
 {
+    if (getState() == READING)
+        return;
+
     std::string resp = this->response->build();
+    ssize_t     total_sent = 0;
+    ssize_t     resp_len = resp.size();
     
-    ssize_t total_sent = 0;
-    ssize_t resp_len = resp.size();
     while (total_sent < resp_len) 
     {
         ssize_t sent = send(this->fd, resp.c_str() + total_sent, resp_len - total_sent, 0);
