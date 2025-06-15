@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/11 17:20:31 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/13 13:37:23 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,6 @@ Response::Response(const Request &req, Server* server) : _server(server)
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
-
-    std::cout << method << std::endl;
         
     if (method == "GET")
         handleGetRequest(req);
@@ -125,7 +123,7 @@ void Response::handleGetRequest(const Request &req)
     {
         setBody(content);
         setContentType(getMimeType(filePath));
-    }
+    } 
     else
     {
         status_code = "403 Forbidden";
@@ -135,25 +133,32 @@ void Response::handleGetRequest(const Request &req)
 
 void Response::handlePostRequest(const Request &req)
 {
-    std::string contentType = req.getHeader("Content-Type");
+    this->content_type = req.getHeader("Content-Type");
+
+    if (this->content_type.find("multipart/form-data") != std::string::npos)
+        handleUploading(req);
+}
+
+void Response::handleDeleteRequest(const Request &req)
+{
+    (void)req;
+}
+
+void Response::handleUploading(const Request &req)
+{
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
     ConfigNode* locationNode = findBestLocation(req.getPath());
     std::string location = findEffectiveRoot(locationNode);
-
-    if (contentType.find("multipart/form-data") == std::string::npos)
-    {
-        status_code = BAD_REQUEST; 
-        return;
-    }
     std::cout << "find boundary " << std::endl;
-    size_t pos = contentType.find("boundary=");
+    size_t pos = content_type.find("boundary=");
+    
     if (pos == std::string::npos)
     {
         status_code = BAD_REQUEST; 
         return;
     }
-    std::string boundary = contentType.substr(pos + 9);
+    std::string boundary = content_type.substr(pos + 9);
     std::string delimiter = "--" + boundary;
     std::string content = req.getBody();
 
@@ -163,14 +168,13 @@ void Response::handlePostRequest(const Request &req)
         return;
     }
     bodies = splitPostBody(content, delimiter);
-
     bool validFile = false;
     for (std::vector<std::string>::iterator it = bodies.begin(); it != bodies.end(); it++)
     {
         pos = it->find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            std::cout << "extarct info" << std::endl;
+            std::cout << "extract info" << std::endl;
             std::string headerPart = it->substr(0, pos);
             std::cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
@@ -197,10 +201,160 @@ void Response::handlePostRequest(const Request &req)
     }
 }
 
-void Response::handleDeleteRequest(const Request &req)
+/* ******************************** */
+/* exclusive utils for post request */
+/********************************** */
+
+std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
 {
-    (void)req;
+    std::vector<std::string>    split;
+    std::string                 content;
+    size_t                      start = 0;
+    size_t                      newStart;
+
+    while (true)
+    {
+        newStart = body.find(delim, start);
+        if (newStart == std::string::npos)
+        {
+            split.push_back(body.substr(start));
+            break;
+        }
+        content = body.substr(start, newStart - start);
+        if (!content.empty())
+            split.push_back(content);
+        start = newStart + delim.length();
+    }
+    return split;
 }
+
+std::map<std::string, std::string>  Response::extractPostHeaders(std::string &content)
+{
+    std::map<std::string, std::string>  parseHeader;
+    std::stringstream                   ss(content);
+    std::string                  line;
+
+       std::cout << "=== PARSING MANUEL ===" << std::endl;
+    std::cout << "Contenu: '" << content << "'" << std::endl;
+
+    
+    while(std::getline(ss, line))
+    {
+        std::cout << "=== line parsed : " << line << "===" << std::endl;
+        if (line.empty() || line == "\r")
+            continue;
+        size_t pos = line.find(":");
+        if(pos == std::string::npos)
+            continue;
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        key = trimString(key, " \t\n\r");
+        std::cout << "key = " << key << std::endl;
+        value = trimString(value, " \t\n\r");
+        std::cout << "value = " << value << std::endl ;
+        parseHeader[key] = value;
+    }
+    return parseHeader;
+}
+
+static std::string extractFilename(std::string content)
+{
+    size_t filepos = content.find("filename=\"");
+    if (filepos == std::string::npos)
+        return ("");
+    filepos += 10;
+    size_t endpos = content.find("\"", filepos);
+    if (endpos == std::string::npos)
+        return ("");
+
+    std::string filename = content.substr(filepos, endpos - filepos);
+
+    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
+        return "";
+    
+    return filename;
+}
+
+bool    Response::saveFile(std::string &filename, std::string &body, std::string location)
+{
+    std::string path = location + "/" + filename;
+    std::ofstream file(path.c_str(), std::ios::binary);
+
+    std::cout << "path = " << path;
+
+    if (!file.is_open())
+    {
+        status_code = INTERNAL_ERROR;
+        return false;
+    }
+    
+    file.write(body.c_str(), body.size());
+    file.close();
+    
+    if (file.fail())
+    {
+        status_code = INTERNAL_ERROR; 
+        return false;
+    }
+    return true;
+}
+
+bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, std::string &content, std::string location)
+{
+    std::string filename;
+
+    
+    for(std::map<std::string, std::string>::iterator it = heads.begin(); it != heads.end(); it++)
+    {
+        std::cout << "key : " << it->first << ", value = " << it->second << std::endl;
+    }
+    
+    if (!heads.count("Content-Disposition"))
+    {
+        std::cout << "no content-dispostion" << std::endl;
+        return false;
+    }
+
+    size_t pos = heads.at("Content-Disposition").find("filename=");
+    if (pos == std::string::npos)
+    {
+        std::cout << "filename noon found" << std::endl;     
+        return false;
+    }
+        
+    filename = extractFilename(heads.at("Content-Disposition"));
+    if (filename == "")
+    {
+        
+        return false;
+    }
+
+    if (!saveFile(filename, content, location))
+        return false;
+    
+    return true;
+}
+
+/*****************************/
+/*      Build Response       */
+/*****************************/
+
+std::string Response::build() const
+{
+    std::stringstream response;
+
+    response << "HTTP/1.1 " << status_code << "\r\n";
+    response << "Content-Type: " << content_type << "\r\n";
+    response << "Content-Length: " << body.size() << "\r\n";
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+        response << it->first << ": " << it->second << "\r\n";
+    response << "Connection: " << getConnectionType() << "\r\n"; 
+    response << "\r\n";
+    response << body;
+
+    return response.str();
+}
+
 
 /****************************************/
 /* utils Request Handling Member Funcs  */
@@ -349,138 +503,6 @@ bool Response::loadPageContent(const std::string& filePath, std::string& content
     }
     return false;
 }
-/* ******************************** */
-/* exclusive utils for post request */
-
-std::vector<std::string> Response::splitPostBody(std::string body, std::string delim)
-{
-    std::vector<std::string>    split;
-    std::string                 content;
-    size_t                      start = 0;
-    size_t                      newStart;
-
-    while (true)
-    {
-        newStart = body.find(delim, start);
-        if (newStart == std::string::npos)
-        {
-            split.push_back(body.substr(start));
-            break;
-        }
-        content = body.substr(start, newStart - start);
-        if (!content.empty())
-            split.push_back(content);
-        start = newStart + delim.length();
-    }
-    return split;
-}
-
-std::map<std::string, std::string>  Response::extractPostHeaders(std::string &content)
-{
-    std::map<std::string, std::string>  parseHeader;
-    std::stringstream                   ss(content);
-    std::string                  line;
-
-       std::cout << "=== PARSING MANUEL ===" << std::endl;
-    std::cout << "Contenu: '" << content << "'" << std::endl;
-
-    
-    while(std::getline(ss, line))
-    {
-        std::cout << "=== line parsed : " << line << "===" << std::endl;
-        if (line.empty() || line == "\r")
-            continue;
-        size_t pos = line.find(":");
-        if(pos == std::string::npos)
-            continue;
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        key = trimString(key, " \t\n\r");
-        std::cout << "key = " << key << std::endl;
-        value = trimString(value, " \t\n\r");
-        std::cout << "value = " << value << std::endl ;
-        parseHeader[key] = value;
-    }
-    return parseHeader;
-}
-
-static std::string extractFilename(std::string content)
-{
-    size_t filepos = content.find("filename=\"");
-    if (filepos == std::string::npos)
-        return ("");
-    filepos += 10;
-    size_t endpos = content.find("\"", filepos);
-    if (endpos == std::string::npos)
-        return ("");
-
-    std::string filename = content.substr(filepos, endpos - filepos);
-
-    if (filename.find("..") != std::string::npos || filename.find("/") != std::string::npos)
-        return "";
-    
-    return filename;
-}
-
-bool    Response::saveFile(std::string &filename, std::string &body, std::string location)
-{
-    std::string path = location + "/" + filename;
-    std::ofstream file(path.c_str(), std::ios::binary);
-
-    std::cout << "path = " << path;
-
-    if (!file.is_open())
-    {
-        status_code = INTERNAL_ERROR;
-        return false;
-    }
-    
-    file.write(body.c_str(), body.size());
-    file.close();
-    
-    if (file.fail())
-    {
-        status_code = INTERNAL_ERROR; 
-        return false;
-    }
-    return true;
-}
-
-bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, std::string &content, std::string location)
-{
-    std::string filename;
-
-    
-    for(std::map<std::string, std::string>::iterator it = heads.begin(); it != heads.end(); it++)
-    {
-        std::cout << "key : " << it->first << ", value = " << it->second << std::endl;
-    }
-    
-    if (!heads.count("Content-Disposition"))
-    {
-        std::cout << "no content-dispostion" << std::endl;
-        return false;
-    }
-
-    size_t pos = heads.at("Content-Disposition").find("filename=");
-    if (pos == std::string::npos)
-    {
-        std::cout << "filename noon found" << std::endl;     
-        return false;
-    }
-        
-    filename = extractFilename(heads.at("Content-Disposition"));
-    if (filename == "")
-    {
-        
-        return false;
-    }
-
-    if (!saveFile(filename, content, location))
-        return false;
-    
-    return true;
-}
 
 /**********************************/
 /* Error Handling Member Funcs    */
@@ -579,24 +601,4 @@ void Response::loadErrorPage(const std::string& errorCode, ConfigNode* locationN
     }
     else
         generateDefaultErrorPage(errorCode);
-}
-
-/*****************************/
-/*      Build Response       */
-/*****************************/
-
-std::string Response::build() const
-{
-    std::stringstream response;
-
-    response << "HTTP/1.1 " << status_code << "\r\n";
-    response << "Content-Type: " << content_type << "\r\n";
-    response << "Content-Length: " << body.size() << "\r\n";
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-        response << it->first << ": " << it->second << "\r\n";
-    response << "Connection: " << getConnectionType() << "\r\n"; 
-    response << "\r\n";
-    response << body;
-
-    return response.str();
 }
