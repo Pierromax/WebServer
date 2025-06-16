@@ -208,35 +208,3 @@ bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, s
     return true;
 }
 
-/* ********************* */
-/*   Cookie gestion      */
-/* ********************* */
-
-void     Response::extractCookie(std::string &cookie)
-{
-    std::map<std::string, std::string>  splitCookie;
-    std::stringstream                   ss(cookie);
-    std::string                         line;
-    
-    while(std::getline(ss, line, ';'))
-    {
-        if (line.empty())
-            continue;
-        size_t pos = line.find("=");
-        if(pos == std::string::npos)
-            continue;
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        key = trimString(key, " \t\n\r");
-        value = trimString(value, " \t\n\r");
-        splitCookie[key] = value;
-    }
-    this->Cookies = splitCookie;
-}
-
-void    Response::deleteCookie()
-{
-    std::map<std::string, std::string>::iterator it;
-    for (it = this->Cookies.begin(); it != this->Cookies.end(); it++)
-        this->Cookies.erase(it);
-}

@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 18:41:12 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/16 16:30:37 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,10 +87,15 @@ class Response
         void        generateDefaultErrorPage(const std::string& errorCode);
         void        loadErrorPage(const std::string& errorCode, ConfigNode* locationNode = NULL);
 
+        //login handling
+        bool        checkLogin(const Request &req);
+        void        handleLogin(const Request &req);
+
         // Cookies Gestion
-        void        extractCookie(std::string &cookie);
+        void        extractCookie(const std::string &cookie);
         void        setCookie(std::string &key, std::string &value);
-        void        deleteCookie();  
+        void        deleteCookie();
+        bool        ckeckcredentials();
 
         // CreateReponse function
         void                                handleGetRequest(const Request &req);
@@ -101,6 +106,7 @@ class Response
         std::map<std::string, std::string>  extractPostHeaders(std::string &content);
         bool                                extractFileToSave(std::map<std::string, std::string> &headers, std::string &content, std::string location);
         bool                                saveFile(std::string &filename, std::string &body, std::string location);
+        
 
     public:
         Response();

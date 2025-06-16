@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:24:57 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/16 16:24:03 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,9 @@ Response::Response(const Request &req, Server* server) : _server(server)
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
-        
+
+    if (!checkLogin(req))
+        return;
     if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
@@ -92,7 +94,6 @@ void Response::setBody(const std::string &body)
 {
     this->body = body;
 }
-
 
 std::string Response::build() const
 {
