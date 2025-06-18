@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/16 16:51:05 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/18 17:56:34 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,37 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+void    Response::handleLogin(const Request &req, ConfigNode *locationNode)
+{
+    std::string body = req.getBody();
+    std::string username;
+    std::string password;
+    size_t      delimPos;
+
+    delimPos = body.find("&");
+    if (delimPos == std::string::npos)
+        return;
+        
+    size_t userPos = body.find("username=") + 9;
+    if (userPos != std::string::npos)
+        username = body.substr(userPos, delimPos - 9);
+        
+    size_t passPos = body.find("password=");
+    if (passPos != std::string::npos)
+        password = body.substr(passPos + 9);
+
+    
+}
+
+
 
 bool    Response::checkLogin(const Request &req)
 {
     extractCookie(req.getHeader("Cookies"));
-    
+    if (this->Cookies.empty())
+        return false;
+    return true;
 }
-
 
 /* ********************* */
 /*   Cookie gestion      */

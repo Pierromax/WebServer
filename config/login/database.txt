@@ -1,3 +1,4 @@
 pierre:pierre
 admin:admin123
 test:test123
+admin/admin123

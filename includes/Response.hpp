@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/16 16:30:37 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/18 17:16:35 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ class Response
 
         //login handling
         bool        checkLogin(const Request &req);
-        void        handleLogin(const Request &req);
+        void        handleLogin(const Request &req, ConfigNode *locationNode);
 
         // Cookies Gestion
         void        extractCookie(const std::string &cookie);

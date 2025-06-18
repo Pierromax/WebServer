@@ -22,6 +22,7 @@ SRCS = $(SRCS_DIR)/Webserv.cpp \
        $(SRCS_DIR)/config/Parser.cpp \
        $(SRCS_DIR)/config/ConfigValidator.cpp \
        $(SRCS_DIR)/response/Response.cpp \
+	   $(SRCS_DIR)/response/login.cpp \
        $(SRCS_DIR)/response/directoryListing.cpp \
        $(SRCS_DIR)/response/errorPage.cpp \
        $(SRCS_DIR)/response/handleCGI.cpp \

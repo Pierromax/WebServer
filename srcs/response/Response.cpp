@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/16 16:24:03 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/18 17:11:10 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,9 +27,12 @@ Response::Response(const Request &req, Server* server) : _server(server)
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
 
-    if (!checkLogin(req))
-        return;
-    if (method == "GET")
+    // if (!checkLogin(req))
+    //     handleLogin(req);
+    std::cout << "=== method ask : " << method << "===" << std::endl;
+    std::cout << "" << std::endl;
+    
+      if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
         handlePostRequest(req);

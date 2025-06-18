@@ -32,6 +32,8 @@ void Response::handlePostRequest(const Request &req)
 
     if (this->content_type.find("multipart/form-data") != std::string::npos)
         handleUploading(req, locationNode);
+    if (this->content_type.find("application/x-www-form-urlencoded") != std::string::npos)
+        handleLogin(req, locationNode);
 }
 
 void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
@@ -39,7 +41,6 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
     std::string location = findEffectiveRoot(locationNode);
-    std::cout << "find boundary " << std::endl;
     size_t pos = content_type.find("boundary=");
     
     if (pos == std::string::npos)
@@ -63,7 +64,6 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
         pos = it->find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            std::cout << "extract info" << std::endl;
             std::string headerPart = it->substr(0, pos);
             std::cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
