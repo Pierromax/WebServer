@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:00:38 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/21 19:36:36 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -199,7 +199,7 @@ void Webserv::run()
         {
             if (it->fd == -1)
                 continue;
-            if (it->revents == 0)  // Pas d'événements sur ce fd
+            if (it->revents == 0)
                 continue;
             if (servers.count(it->fd))
                 handleServers(*it);
@@ -231,7 +231,6 @@ void Webserv::handleServers(pollfd &it)
 void Webserv::handleClients(pollfd &it)
 {
     bool closeConn = false;
-
     if (it.revents & (POLLERR | POLLHUP))
     {
         std::cerr << "Error or HUP on client fd = " << it.fd << std::endl;
@@ -257,7 +256,7 @@ void Webserv::handleClients(pollfd &it)
         else
             closeConn = true;
     }
-    if (closeConn || clients[it.fd]->isTimeout())
+    if (closeConn)
         closeClientConnection(it.fd);
 }
 

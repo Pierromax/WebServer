@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/15 15:12:37 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/21 21:11:11 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <cstddef> // for size_t
 #include <poll.h>  // for pollfd
 #include <sys/socket.h>
+#include <ctime>
 #include <netinet/in.h>
 #include <stdexcept>
 #include <cstring>
@@ -29,33 +30,47 @@
 // Forward declaration
 struct ConfigNode;
 
+struct sessionData
+{
+    std::string 	userName;
+	unsigned int 	max_age;
+    time_t      	createdAt;
+    time_t      	expiresAt;
+};
 
 class Server
 {
-public:
-	Server();
-	Server(const Server &other);
-	Server &operator=(const Server &other);
-	~Server();
+	public:
+		Server();
+		Server(const Server &other);
+		Server &operator=(const Server &other);
+		~Server();
 
-	Server(ConfigNode *configNode); // New constructor
+		Server(ConfigNode *configNode); // New constructor
+	
+	
+		int getfd() const;
+		sockaddr_in getAddress() const;
+	
+		std::string host;
+		int port;
+		std::vector<std::string> serverNames;
+		bool isDefault;
+		std::map<int, std::string> errorPages;
+		size_t 		maxBodySize;
+		ConfigNode* getConfigNode() const; // Getter for the config node
 
-	int getfd() const;
-	sockaddr_in getAddress() const;
-
-	std::string host;
-	int port;
-	std::vector<std::string> serverNames;
-	bool isDefault;
-	std::map<int, std::string> errorPages;
-	size_t maxBodySize;
-	ConfigNode* getConfigNode() const; // Getter for the config node
-
-private:
-	int fd;
-	sockaddr_in adress;
-	socklen_t adrLen;
-	ConfigNode* _configNode; // Store the config node used to create this server
+		// gestion de sessions
+		std::pair<std::string, sessionData> createSession(std::string username);
+		bool	isActiveSession(std::string &id);
+	
+	private:
+		int fd;
+		sockaddr_in adress;
+		socklen_t adrLen;
+		ConfigNode* _configNode; // Store the config node used to create this server
+		std::map<std::string, sessionData> activeSessions;
 };
+std::string intToString(int value);
 
 #endif // SERVER_HPP

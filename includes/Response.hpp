@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/18 17:16:35 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/21 22:47:38 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include "Webserv.hpp"
 #include "Utils.hpp"
 #include "CGIsHandling.hpp"
+#include <cstdlib>
 #include <map>
 #include <iostream>
 #include <string>
@@ -31,6 +32,8 @@
 // Forward declarations
 struct ConfigNode;
 
+struct sessionData;
+
 class Response
 {
     private:
@@ -38,6 +41,7 @@ class Response
         std::string status_code;
         std::map <std::string, std::string> headers;
         std::map <std::string, std::string> Cookies;
+        std::pair<std::string, sessionData> lastSession;
         std::string connection_type;
         std::string content_type;
         std::string body;
@@ -90,13 +94,15 @@ class Response
         //login handling
         bool        checkLogin(const Request &req);
         void        handleLogin(const Request &req, ConfigNode *locationNode);
-
+        void        createSession(std::string username);
+        
         // Cookies Gestion
         void        extractCookie(const std::string &cookie);
-        void        setCookie(std::string &key, std::string &value);
+        void        setCookie(const std::string &key, const std::string &value);
+        void        setCookieUser();
         void        deleteCookie();
-        bool        ckeckcredentials();
-
+        bool        checkDB(std::string path, std::string userName, std::string password);
+        
         // CreateReponse function
         void                                handleGetRequest(const Request &req);
         void                                handlePostRequest(const Request &req);
@@ -107,14 +113,13 @@ class Response
         bool                                extractFileToSave(std::map<std::string, std::string> &headers, std::string &content, std::string location);
         bool                                saveFile(std::string &filename, std::string &body, std::string location);
         
-
     public:
         Response();
         Response(const Request &req, Server* server);
         Response(const Response &cpy);
         Response &operator=(const Response &rhs);
         ~Response();
-
+        
         void        setStatusCode(const std::string &status);
         void        setContentType(const std::string &type);
         void        setBody(const std::string &body);
@@ -125,5 +130,6 @@ class Response
         std::string build() const;
         void        sendResponse() const;
 };
+
 
 #endif

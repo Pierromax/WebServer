@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/12 17:46:07 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/21 21:57:31 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,8 @@ Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), 
 	int opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("failed to set socket reuse port option");
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw std::runtime_error("failed to set socket options");
+	// if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	// 	throw std::runtime_error("failed to set socket options");
 
 	adress.sin_family = AF_INET;
 	adress.sin_addr.s_addr = INADDR_ANY;
@@ -108,4 +108,52 @@ ConfigNode* Server::getConfigNode() const
 
 Server::~Server()
 {
+}
+
+/* ******************** */
+/* Gestion des sessions */
+/* ******************** */
+
+std::pair<std::string, sessionData>    Server::createSession(std::string username)
+{
+    sessionData user;
+    std::string sessionID;
+    time_t      creationTime = time(NULL);
+    
+    unsigned int seed = static_cast<unsigned int>(creationTime);
+    int random = rand_r(&seed);
+
+    sessionID = "sess_" + intToString(creationTime) + intToString(random);
+	
+    user.userName = username;
+	user.max_age = 3600;
+    user.createdAt = creationTime;
+    user.expiresAt = creationTime + user.max_age;
+	 
+    this->activeSessions.insert(std::make_pair(sessionID, user));
+
+	return std::make_pair(sessionID, user);
+}
+
+bool	Server::isActiveSession(std::string &id)
+{
+	std::map<std::string, sessionData>::const_iterator it = activeSessions.find(id);
+	if (it == activeSessions.end())
+		return false;
+
+	time_t now = time(NULL);
+	if (now > it->second.expiresAt) {
+		activeSessions.erase(id);
+		return false;
+	}
+	return true;
+}
+
+std::string intToString(int value)
+{
+    std::stringstream ss;
+    ss << value;
+	std::string result = ss.str();
+	
+    return result;
 }

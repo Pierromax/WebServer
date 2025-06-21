@@ -21,7 +21,7 @@ void Response::handleGetRequest(const Request &req)
         return;
 
     std::string filePath = resolveFilePath(locationNode, path);
-    std::cout << "Chemin complet du fichier: " << filePath << std::endl;
+    std::cout << "in complet du fichier: " << filePath << std::endl;
 
     if (filePath.empty())
     {

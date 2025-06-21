@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:28:22 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/21 19:33:54 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,29 +48,12 @@ ClientState     Client::getState() const {return state;}
 
 void            Client::setState(ClientState newState) {state = newState;}
 
-bool Client::isTimeout() const
-{
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    
-    // Configuration adaptative selon l'état
-    time_t timeout_value;
-    if (!request || !request->isComplete())
-        timeout_value = CONNECTION_ESTABLISHMENT_TIMEOUT; // ~30s
-    else if (response)
-        timeout_value = RESPONSE_SENDING_TIMEOUT; // ~60s
-    else
-        timeout_value = KEEPALIVE_TIMEOUT; // ~120s
-    
-    return (now.tv_sec - lastActivity) > timeout_value;
-}
-
 Server* Client::getServer() const { return _server; }
 
 void    Client::prepareResponse()
 {
     if (this->response)
-        delete(this->response);
+    delete(this->response);
     this->response = new Response(*request, getServer());
 }
 
@@ -89,7 +72,7 @@ void    Client::prepareRequest()
 }
 
 void Client::sendResponse() const
-{
+{ 
     if (getState() == READING)
         return;
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:15:33 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/21 19:36:05 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ void Request::ReadFromSocket()
 {
     char buffer[2048] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
-
+    
     if (bytes_received > 0)
     {
         this->raw_request.append(buffer, bytes_received);

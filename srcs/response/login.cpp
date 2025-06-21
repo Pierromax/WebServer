@@ -6,20 +6,23 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/18 17:56:34 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/21 21:08:27 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include "Request.hpp"
-#include "Response.hpp"
 
 void    Response::handleLogin(const Request &req, ConfigNode *locationNode)
 {
     std::string body = req.getBody();
+    std::string path = req.getPath();
+    std::string root = findEffectiveRoot(locationNode);
+    std::string location = root + path;
     std::string username;
     std::string password;
     size_t      delimPos;
+
 
     delimPos = body.find("&");
     if (delimPos == std::string::npos)
@@ -33,16 +36,79 @@ void    Response::handleLogin(const Request &req, ConfigNode *locationNode)
     if (passPos != std::string::npos)
         password = body.substr(passPos + 9);
 
-    
+    if (checkDB(location, username, password))
+        createSession(username);
 }
 
-
-
-bool    Response::checkLogin(const Request &req)
+void    Response::createSession(std::string username)
 {
-    extractCookie(req.getHeader("Cookies"));
-    if (this->Cookies.empty())
+    lastSession = this->_server->createSession(username);
+    setCookie("session_id", lastSession.first);
+    setCookie("Max_Age", intToString(lastSession.second.max_age));
+    setCookieUser();
+}
+
+bool    Response::checkDB(std::string path, std::string username, std::string password)
+{
+    std::string                         locDB = path + "/database.txt";
+    std::map<std::string, std::string>  users;
+    std::string                         line;
+    
+    std::ifstream                       dataBase(locDB.c_str());
+    if (dataBase.fail() || !dataBase.is_open())
         return false;
+
+    while(std::getline(dataBase, line))
+    {
+        if (line.empty())
+            continue;
+        line = trimString(line, " \r\t");
+        size_t pos = line.find (":");
+        if (pos == std::string::npos)
+            continue;
+        std::string dbUser = line.substr(0, pos);
+        std::string dbPassword = line.substr(pos + 1);
+        if (username == dbUser && dbPassword == password)
+        {
+            dataBase.close();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Response::checkLogin(const Request &req)
+{
+    std::cout << "=== DÉBUT checkLogin ===" << std::endl;
+    
+    std::string cookieHeader = req.getHeader("Cookie");
+    if (cookieHeader.empty()) {
+        std::cout << "Aucun cookie dans la requête" << std::endl;
+        return false;
+    }
+    
+    extractCookie(cookieHeader);
+    
+    std::map<std::string, std::string>::iterator it = this->Cookies.find("session_id");
+    if (it == this->Cookies.end()) {
+        std::cout << "Cookie session_id non trouvé" << std::endl;
+        return false;
+    }
+    
+    std::string sessionID = it->second;
+    if (sessionID.empty()) {
+        std::cout << "SessionID vide" << std::endl;
+        return false;
+    }
+    
+    std::cout << "SessionID trouvé: " << sessionID << std::endl;
+    
+    if (!_server->isActiveSession(sessionID)) {
+        std::cout << "Session invalide ou expirée: " << sessionID << std::endl;
+        return false;
+    }
+    
+    std::cout << "Session valide: " << sessionID << std::endl;
     return true;
 }
 
@@ -75,4 +141,24 @@ void     Response::extractCookie(const std::string &cookie)
 void    Response::deleteCookie()
 {
     Cookies.clear();
+    setHeaders("Set-Cookie", "session_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; HttpOnly");
+}
+
+void    Response::setCookie(const std::string &key, const std::string &value)
+{
+    this->Cookies.insert(std::make_pair(key, value));
+}
+
+void        Response::setCookieUser()
+{
+    std::map<std::string, std::string>::iterator it = Cookies.begin();
+    std::string cookieLine;
+    
+    cookieLine = it->first + "=" + it->second + ";";
+    it++;
+    
+    for (; it != Cookies.end(); it++)
+        cookieLine.append(" " + it->first + "=" + it->second + ";");
+        
+    setHeaders("Set-Cookie", cookieLine);
 }
