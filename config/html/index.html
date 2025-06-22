@@ -38,6 +38,10 @@
     <div class="upload-rediretion">
         <button type="button" class="select-button" id="uploadButton">Upload</button>
     </div>
+    <h2> </h2>
+    <div class="upload-rediretion">
+        <button type="button" class="select-button" id="loginButton">Login</button>
+    </div>
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', function()
@@ -46,6 +50,12 @@
         uButton.addEventListener('click', function()
         {
         window.location.href = '/upload';
+        });
+
+        var loginButton = document.getElementById('loginButton');
+        loginButton.addEventListener('click', function()
+        {
+        window.location.href = '/login';
         });
     });
 

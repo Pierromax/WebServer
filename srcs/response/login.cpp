@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/21 21:08:27 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/22 03:30:29 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,13 @@ void    Response::handleLogin(const Request &req, ConfigNode *locationNode)
         password = body.substr(passPos + 9);
 
     if (checkDB(location, username, password))
+    {
         createSession(username);
+        status_code = "302 found";
+        setHeaders("location", "/");
+        setHeaders("Content-Type", "text/html");
+        setBody("");
+    }
 }
 
 void    Response::createSession(std::string username)
