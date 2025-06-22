@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/22 03:30:29 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/22 15:25:15 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,34 +23,25 @@ void    Response::handleLogin(const Request &req, ConfigNode *locationNode)
     std::string password;
     size_t      delimPos;
 
-
     delimPos = body.find("&");
     if (delimPos == std::string::npos)
         return;
-        
     size_t userPos = body.find("username=") + 9;
     if (userPos != std::string::npos)
         username = body.substr(userPos, delimPos - 9);
-        
     size_t passPos = body.find("password=");
     if (passPos != std::string::npos)
         password = body.substr(passPos + 9);
-
-    if (checkDB(location, username, password))
-    {
-        createSession(username);
-        status_code = "302 found";
-        setHeaders("location", "/");
-        setHeaders("Content-Type", "text/html");
-        setBody("");
-    }
+    if (!checkDB(location, username, password))
+        return redirectTo("/login");
+    createSession(username);
+    redirectTo("/");
 }
 
 void    Response::createSession(std::string username)
 {
     lastSession = this->_server->createSession(username);
     setCookie("session_id", lastSession.first);
-    setCookie("Max_Age", intToString(lastSession.second.max_age));
     setCookieUser();
 }
 
@@ -84,37 +75,25 @@ bool    Response::checkDB(std::string path, std::string username, std::string pa
 }
 
 bool Response::checkLogin(const Request &req)
-{
-    std::cout << "=== DÉBUT checkLogin ===" << std::endl;
-    
+{    
     std::string cookieHeader = req.getHeader("Cookie");
-    if (cookieHeader.empty()) {
-        std::cout << "Aucun cookie dans la requête" << std::endl;
+    if (cookieHeader.empty())
         return false;
-    }
-    
     extractCookie(cookieHeader);
     
     std::map<std::string, std::string>::iterator it = this->Cookies.find("session_id");
-    if (it == this->Cookies.end()) {
-        std::cout << "Cookie session_id non trouvé" << std::endl;
+    if (it == this->Cookies.end())
         return false;
-    }
     
     std::string sessionID = it->second;
-    if (sessionID.empty()) {
-        std::cout << "SessionID vide" << std::endl;
+    if (sessionID.empty())
         return false;
-    }
-    
-    std::cout << "SessionID trouvé: " << sessionID << std::endl;
-    
+
     if (!_server->isActiveSession(sessionID)) {
-        std::cout << "Session invalide ou expirée: " << sessionID << std::endl;
+        deleteCookie();
         return false;
     }
     
-    std::cout << "Session valide: " << sessionID << std::endl;
     return true;
 }
 
@@ -160,11 +139,19 @@ void        Response::setCookieUser()
     std::map<std::string, std::string>::iterator it = Cookies.begin();
     std::string cookieLine;
     
-    cookieLine = it->first + "=" + it->second + ";";
+    cookieLine = it->first + "=" + it->second;
     it++;
     
     for (; it != Cookies.end(); it++)
-        cookieLine.append(" " + it->first + "=" + it->second + ";");
+        cookieLine.append("; " + it->first + "=" + it->second);
         
     setHeaders("Set-Cookie", cookieLine);
+}
+
+void    Response::redirectTo(std::string const &path)
+{
+    status_code = "302 found";
+    setHeaders("location", path);
+    setHeaders("Content-Type", "text/html");
+    setBody("");  
 }
