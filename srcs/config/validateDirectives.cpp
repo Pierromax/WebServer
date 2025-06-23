@@ -208,15 +208,8 @@ void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &fil
         if (serverPorts.find(port) != serverPorts.end())
             throw ParsingError("duplicate listen port " + it->second[i] + " in same server", filename, serverNode->line);
         serverPorts.insert(port);
-        
-        std::map<int, size_t>::iterator portIt = usedPorts.find(port);
-        if (portIt != usedPorts.end()) {
-            std::stringstream err;
-            err << "duplicate listen port " << port << " (first defined at line " << portIt->second << ")";
-            throw ParsingError(err.str(), filename, serverNode->line);
-        }
-        usedPorts[port] = serverNode->line;
     }
+    (void)usedPorts;
 }
 
 /**

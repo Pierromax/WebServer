@@ -68,20 +68,31 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("failed to set socket options");
 
-	adress.sin_family = AF_INET;
-	adress.sin_addr.s_addr = INADDR_ANY;
-	_configNode = configNode; // Store the config node
+	_configNode = configNode;
 	port = DEFAULT_PORT;
-	std::map<std::string, std::vector<std::string> >::const_iterator it = configNode->directives.find("listen");
-	if (it != configNode->directives.end() && !it->second.empty())
+	host = "0.0.0.0";
+	
+	if (!configNode->listenPairs.empty())
 	{
-		std::stringstream portStream(it->second[0]);
-		if (!(portStream >> port))
-		{
-			std::cout << "Warning: Invalid port value, using default port " << DEFAULT_PORT << std::endl;
-			port = DEFAULT_PORT;
-		}
+		host = configNode->listenPairs[0].first;
+		port = configNode->listenPairs[0].second;
+		if (host.empty())
+			host = "0.0.0.0";
 	}
+
+	std::map<std::string, std::vector<std::string> >::const_iterator serverNameIt = 
+		configNode->directives.find("server_name");
+	if (serverNameIt != configNode->directives.end())
+	{
+		for (size_t i = 0; i < serverNameIt->second.size(); ++i)
+			serverNames.push_back(serverNameIt->second[i]);
+	}
+
+	adress.sin_family = AF_INET;
+	if (host == "0.0.0.0" || host.empty())
+		adress.sin_addr.s_addr = INADDR_ANY;
+	else
+		adress.sin_addr.s_addr = inet_addr(host.c_str());
 	adress.sin_port = htons(port);
 
 	adrLen = sizeof(adress);
@@ -92,7 +103,7 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 		throw std::runtime_error("failed to get nonBlock socket");
 	if (listen(fd, 10) < 0)
 		throw std::runtime_error("can't listen serveur");
-	std::cout << "Serveur en écoute sur le port " << port << std::endl;
+	std::cout << "Serveur en écoute sur " << host << ":" << port << std::endl;
 }
 
 int Server::getfd() const
@@ -162,4 +173,36 @@ std::string intToString(int value)
 	std::string result = ss.str();
 	
     return result;
+}
+
+/**
+ * @brief Checks if the server matches the given Host header
+ * @param hostHeader The Host header from the HTTP request
+ * @return true if this server should handle the request
+ */
+bool Server::matchesServerName(const std::string& hostHeader) const
+{
+	if (serverNames.empty())
+		return true;
+	
+	std::string hostname = hostHeader;
+	size_t colonPos = hostHeader.find(':');
+	if (colonPos != std::string::npos)
+		hostname = hostHeader.substr(0, colonPos);
+	
+	for (size_t i = 0; i < serverNames.size(); ++i)
+	{
+		if (serverNames[i] == hostname)
+			return true;
+	}
+	return false;
+}
+
+/**
+ * @brief Adds a server name to this server
+ * @param name Server name to add
+ */
+void Server::addServerName(const std::string& name)
+{
+	serverNames.push_back(name);
 }

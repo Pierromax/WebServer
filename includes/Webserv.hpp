@@ -154,6 +154,22 @@ struct ConfigNode
         }
     }
 
+    ConfigNode(const ConfigNode &other)
+        : type(other.type), value(other.value), parent(other.parent), line(other.line)
+    {
+        directives = other.directives;
+        directiveLines = other.directiveLines;
+        client_max_body_size = other.client_max_body_size;
+        autoindex = other.autoindex;
+        cgiHandlers = other.cgiHandlers;
+        listenPairs = other.listenPairs;
+        isAuthRequired = other.isAuthRequired;
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            allowedMethods[i] = other.allowedMethods[i];
+        for (size_t i = 0; i < other.children.size(); ++i)
+            children.push_back(new ConfigNode(*other.children[i]));
+    }
+
     ~ConfigNode()
     {
         for (size_t i = 0; i < children.size(); ++i)
@@ -211,6 +227,7 @@ private:
     socklen_t adrLen;
     std::vector<pollfd> fds;
     std::map<int, Server*> servers;
+    std::vector<Server*> orderedServers;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;
 
@@ -270,6 +287,7 @@ public:
     void displayConfig(ConfigNode *node, int depth = 0);
 
     void setPollEvent(int fd, short events);
+    Server* findBestServer(int port, const std::string& hostHeader);
 };
 
 bool isPortAvailable(int port);

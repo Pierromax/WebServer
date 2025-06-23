@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <ctime>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdexcept>
 #include <cstring>
 #include <fcntl.h>
@@ -59,7 +60,9 @@ class Server
 		bool isDefault;
 		std::map<int, std::string> errorPages;
 		size_t 		maxBodySize;
-		ConfigNode* getConfigNode() const; // Getter for the config node
+		ConfigNode* getConfigNode() const;
+		bool matchesServerName(const std::string& hostHeader) const;
+		void addServerName(const std::string& name); // Getter for the config node
 
 		std::pair<std::string, sessionData> createSession(std::string username);
 		bool	isActiveSession(std::string const &id);

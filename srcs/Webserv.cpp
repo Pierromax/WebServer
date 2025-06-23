@@ -124,7 +124,7 @@ void Webserv::acceptNewClient(Server *server)
     }
     
     std::cout << "Nouveau client accepté avec fd = " << client_fd << std::endl;
-    Client *newclient = new Client(client_fd, server); // Pass server pointer
+    Client *newclient = new Client(client_fd, server, this);
     pollfd newfd;
     std::cout << "client accepted" << std::endl;
     newfd.fd = client_fd;
@@ -290,8 +290,10 @@ void Webserv::launchServers()
     
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
-    servers.clear();    
+    servers.clear();
+    orderedServers.clear();
     fds.clear();
+    
     if (rootConfig && !rootConfig->children.empty())
     {
         for (size_t i = 0; i < rootConfig->children.size(); ++i)
@@ -300,15 +302,26 @@ void Webserv::launchServers()
             if (serverNode->type != "server")
                 continue;
 
-            Server *newServer = new Server(serverNode);
-            pollfd newfd;
-            newfd.fd = newServer->getfd();
-            newfd.events = POLLIN;
-            newfd.revents = 0;
-            fds.push_back(newfd);
-            servers[newfd.fd] = newServer;
-            std::cout << "Server added on fd = " << newfd.fd 
-                      << " (port " << ntohs(newServer->getAddress().sin_port) << ")" << std::endl;
+            for (size_t j = 0; j < serverNode->listenPairs.size(); ++j)
+            {
+                std::string host = serverNode->listenPairs[j].first;
+                int port = serverNode->listenPairs[j].second;
+                
+                ConfigNode *serverCopy = new ConfigNode(*serverNode);
+                serverCopy->listenPairs.clear();
+                serverCopy->listenPairs.push_back(std::make_pair(host, port));
+                
+                Server *newServer = new Server(serverCopy);
+                pollfd newfd;
+                newfd.fd = newServer->getfd();
+                newfd.events = POLLIN;
+                newfd.revents = 0;
+                fds.push_back(newfd);
+                servers[newfd.fd] = newServer;
+                orderedServers.push_back(newServer);
+                std::cout << "Server added on fd = " << newfd.fd 
+                          << " (host:port " << host << ":" << port << ")" << std::endl;
+            }
         }
     }
     
@@ -321,6 +334,7 @@ void Webserv::launchServers()
         newfd.revents = 0;
         fds.push_back(newfd);
         servers[newfd.fd] = defaultServer;
+        orderedServers.push_back(defaultServer);
         std::cout << "Default server added on fd = " << newfd.fd << std::endl;
     }
 }
@@ -370,4 +384,31 @@ void Webserv::setPollEvent(int fd, short events)
             break;
         }
     }
+}
+
+/**
+ * @brief Finds the best server to handle a request based on port and Host header
+ * @param port Port number from the request
+ * @param hostHeader Host header from the HTTP request
+ * @return Best matching server or default server for the port
+ */
+Server* Webserv::findBestServer(int port, const std::string& hostHeader)
+{
+    Server* defaultServer = NULL;
+    
+    for (size_t i = 0; i < orderedServers.size(); ++i)
+    {
+        Server* server = orderedServers[i];
+        
+        if (ntohs(server->getAddress().sin_port) != port)
+            continue;
+            
+        if (!defaultServer)
+            defaultServer = server;
+            
+        if (server->matchesServerName(hostHeader))
+            return server;
+    }
+    
+    return defaultServer;
 }
