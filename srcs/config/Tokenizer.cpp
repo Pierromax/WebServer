@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/23 16:43:07 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 20:15:36 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,10 +142,10 @@ void Webserv::tokenizeLine(const std::string &line, std::size_t lineNum, std::ve
  */
 void Webserv::displayTokens(const std::vector<Token> &tokens)
 {
-    std::cout << "Tokens found: " << tokens.size() << std::endl;
+    d_cout << "Tokens found: " << tokens.size() << std::endl;
     for (std::size_t i = 0; i < tokens.size(); ++i)
     {
-        std::cout << "Token " << i << ": ";
+        d_cout << "Token " << i << ": ";
         tokens[i].display();
     }
 }

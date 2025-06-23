@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 16:10:57 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 20:15:36 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,7 @@ std::string Request::extractTempPath()
     
     if (iss >> tempMethod >> tempPath >> tempVersion)
     {
-        std::cout << "Temporary path extracted: " << tempPath << std::endl;
+        d_cout << "Temporary path extracted: " << tempPath << std::endl;
         return tempPath;
     }
     return "";
@@ -158,7 +158,7 @@ void Request::updateMaxBodySize(const std::string& tempPath)
     ConfigNode* locationNode = findBestLocation(tempPath, _server);
     if (locationNode)
         _maxBodySize = locationNode->client_max_body_size;
-    std::cout << "Max body size for this request: " << _maxBodySize << " bytes." << std::endl;
+    d_cout << "Max body size for this request: " << _maxBodySize << " bytes." << std::endl;
 }
 
 /**
@@ -195,7 +195,7 @@ bool Request::checkContentLengthLimit(size_t contentLength)
 {
     if (contentLength > _maxBodySize)
     {
-        std::cout << "Content-Length (" << contentLength << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
+        d_cout << "Content-Length (" << contentLength << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
         return true;
     }
     return false;
@@ -209,7 +209,7 @@ bool Request::checkCurrentBodySize()
 {
     if (static_cast<int>(_bytesRead) - static_cast<int>(_headerSize) > static_cast<int>(_maxBodySize))
     {
-        std::cout << "Body size (" << (_bytesRead - _headerSize) << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
+        d_cout << "Body size (" << (_bytesRead - _headerSize) << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
         return true;
     }
     return false;
@@ -221,7 +221,7 @@ bool Request::checkCurrentBodySize()
  */
 bool Request::isRequestTooLong()
 {
-    std::cout << "Step " << _step << ": Checking request length." << std::endl;
+    d_cout << "Step " << _step << ": Checking request length." << std::endl;
 
     if (_step == 0)
     {
@@ -338,7 +338,7 @@ void Request::parseHeader(const std::string &line)
 // a faire en separant si la requete est POST ou DELETE
 void Request::parseBody(const std::string &raw_body)
 {
-    std::cout << "enter parse body" << std::endl;
+    d_cout << "enter parse body" << std::endl;
     if (raw_body.empty() || !headers.count("Content-Length"))
     {
         this->body = "";
@@ -396,7 +396,7 @@ bool Request::isComplete() const
     iss >> value;
     if (value == 0)
     {
-        std::cout << "value == 0" << std::endl;
+        d_cout << "value == 0" << std::endl;
         return true;
     }
     if (raw_request.length() - (headerEnd + 4) < value)

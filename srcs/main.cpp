@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:03:07 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/12 16:50:33 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 20:12:16 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ int main(int ac, char **av)
         if (ac == 2)
             config_file = av[1];
         Webserv webserver(config_file);
-        std::cout << B GREEN "Webserver initialized successfully with config: " 
+        d_cout << B GREEN "Webserver initialized successfully with config: " 
                   << config_file << R << std::endl;
 		if (!CONFIG_TESTER)
         	webserver.run();

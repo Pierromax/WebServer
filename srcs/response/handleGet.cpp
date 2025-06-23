@@ -8,7 +8,7 @@ void Response::handleGetRequest(const Request &req)
     ConfigNode* locationNode = findBestLocation(path, _server);
     std::string content;
     
-    std::cout << "URL demandée: " << req.getPath() << std::endl;
+    d_cout << "URL demandée: " << req.getPath() << std::endl;
 
     if (!isMethodAllowed("GET", locationNode))
     {
@@ -31,7 +31,7 @@ void Response::handleGetRequest(const Request &req)
         return handleLogout(req);
 
     std::string filePath = resolveFilePath(locationNode, path);
-    std::cout << "in complet du fichier: " << filePath << std::endl;
+    d_cout << "in complet du fichier: " << filePath << std::endl;
 
     if (filePath.empty())
     {

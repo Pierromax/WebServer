@@ -23,7 +23,7 @@ void Response::handleDeleteRequest(const Request &req)
 			throw std::runtime_error(FORBIDDEN);
 		if (remove(filePath.c_str()) != 0)
 			throw std::runtime_error(INTERNAL_ERROR);
-		std::cout << GREEN "File deleted successfully: " B << filePath << R << std::endl;
+		d_cout << GREEN "File deleted successfully: " B << filePath << R << std::endl;
 		status_code = NO_CONTENT;
 		setBody("");
 		setContentType("text/html");

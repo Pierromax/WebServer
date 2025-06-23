@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/21 19:36:36 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 20:16:35 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,9 @@
 
 // Variable globale pour contrôler la boucle principale
 volatile sig_atomic_t g_running = 1;
+
+// Définition de la variable globale de debug
+DebugStream d_cout;
 
 /**
  * @brief Signal handler for SIGINT (Ctrl+C)
@@ -43,7 +46,7 @@ Webserv::Webserv() : rootConfig(NULL)
     newfd.revents = 0;
     fds.push_back(newfd);
     servers[newfd.fd] = newServer;
-    std::cout << "Serveur ajouté à la map avec fd = " << newfd.fd << std::endl;
+    d_cout << "Serveur ajouté à la map avec fd = " << newfd.fd << std::endl;
 }
 
 /**
@@ -106,8 +109,8 @@ Webserv::~Webserv()
  */
 void Webserv::acceptNewClient(Server *server)
 {
-    if (!server) return; // Safety check
-    std::cout << "enter handle acceptnew client" << std::endl;
+    if (!server) return;
+    d_cout << "[DEBUG] enter handle acceptnew client" << std::endl;
     
     sockaddr_in serveuraddr = server->getAddress();
     socklen_t addrlen = sizeof(serveuraddr);
@@ -123,10 +126,10 @@ void Webserv::acceptNewClient(Server *server)
         throw std::runtime_error("Error: accept client failed");
     }
     
-    std::cout << "Nouveau client accepté avec fd = " << client_fd << std::endl;
+    d_cout << "[DEBUG] Nouveau client accepté avec fd = " << client_fd << std::endl;
     Client *newclient = new Client(client_fd, server, this);
     pollfd newfd;
-    std::cout << "client accepted" << std::endl;
+    d_cout << "[DEBUG] client accepted" << std::endl;
     newfd.fd = client_fd;
     newfd.events = POLLIN;
     newfd.revents = 0;
@@ -156,7 +159,7 @@ void Webserv::closeClientConnection(int clientFd)
 {
     if (clients.count(clientFd) == 0)
         return;
-    std::cout << "connection close with fd = " << clientFd << std::endl; 
+    d_cout << "[DEBUG] connection close with fd = " << clientFd << std::endl; 
     close(clientFd);
     delete clients[clientFd];
     clients.erase(clientFd);
@@ -165,7 +168,6 @@ void Webserv::closeClientConnection(int clientFd)
     {
         if (pfd_it->fd == clientFd)
         {
-            //std::cout << "[DEBUG] Marking pollfd as -1 for fd = " << clientFd << std::endl;
             pfd_it->fd = -1;
             break;
         }
@@ -177,7 +179,7 @@ void Webserv::closeClientConnection(int clientFd)
  */
 void Webserv::run()
 {
-    std::cout << "Webserver running." << std::endl;
+    d_cout << "Webserver running." << std::endl;
     g_running = 1;
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, signalHandler);
@@ -207,7 +209,7 @@ void Webserv::run()
                 handleClients(*it);
         }
     }
-    std::cout << "Webserver shutting down" << std::endl;
+    d_cout << "Webserver shutting down" << std::endl;
 }
 
 void Webserv::handleServers(pollfd &it)
@@ -286,7 +288,7 @@ void Webserv::storeServers(std::string &filename)
  */
 void Webserv::launchServers()
 {
-    std::cout << "Lancement des serveurs..." << std::endl;
+    d_cout << "Lancement des serveurs..." << std::endl;
     
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
@@ -319,7 +321,7 @@ void Webserv::launchServers()
                 fds.push_back(newfd);
                 servers[newfd.fd] = newServer;
                 orderedServers.push_back(newServer);
-                std::cout << "Server added on fd = " << newfd.fd 
+                d_cout << "[DEBUG] Server added on fd = " << newfd.fd 
                           << " (host:port " << host << ":" << port << ")" << std::endl;
             }
         }
@@ -335,7 +337,7 @@ void Webserv::launchServers()
         fds.push_back(newfd);
         servers[newfd.fd] = defaultServer;
         orderedServers.push_back(defaultServer);
-        std::cout << "Default server added on fd = " << newfd.fd << std::endl;
+        d_cout << "Default server added on fd = " << newfd.fd << std::endl;
     }
 }
 
@@ -349,29 +351,29 @@ void Webserv::displayConfig(ConfigNode *node, int depth)
     if (!node)
         return;
     if (node->type == "root")
-        std::cout << "\nParsed Configuration:" << std::endl;
+        d_cout << "\nParsed Configuration:" << std::endl;
     std::string indent(depth * 4, ' ');
-    std::cout << indent << node->type;
+    d_cout << indent << node->type;
     if (!node->value.empty())
-        std::cout << " " << node->value;
-    std::cout << " {" << std::endl;
+        d_cout << " " << node->value;
+    d_cout << " {" << std::endl;
     for (std::map<std::string, std::vector<std::string> >::const_iterator it = 
         node->directives.begin(); it != node->directives.end(); ++it)
     {
-        std::cout << indent << "    " << it->first << " ";
+        d_cout << indent << "    " << it->first << " ";
         const std::vector<std::string> &values = it->second;
         for (size_t i = 0; i < values.size(); ++i)
-            std::cout << values[i] << " ";
-        std::cout << ";" << std::endl;
+            d_cout << values[i] << " ";
+        d_cout << ";" << std::endl;
     }
     for (std::map<std::string, std::string>::const_iterator it = 
         node->cgiHandlers.begin(); it != node->cgiHandlers.end(); ++it)
     {
-        std::cout << indent << "    cgi " << it->first << " " << it->second << " ;" << std::endl;
+        d_cout << indent << "    cgi " << it->first << " " << it->second << " ;" << std::endl;
     }
     for (size_t i = 0; i < node->children.size(); ++i)
         displayConfig(node->children[i], depth + 1);
-    std::cout << indent << "}" << std::endl;
+    d_cout << indent << "}" << std::endl;
 }
 
 void Webserv::setPollEvent(int fd, short events)

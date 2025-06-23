@@ -17,7 +17,7 @@ void Response::handlePostRequest(const Request &req)
     }
     if (req.getStatusCode() == PAYLOAD_TOO_LARGE)
     {
-        std::cout << "Payload too large for POST request" << std::endl;
+        d_cout << "Payload too large for POST request" << std::endl;
         status_code = PAYLOAD_TOO_LARGE;
         loadErrorPage("413", locationNode);
         return;
@@ -49,8 +49,8 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
     std::string location = buildFullPath(locationNode, req.getPath());
-    std::cout << "Location effective root: " << location << std::endl;
-    std::cout << "find boundary " << std::endl;
+    d_cout << "Location effective root: " << location << std::endl;
+    d_cout << "find boundary " << std::endl;
     size_t pos = content_type.find("boundary=");
     
     if (pos == std::string::npos)
@@ -75,24 +75,24 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
         if (pos != std::string::npos)
         {
             std::string headerPart = it->substr(0, pos);
-            std::cout << headerPart << std::endl;
+            d_cout << headerPart << std::endl;
             std::string bodyPart = it->substr(pos + 4);
             bodyHeaders = extractPostHeaders(headerPart);
             if (extractFileToSave(bodyHeaders, bodyPart, location))
                 validFile = true;
-            std::cout << " after saving file" << std::endl;
+            d_cout << " after saving file" << std::endl;
         }
     }
-    std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
+    d_cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
     if (validFile)
     {
         status_code = "201 Created";
         std::string successPagePath = location + "/201.html";
         std::string pageContent;
-        std::cout << "Tentative de chargement: " << successPagePath << std::endl;
+        d_cout << "Tentative de chargement: " << successPagePath << std::endl;
         if (loadPageContent(successPagePath, pageContent))
         {
-            std::cout << "Page 201.html chargée avec succès" << std::endl;
+            d_cout << "Page 201.html chargée avec succès" << std::endl;
             setBody(pageContent);
             setContentType(getMimeType(successPagePath));
         }
@@ -198,14 +198,14 @@ bool    Response::extractFileToSave(std::map<std::string, std::string> &heads, s
     
     if (!heads.count("Content-Disposition"))
     {
-        std::cout << "no content-dispostion" << std::endl;
+        d_cout << "no content-dispostion" << std::endl;
         return false;
     }
 
     size_t pos = heads.at("Content-Disposition").find("filename=");
     if (pos == std::string::npos)
     {
-        std::cout << "filename non found" << std::endl;     
+        d_cout << "filename non found" << std::endl;     
         return false;
     }
         

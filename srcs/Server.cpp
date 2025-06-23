@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 15:44:58 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 20:15:36 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), 
 		throw std::runtime_error("failed to get nonBlock socket");
 	if (listen(fd, 10) < 0)
 		throw std::runtime_error("can't listen serveur");
-	std::cout << "Serveur en écoute sur le port " << DEFAULT_PORT << std::endl;
+	d_cout << "Serveur en écoute sur le port " << DEFAULT_PORT << std::endl;
 }
 
 Server::Server(const Server &other)
@@ -103,7 +103,7 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 		throw std::runtime_error("failed to get nonBlock socket");
 	if (listen(fd, 10) < 0)
 		throw std::runtime_error("can't listen serveur");
-	std::cout << "Serveur en écoute sur " << host << ":" << port << std::endl;
+	d_cout << "Serveur en écoute sur " << host << ":" << port << std::endl;
 }
 
 int Server::getfd() const

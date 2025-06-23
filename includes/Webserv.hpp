@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 17:06:29 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 20:13:53 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,35 @@
 # define CONFIG_TESTER 0
 #endif
 
+#ifndef DEBUG
+# define DEBUG 0
+#endif
+
 #define DEFAULT_PORT 8080
+
+/**
+ * @brief Debug stream class that only outputs when DEBUG is enabled
+ */
+class DebugStream
+{
+public:
+    template<typename T>
+    DebugStream& operator<<(const T& value)
+    {
+        if (DEBUG)
+            std::cout << value;
+        return *this;
+    }
+    
+    DebugStream& operator<<(std::ostream& (*manip)(std::ostream&))
+    {
+        if (DEBUG)
+            std::cout << manip;
+        return *this;
+    }
+};
+
+extern DebugStream d_cout;
 
 #define VALID_CODES_LIST \
     "200", "301", "302", "400", "404", "405", "413", "500"
@@ -106,7 +134,7 @@ struct Token
             typeStr = "UNKNOWN";
             break;
         }
-        std::cout << "[" << typeStr << "] " << value << " (line " << line << ")" << std::endl;
+        d_cout << "[" << typeStr << "] " << value << " (line " << line << ")" << std::endl;
     }
 };
 

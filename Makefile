@@ -43,6 +43,7 @@ NAME = webserv
 
 # Marqueurs pour suivre le mode de compilation
 TEST_MARKER = .test_mode
+DEBUG_MARKER = .debug_mode
 NORMAL_MARKER = .normal_mode
 
 all: $(NORMAL_MARKER) $(NAME)
@@ -55,33 +56,47 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 	@make --silent banner
 
-# Cible pour définir le mode normal (CONFIG_TESTER=0)
+# Cible pour définir le mode normal (CONFIG_TESTER=0, DEBUG=0)
 $(NORMAL_MARKER):
-	@if [ -f $(TEST_MARKER) ]; then \
+	@if [ -f $(TEST_MARKER) ] || [ -f $(DEBUG_MARKER) ]; then \
 		rm -rf $(OBJS_DIR); \
-		rm -f $(TEST_MARKER); \
+		rm -f $(TEST_MARKER) $(DEBUG_MARKER); \
 	fi
 	@touch $(NORMAL_MARKER)
+	@$(eval CXXFLAGS += -DCONFIG_TESTER=0 -DDEBUG=0)
 
 # Cible pour le testeur de configuration
 tester: $(TEST_MARKER) $(NAME)
-	@echo "$(BLUE)Webserv built in tester mode (CONFIG_TESTER=1)$(WHITE)"
+	@echo "$(BLUE)Webserv built in tester mode (CONFIG_TESTER=1, DEBUG=0)$(WHITE)"
 
 # Marqueur pour le mode test
 $(TEST_MARKER):
-	@if [ -f $(NORMAL_MARKER) ]; then \
+	@if [ -f $(NORMAL_MARKER) ] || [ -f $(DEBUG_MARKER) ]; then \
 		rm -rf $(OBJS_DIR); \
-		rm -f $(NORMAL_MARKER); \
+		rm -f $(NORMAL_MARKER) $(DEBUG_MARKER); \
 	fi
 	@touch $(TEST_MARKER)
-	@$(eval CXXFLAGS += -DCONFIG_TESTER=1)
+	@$(eval CXXFLAGS += -DCONFIG_TESTER=1 -DDEBUG=0)
+
+# Cible pour le mode debug
+debug: $(DEBUG_MARKER) $(NAME)
+	@echo "$(BLUE)Webserv built in debug mode (CONFIG_TESTER=0, DEBUG=1)$(WHITE)"
+
+# Marqueur pour le mode debug
+$(DEBUG_MARKER):
+	@if [ -f $(NORMAL_MARKER) ] || [ -f $(TEST_MARKER) ]; then \
+		rm -rf $(OBJS_DIR); \
+		rm -f $(NORMAL_MARKER) $(TEST_MARKER); \
+	fi
+	@touch $(DEBUG_MARKER)
+	@$(eval CXXFLAGS += -DCONFIG_TESTER=0 -DDEBUG=1)
 
 test: tester
 	@./test.sh
 
 clean:
 	rm -rf $(OBJS_DIR) logs
-	rm -f $(TEST_MARKER) $(NORMAL_MARKER)
+	rm -f $(TEST_MARKER) $(DEBUG_MARKER) $(NORMAL_MARKER)
 
 fclean: clean
 	@rm -f $(NAME)
@@ -128,4 +143,4 @@ banner:
 	@echo "              ███████████████████████████████████████"
 	@echo ""
 
-.PHONY: all fclean clean re banner tester test
+.PHONY: all fclean clean re banner tester test debug
