@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/22 04:07:08 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 13:45:51 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ class Server
 	
 		int getfd() const;
 		sockaddr_in getAddress() const;
+		
 	
 		std::string host;
 		int port;
@@ -60,9 +61,10 @@ class Server
 		size_t 		maxBodySize;
 		ConfigNode* getConfigNode() const; // Getter for the config node
 
-		// gestion de sessions
 		std::pair<std::string, sessionData> createSession(std::string username);
-		bool	isActiveSession(std::string &id);
+		bool	isActiveSession(std::string const &id);
+		void	deleteSession(std::string const &id);
+
 	
 	private:
 		int fd;

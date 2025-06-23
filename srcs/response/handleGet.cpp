@@ -20,6 +20,9 @@ void Response::handleGetRequest(const Request &req)
     if (checkForRedirect(locationNode, path))
         return;
 
+    if (path == "/logout")
+        return handleLogout(req);
+
     std::string filePath = resolveFilePath(locationNode, path);
     std::cout << "in complet du fichier: " << filePath << std::endl;
 
@@ -61,4 +64,20 @@ void Response::handleGetRequest(const Request &req)
         status_code = "403 Forbidden";
         loadErrorPage("403", locationNode);
     }
+}
+
+void Response::handleLogout(const Request &req)
+{
+    std::cout << "🚪 Demande de déconnexion" << std::endl;
+    
+    std::string cookieHeader = req.getHeader("Cookie");
+    if (!cookieHeader.empty()) 
+    {
+        extractCookie(cookieHeader);
+        std::map<std::string, std::string>::iterator it = Cookies.find("session_id");
+        if (it != Cookies.end())
+            _server->deleteSession(it->second);
+    }
+    deleteCookie();
+    redirectTo("/");
 }

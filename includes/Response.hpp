@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/22 15:09:06 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 13:52:02 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,11 +96,13 @@ class Response
         void        handleLogin(const Request &req, ConfigNode *locationNode);
         void        createSession(std::string username);
         void        redirectTo(std::string const &path);
+        void        handleLogout(const Request &req);
+
         
         // Cookies Gestion
         void        extractCookie(const std::string &cookie);
         void        setCookie(const std::string &key, const std::string &value);
-        void        setCookieUser();
+        void        setCookieHttp();
         void        deleteCookie();
         bool        checkDB(std::string path, std::string userName, std::string password);
         

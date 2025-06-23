@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/22 15:15:21 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 13:35:12 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,10 @@ Response::Response(const Request &req, Server* server) : _server(server)
     setConnectionType(req.getHeader("Connection"));
 
     bool    isrequired;
-    if (req.getPath() == "/" ||  req.getPath() == "/login")
-        isrequired = false;
-    else
+    if (req.getPath() == "/upload")
         isrequired = true;
+    else
+        isrequired = false;
         
     if (!checkLogin(req) && isrequired)
         redirectTo("/login");
@@ -110,6 +110,8 @@ std::string Response::build() const
     response << "Content-Length: " << body.size() << "\r\n";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
         response << it->first << ": " << it->second << "\r\n";
+    for (std::map<std::string, std::string>::const_iterator it = Cookies.begin(); it != Cookies.end(); ++it)
+        response << "Set-Cookie: " << it->first << "=" << it->second << "\r\n";
     response << "Connection: " << getConnectionType() << "\r\n"; 
     response << "\r\n";
     response << body;

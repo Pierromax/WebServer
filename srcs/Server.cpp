@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/22 04:11:22 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 14:34:59 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,6 @@ Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), 
 	int opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("failed to set socket reuse port option");
-	// if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	// 	throw std::runtime_error("failed to set socket options");
 
 	adress.sin_family = AF_INET;
 	adress.sin_addr.s_addr = INADDR_ANY;
@@ -135,16 +133,14 @@ std::pair<std::string, sessionData>    Server::createSession(std::string usernam
 	return std::make_pair(sessionID, user);
 }
 
-bool	Server::isActiveSession(std::string &id)
+bool	Server::isActiveSession(std::string const &id)
 {
-	std::map<std::string, sessionData>::iterator test = activeSessions.begin();
 
-	std::cout << "========check map=======" << std::endl;
-	for (; test != activeSessions.end(); test++)
-	{
-		std::cout << test->first << "=" << test->second.userName<< std::endl;
-	}
-	
+	std::cout << "===check activeSessions map======" << std::endl;
+	std::map<std::string, sessionData>::iterator itt = activeSessions.begin();
+	for (; itt != activeSessions.end(); itt++)
+		std::cout << itt->first << " = " << itt->second.userName << std::endl;
+		
 	std::map<std::string, sessionData>::iterator it = activeSessions.find(id);
 	if (it == activeSessions.end())
 		return false;
@@ -155,6 +151,14 @@ bool	Server::isActiveSession(std::string &id)
 		return false;
 	}
 	return true;
+}
+
+void	Server::deleteSession(std::string const &id)
+{
+	std::map<std::string, sessionData>::iterator it = activeSessions.find(id);
+	if (it == activeSessions.end())
+		return;
+	activeSessions.erase(id);
 }
 
 std::string intToString(int value)
