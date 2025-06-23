@@ -127,6 +127,7 @@ struct ConfigNode
     size_t client_max_body_size;
     bool autoindex;
     std::map<std::string, std::string> cgiHandlers;
+    std::vector<std::pair<std::string, int> > listenPairs;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
         : type(t), value(v), parent(p), line(ln)
@@ -138,6 +139,7 @@ struct ConfigNode
             client_max_body_size = p->client_max_body_size;
             autoindex = p->autoindex;
             cgiHandlers = p->cgiHandlers;
+            listenPairs = p->listenPairs;
             for (int i = 0; i < METHOD_COUNT; ++i)
                 allowedMethods[i] = p->allowedMethods[i];
             isAuthRequired = p->isAuthRequired;

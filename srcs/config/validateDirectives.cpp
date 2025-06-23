@@ -54,17 +54,31 @@ void Webserv::validateMethodsDirective(const std::vector<std::string> &values, c
 void Webserv::validateListenDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line)
 {
     for (size_t i = 0; i < values.size(); ++i) {
-        const std::string& portStr = values[i];
-        std::stringstream ss(portStr);
-        int port;
-        std::string remaining;
+        const std::string& listenStr = values[i];
+        std::string host = "";
+        int port = 0;
+        size_t colonPos = listenStr.find(':');
 
-        if (!(ss >> port) || ss >> remaining)
-            throw ParsingError("invalid port \"" + portStr + "\" in directive \"listen\"", filename, line);
+        if (colonPos != std::string::npos)
+        {
+            host = listenStr.substr(0, colonPos);
+            std::string portStr = listenStr.substr(colonPos + 1);
+            std::stringstream ss(portStr);
+            std::string remaining;
+
+            if (!(ss >> port) || ss >> remaining)
+                throw ParsingError("invalid port \"" + listenStr + "\" in directive \"listen\"", filename, line);
+        }
+        else
+        {
+            std::stringstream ss(listenStr);
+            std::string remaining;
+
+            if (!(ss >> port) || ss >> remaining)
+                throw ParsingError("invalid port \"" + listenStr + "\" in directive \"listen\"", filename, line);
+        }
         if (port < 1024 || port > 65535)
-            throw ParsingError("port " + portStr + " out of range (1024-65535) in directive \"listen\"", filename, line);
-        // if (!isPortAvailable(port))
-        //     throw ParsingError("port " + portStr + " is not available in directive \"listen\"", filename, line);
+            throw ParsingError("port " + listenStr + " out of range (1024-65535) in directive \"listen\"", filename, line);
     }
 }
 
