@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:00:00 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/15 16:50:45 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 16:43:07 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ std::set<std::string> initKeywords()
     keywords.insert("methods");
     keywords.insert("autoindex");
     keywords.insert("redirect");
+    keywords.insert("AUTH_REQUIRED");
     return keywords;
 }
 

@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 15:41:39 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 17:06:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,6 +123,7 @@ struct ConfigNode
     std::map<std::string, std::size_t> directiveLines; 
     std::size_t line;
     bool allowedMethods[METHOD_COUNT];
+    bool isAuthRequired;
     size_t client_max_body_size;
     bool autoindex;
     std::map<std::string, std::string> cgiHandlers;
@@ -139,11 +140,13 @@ struct ConfigNode
             cgiHandlers = p->cgiHandlers;
             for (int i = 0; i < METHOD_COUNT; ++i)
                 allowedMethods[i] = p->allowedMethods[i];
+            isAuthRequired = p->isAuthRequired;
         }
         else
         {
             client_max_body_size = 1048576;
             autoindex = false;
+            isAuthRequired = false;
             for (int i = 0; i < METHOD_COUNT; ++i)
                 allowedMethods[i] = true;
         }

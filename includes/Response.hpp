@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 16:10:46 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 17:13:35 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ class Response
         void        createSession(std::string username);
         void        redirectTo(std::string const &path);
         void        handleLogout(const Request &req);
-
+        bool        isLoginRequired(std::string req_path);
         
         // Cookies Gestion
         void        extractCookie(const std::string &cookie);
