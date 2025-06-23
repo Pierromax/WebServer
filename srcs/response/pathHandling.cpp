@@ -70,6 +70,10 @@ std::string Response::tryIndexFiles(const std::string& directoryPath, const std:
     return "";
 }
 
+/** 
+ * @brief Builds the full path (computer/server path) for a request from a location node and request path
+ * @param locationNode The location node to find the root from
+ */
 std::string Response::buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const
 {
     if (!locationNode)

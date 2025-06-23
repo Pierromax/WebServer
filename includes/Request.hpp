@@ -19,10 +19,14 @@
 #include <sys/socket.h>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
+#include <cstdio>
 
 #define GOOD_REQUEST "200 OK"
 #define BAD_REQUEST "400 Bad Request"
+#define FORBIDDEN "403 Forbidden"
 #define FILE_NOT_FOUND "404 Not Found"
+#define NO_CONTENT "204 No Content"
 #define METHOD_NOT_ALLOWED "405 Method Not Allowed"
 #define PAYLOAD_TOO_LARGE "413 Payload Too Large"
 #define INTERNAL_ERROR "500 Internal Server Error"

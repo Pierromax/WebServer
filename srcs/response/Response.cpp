@@ -60,12 +60,12 @@ Response::~Response()
 
 std::string Response::getbody() const
 {
-    return(body);
+    return (body);
 }
 
 std::string Response::getConnectionType() const
 {
-    return(connection_type);
+    return (connection_type);
 }
 
 void Response::setStatusCode(const std::string &status)
