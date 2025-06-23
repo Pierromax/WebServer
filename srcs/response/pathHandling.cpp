@@ -28,40 +28,6 @@ std::string Response::getMimeType(const std::string& filePath) const
     return "application/octet-stream";
 }
 
-ConfigNode* Response::findBestLocation(const std::string& requestPath) const
-{
-    if (!_server || !_server->getConfigNode())
-        return NULL;
-    ConfigNode* serverNode = _server->getConfigNode();
-    return findBestLocationRecursive(requestPath, serverNode, serverNode, "");
-}
-
-ConfigNode* Response::findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const
-{
-    if (!currentNode)
-        return bestMatch;
-    size_t currentBestLen = (bestMatch->type == "location") ? bestMatch->value.length() : 0;
-    for (size_t i = 0; i < currentNode->children.size(); ++i)
-    {
-        ConfigNode* location = currentNode->children[i];
-        if (location->type != "location")
-            continue;
-        std::string fullLocationPath = currentPath + location->value;
-        if (requestPath.rfind(fullLocationPath, 0) == 0)
-        {
-            bool fullMatch = (requestPath.length() == fullLocationPath.length()) ||
-                             (fullLocationPath == "/") ||
-                             (requestPath.length() > fullLocationPath.length() && requestPath[fullLocationPath.length()] == '/');
-            if (fullMatch && fullLocationPath.length() >= currentBestLen)
-            {
-                bestMatch = location;
-                bestMatch = findBestLocationRecursive(requestPath, location, bestMatch, fullLocationPath);
-            }
-        }
-    }
-    return bestMatch;
-}
-
 std::string Response::findEffectiveRoot(ConfigNode* contextNode) const
 {
     ConfigNode* searchNode = contextNode;
@@ -104,6 +70,10 @@ std::string Response::tryIndexFiles(const std::string& directoryPath, const std:
     return "";
 }
 
+/** 
+ * @brief Builds the full path (computer/server path) for a request from a location node and request path
+ * @param locationNode The location node to find the root from
+ */
 std::string Response::buildFullPath(ConfigNode* locationNode, const std::string& requestPath) const
 {
     if (!locationNode)

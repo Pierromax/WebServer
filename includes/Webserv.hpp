@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/12 17:39:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 15:41:39 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,11 @@
 #include <cstring>
 #include <fcntl.h>
 #include <signal.h>
-#include <csignal> // Pour sig_atomic_t
+#include <csignal> 
+#include <set>
+#include <cstdlib>
+#include <sys/stat.h>
+
 
 #ifndef CONFIG_TESTER
 # define CONFIG_TESTER 0
@@ -124,10 +128,25 @@ struct ConfigNode
     std::map<std::string, std::string> cgiHandlers;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
-        : type(t), value(v), parent(p), line(ln), client_max_body_size(p ? p->client_max_body_size : 1048576), autoindex(false)
+        : type(t), value(v), parent(p), line(ln)
     {
-        for (int i = 0; i < METHOD_COUNT; ++i)
-            allowedMethods[i] = true;
+        if (p != NULL)
+        {
+            directives = p->directives;
+            directiveLines = p->directiveLines;
+            client_max_body_size = p->client_max_body_size;
+            autoindex = p->autoindex;
+            cgiHandlers = p->cgiHandlers;
+            for (int i = 0; i < METHOD_COUNT; ++i)
+                allowedMethods[i] = p->allowedMethods[i];
+        }
+        else
+        {
+            client_max_body_size = 1048576;
+            autoindex = false;
+            for (int i = 0; i < METHOD_COUNT; ++i)
+                allowedMethods[i] = true;
+        }
     }
 
     ~ConfigNode()
@@ -249,5 +268,9 @@ public:
 };
 
 bool isPortAvailable(int port);
+
+// --- Location Finding Helpers (moved from Response) ---
+ConfigNode* findBestLocation(const std::string& requestPath, Server* server);
+ConfigNode* findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath);
 
 #endif

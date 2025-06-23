@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:46:41 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 18:22:29 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,6 @@ class Response
         Server*     _server;
 
         // --- Request Handling Helpers ---
-        ConfigNode* findBestLocation(const std::string& requestPath) const;
-        ConfigNode* findBestLocationRecursive(const std::string& requestPath, ConfigNode* currentNode, ConfigNode* bestMatch, const std::string& currentPath) const;
         std::string findEffectiveRoot(ConfigNode* contextNode) const;
         std::vector<std::string>    findEffectiveIndexFiles(ConfigNode* contextNode) const;
         std::string tryIndexFiles(const std::string& directoryPath, const std::vector<std::string>& indexFiles) const;

@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 15:24:57 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 15:30:55 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ Response::Response(const Request &req, Server* server) : _server(server)
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
-        
+
     if (method == "GET")
         handleGetRequest(req);
     else if (method == "POST")
@@ -60,12 +60,12 @@ Response::~Response()
 
 std::string Response::getbody() const
 {
-    return(body);
+    return (body);
 }
 
 std::string Response::getConnectionType() const
 {
-    return(connection_type);
+    return (connection_type);
 }
 
 void Response::setStatusCode(const std::string &status)

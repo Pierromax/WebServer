@@ -13,6 +13,7 @@ INC = -I $(INCLUDES_DIR)
 
 #cpp files
 SRCS = $(SRCS_DIR)/Webserv.cpp \
+       $(SRCS_DIR)/utils/location.cpp \
        $(SRCS_DIR)/Server.cpp \
        $(SRCS_DIR)/Request.cpp \
        $(SRCS_DIR)/Client.cpp \
@@ -20,7 +21,8 @@ SRCS = $(SRCS_DIR)/Webserv.cpp \
        $(SRCS_DIR)/ParsingError.cpp \
        $(SRCS_DIR)/config/Tokenizer.cpp \
        $(SRCS_DIR)/config/Parser.cpp \
-       $(SRCS_DIR)/config/ConfigValidator.cpp \
+       $(SRCS_DIR)/config/ValidateConfig.cpp \
+	   $(SRCS_DIR)/config/validateDirectives.cpp \
        $(SRCS_DIR)/response/Response.cpp \
        $(SRCS_DIR)/response/directoryListing.cpp \
        $(SRCS_DIR)/response/errorPage.cpp \

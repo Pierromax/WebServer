@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 16:13:39 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/15 19:20:35 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,20 +19,25 @@
 #include <sys/socket.h>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
+#include <cstdio>
 
 #define GOOD_REQUEST "200 OK"
 #define BAD_REQUEST "400 Bad Request"
+#define FORBIDDEN "403 Forbidden"
 #define FILE_NOT_FOUND "404 Not Found"
+#define NO_CONTENT "204 No Content"
 #define METHOD_NOT_ALLOWED "405 Method Not Allowed"
 #define PAYLOAD_TOO_LARGE "413 Payload Too Large"
-#define INTERNAL_SERVER_ERROR "500 Internal Server Error"
-
 #define INTERNAL_ERROR "500 Internal Server Error"
+
+class Server;
 
 class Request
 {
     private:
         int         fd;
+        Server*     _server; 
         std::string statuscode;
         std::string method;
         std::string path;
@@ -40,15 +45,28 @@ class Request
         std::map<std::string, std::string> headers;
         std::string body;
         std::string raw_request;
-        ssize_t     _bytesRead; // Store the result of recv()
+        ssize_t     _bytesRead;
+        size_t      _maxBodySize;
+        size_t      _step;
+        size_t      _headerSize; 
 
         void        parseRequest(const std::string &buffer);
         void        parseFirstline(const std::string &line);
         void        parseHeader(const std::string &buffer);
         void        parseBody(const std::string &buffer);
+        bool        isRequestTooLong();
+        
+        // --- Helper methods for isRequestTooLong() ---
+        size_t      findHeaderSize();
+        std::string extractTempPath();
+        void        updateMaxBodySize(const std::string& tempPath);
+        size_t      extractContentLength();
+        bool        checkContentLengthLimit(size_t contentLength);
+        bool        checkCurrentBodySize();
+
 
     public:
-        Request(int clientFD);
+        Request(int clientFD, Server* server = NULL); // Ajout du paramètre Server*
         Request(const Request &cpy);
         Request &operator=(const Request &rhs);
         ~Request();
