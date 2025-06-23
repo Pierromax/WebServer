@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 19:20:55 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 15:43:47 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ Request::Request(int client_fd, Server* server) : fd(client_fd),
                                   body(""),
                                   raw_request(""),
                                   _bytesRead(0),
-                                  _maxBodySize(server ? 1048576 : 1048576), // 1MB par défaut, sera mis à jour
                                   _step(0),
                                   _headerSize(0)
 {

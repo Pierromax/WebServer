@@ -48,7 +48,8 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
 {
     std::map<std::string, std::string> bodyHeaders;
     std::vector<std::string> bodies;
-    std::string location = findEffectiveRoot(locationNode);
+    std::string location = buildFullPath(locationNode, req.getPath());
+    std::cout << "Location effective root: " << location << std::endl;
     std::cout << "find boundary " << std::endl;
     size_t pos = content_type.find("boundary=");
     
@@ -81,14 +82,14 @@ void Response::handleUploading(const Request &req,   ConfigNode* locationNode)
             std::cout << "try to save" << std::endl;
             if (extractFileToSave(bodyHeaders, bodyPart, location))
                 validFile = true;
-            std::cout << "after saving file" << std::endl;
+            std::cout << " after saving file" << std::endl;
         }
     }
     std::cout << "is 1 valid file ?"<< (validFile ? "true" : "false") << std::endl;
     if (validFile)
     {
         status_code = "201 Created";
-        std::string successPagePath = location + "/upload/201.html";
+        std::string successPagePath = location + "/201.html";
         std::string pageContent;
         std::cout << "Tentative de chargement: " << successPagePath << std::endl;
         if (loadPageContent(successPagePath, pageContent))
@@ -176,7 +177,7 @@ static std::string extractFilename(std::string content)
 
 bool    Response::saveFile(std::string &filename, std::string &body, std::string location)
 {
-    std::string path = location + "/" + filename;
+    std::string path = location + "/../uploaded/" + filename;
     std::ofstream file(path.c_str(), std::ios::binary);
 
     std::cout << "path = " << path;
