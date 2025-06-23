@@ -5,7 +5,7 @@
 void Response::handleGetRequest(const Request &req)
 {
     std::string path = req.getPath();
-    ConfigNode* locationNode = findBestLocation(path);
+    ConfigNode* locationNode = findBestLocation(path, _server);
     std::string content;
     
     std::cout << "URL demandée: " << req.getPath() << std::endl;
@@ -14,6 +14,13 @@ void Response::handleGetRequest(const Request &req)
     {
         status_code = METHOD_NOT_ALLOWED;
         loadErrorPage("405", locationNode);
+        return;
+    }
+
+    if (req.getStatusCode() == PAYLOAD_TOO_LARGE)
+    {
+        status_code = PAYLOAD_TOO_LARGE;
+        loadErrorPage("413", locationNode);
         return;
     }
 

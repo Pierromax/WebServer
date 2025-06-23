@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 13:35:12 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 16:12:06 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,12 +68,12 @@ Response::~Response()
 
 std::string Response::getbody() const
 {
-    return(body);
+    return (body);
 }
 
 std::string Response::getConnectionType() const
 {
-    return(connection_type);
+    return (connection_type);
 }
 
 void Response::setStatusCode(const std::string &status)
