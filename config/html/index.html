@@ -3,109 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webserv</title>
+    <title>WebSquidoMax - Accueil</title>
     <style>
+        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Nunito", sans-serif;
+            background: #8d6c9f;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: #efd8be;
+            padding: 40px;
             text-align: center;
-            padding: 50px;
-            background-color: #f5f5f5;
+            position: relative;
         }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 64px;
+            height: 64px;
+            background-image: url('/assets/sloth.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite;
+        }
+
+        .header::after {
+            content: "";
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 64px;
+            height: 64px;
+            background-image: url('/assets/octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite 1s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
         h1 {
-            color: #333;
+            color: #2d3436;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
-        p {
-            color: #666;
+
+        .subtitle {
+            color: #636e72;
+            font-size: 1.2em;
+            font-weight: 400;
         }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 40px;
+        }
+
+        .menu-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
             cursor: pointer;
-            font-size: 16px;
         }
-        button:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
+        .menu-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #b5c4e0, #cda1a7, #efd8be, #8d6c9f);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
         }
-        button.logout-button {
-            background-color: #f44336; /* Rouge pour logout */
+
+        .menu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-color: #ddd;
         }
-        button.logout-button:hover {
-            background-color: #da190b;
+
+        .menu-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .menu-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .menu-card h3 {
+            color: #2d3436;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .menu-card p {
+            color: #636e72;
+            font-size: 1em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .menu-btn {
+            background: #b5c4e0;
+            color: #2d3436;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            font-family: "Nunito", sans-serif;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .menu-btn:hover {
+            background: #a0b3d6;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(181, 196, 224, 0.4);
+        }
+
+        .upload-card {
+            background: linear-gradient(135deg, #b5c4e0 0%, #a0b3d6 100%);
+            color: #2d3436;
+        }
+
+        .upload-card h3, .upload-card p {
+            color: #2d3436;
+        }
+
+        .upload-card .menu-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d3436;
+        }
+
+        .upload-card .menu-btn:hover {
+            background: white;
+        }
+
+        .cgi-card {
+            background: linear-gradient(135deg, #cda1a7 0%, #c08d94 100%);
+            color: #2d3436;
+        }
+
+        .cgi-card h3, .cgi-card p {
+            color: #2d3436;
+        }
+
+        .cgi-card .menu-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d3436;
+        }
+
+        .cgi-card .menu-btn:hover {
+            background: white;
+        }
+
+        .login-card {
+            background: linear-gradient(135deg, #8d6c9f 0%, #7a5a89 100%);
+            color: white;
+        }
+
+        .login-card h3, .login-card p {
+            color: white;
+        }
+
+        .login-card .menu-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d3436;
+        }
+
+        .login-card .menu-btn:hover {
+            background: white;
+        }
+
+        .logout-card {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        .logout-card h3, .logout-card p {
+            color: white;
+        }
+
+        .logout-card .menu-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #e74c3c;
+        }
+
+        .logout-card .menu-btn:hover {
+            background: white;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            color: #636e72;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .user-welcome {
+            color: #2d3436;
+            padding: 15px;
+            margin: 20px 40px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .menu-grid {
+                grid-template-columns: 1fr;
+                padding: 25px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .menu-card {
+                padding: 25px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1 id="mainTitle">Bienvenue sur Webserv !</h1>
-    <div class="rediretion">
-        <button type="button" class="select-button" id="uploadButton">Upload</button>
+    <div class="container">
+        <div class="header">
+            <h1 id="mainTitle">🌸 Bienvenue sur WebSquidoMax !</h1>
+            <div id="user-welcome" class="user-welcome" style="display: none;">
+                👋 Content de vous revoir !
+            </div>
+        </div>
+        
+        
+        <div class="menu-grid">
+            <div class="menu-card upload-card">
+                <span class="menu-icon">📤</span>
+                <h3>Upload de fichiers</h3>
+                <p>Téléchargez vos fichiers en toute sécurité sur le serveur.</p>
+                <button class="menu-btn" id="uploadButton">
+                    🚀 Aller à l'upload
+                </button>
+            </div>
+            
+            <div class="menu-card cgi-card">
+                <span class="menu-icon">⚡</span>
+                <h3>Scripts CGI</h3>
+                <p>Explorez nos scripts CGI interactifs et nos calculatrices magiques.</p>
+                <button class="menu-btn" id="squidButton">
+                    🎮 Découvrir les CGI
+                </button>
+            </div>
+            
+            <div class="menu-card login-card" id="authCard">
+                <span class="menu-icon" id="authIcon">🔑</span>
+                <h3 id="authTitle">Connexion</h3>
+                <p id="authDescription">Connectez-vous pour accéder à toutes les fonctionnalités.</p>
+                <button class="menu-btn" id="loginButton">
+                    🚪 Se connecter
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>WebSquidoMax - Done with lazyness
+                <img src="/assets/sloth.png" alt="Sloth" style="width: 24px; height: 24px; vertical-align: middle;">
+            </p>
+        </div>
     </div>
-    <h2> </h2>
-    <div class="rediretion">
-        <button type="button" class="select-button" id="loginButton">Login</button>
-    </div>
-</body>
 
-<script>
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            return parts.pop().split(';').shift();
+    <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) {
+                return parts.pop().split(';').shift();
+            }
+            return null;
         }
-        return null;
-    }
-    
-    function updateTitle() {
-        const username = getCookie('user');
-        const titleElement = document.getElementById('mainTitle');
         
-        if (username && username !== '') {
-            titleElement.textContent = `Salut ${username} ! Bienvenue sur Webserv 👋`;
-        } else {
-            titleElement.textContent = 'Bienvenue sur Webserv !';
-        }
-    }
-    
-    function updateLoginButton() {
-        const username = getCookie('user');
-        const loginButton = document.getElementById('loginButton');
-        
-        if (username && username !== '') {
-            loginButton.textContent = 'Logout';
-            loginButton.classList.add('logout-button'); // ← Ajouter classe CSS
-        } else {
-            loginButton.textContent = 'Login';
-            loginButton.classList.remove('logout-button'); // ← Retirer classe CSS
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        updateTitle();
-        updateLoginButton();
-        
-        var uButton = document.getElementById('uploadButton');
-        uButton.addEventListener('click', function() {
-            window.location.href = '/upload';
-        });
-
-        var loginButton = document.getElementById('loginButton');
-        loginButton.addEventListener('click', function() {
+        function updateTitle() {
             const username = getCookie('user');
+            const titleElement = document.getElementById('mainTitle');
+            const welcomeElement = document.getElementById('user-welcome');
             
             if (username && username !== '') {
-                if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-                    window.location.href = '/logout';
-                }
+                titleElement.textContent = `Bienvenue sur WebSquidoMax !`;
+                welcomeElement.textContent = `Content de vous revoir, ${username} !`;
+                welcomeElement.style.display = 'block';
             } else {
-                window.location.href = '/login';
+                titleElement.textContent = 'Bienvenue sur WebSquidoMax !';
+                welcomeElement.style.display = 'none';
             }
-        });
-    });
-</script>
+        }
+        
+        function updateLoginButton() {
+            const username = getCookie('user');
+            const authCard = document.getElementById('authCard');
+            const authIcon = document.getElementById('authIcon');
+            const authTitle = document.getElementById('authTitle');
+            const authDescription = document.getElementById('authDescription');
+            const loginButton = document.getElementById('loginButton');
+            
+            if (username && username !== '') {
+                // Mode logout
+                authCard.className = 'menu-card logout-card';
+                authIcon.textContent = '🚪';
+                authTitle.textContent = 'Déconnexion';
+                authDescription.textContent = 'Vous êtes actuellement connecté. Cliquez pour vous déconnecter.';
+                loginButton.textContent = '👋 Se déconnecter';
+            } else {
+                // Mode login
+                authCard.className = 'menu-card login-card';
+                authIcon.textContent = '🔑';
+                authTitle.textContent = 'Connexion';
+                authDescription.textContent = 'Connectez-vous pour accéder à toutes les fonctionnalités.';
+                loginButton.textContent = '🚪 Se connecter';
+            }
+        }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTitle();
+            updateLoginButton();
+            
+            // Upload button
+            document.getElementById('uploadButton').addEventListener('click', function() {
+                window.location.href = '/upload';
+            });
+
+            // CGI button
+            document.getElementById('squidButton').addEventListener('click', function() {
+                window.location.href = '/squidgame';
+            });
+
+            // Login/Logout button
+            document.getElementById('loginButton').addEventListener('click', function() {
+                const username = getCookie('user');
+                
+                if (username && username !== '') {
+                    // Logout
+                    if (confirm('🤔 Voulez-vous vraiment vous déconnecter ?')) {
+                        window.location.href = '/logout';
+                    }
+                } else {
+                    // Login
+                    window.location.href = '/login';
+                }
+            })
+        });
+    </script>
+</body>
 </html>

@@ -3,51 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webserv</title>
+    <title>Upload Réussi - WebSquidoMax</title>
     <style>
+        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Nunito", sans-serif;
+            background: #8d6c9f;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            animation: fadeInScale 0.6s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .header {
+            background: #d4edda;
+            padding: 30px;
             text-align: center;
-            padding: 50px;
-            background-color: #f5f5f5;
+            position: relative;
         }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/sloth.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: celebration 2s ease-in-out infinite;
+        }
+
+        .header::after {
+            content: "";
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: celebration 2s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes celebration {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1) rotate(0deg); 
+            }
+            25% { 
+                opacity: 0.8; 
+                transform: scale(1.1) rotate(-10deg); 
+            }
+            75% { 
+                opacity: 0.9; 
+                transform: scale(1.05) rotate(10deg); 
+            }
+        }
+
         h1 {
-            color: #333;
+            color: #155724;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
-        p {
-            color: #666;
+
+        .subtitle {
+            color: #155724;
+            font-size: 1.1em;
+            font-weight: 400;
         }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+
+        .success-content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            display: block;
+            animation: bounce 2s ease-in-out infinite;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        @keyframes bounce {
+            0%, 100% { 
+                transform: translateY(0px) scale(1); 
+            }
+            50% { 
+                transform: translateY(-15px) scale(1.1); 
+            }
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+            font-weight: 600;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+
+        .file-info {
+            background: rgba(181, 196, 224, 0.2);
+            color: #2d3436;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 600;
+            border-left: 4px solid #b5c4e0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 25px;
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1em;
+            font-weight: 600;
+            font-family: "Nunito", sans-serif;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
         }
-        button:hover {
-            background-color: #45a049;
+
+        .btn-upload {
+            background: #b5c4e0;
+            color: #2d3436;
+        }
+
+        .btn-upload:hover {
+            background: #a0b3d6;
             transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px rgba(181, 196, 224, 0.4);
+        }
+
+        .btn-home {
+            background: #cda1a7;
+            color: #2d3436;
+        }
+
+        .btn-home:hover {
+            background: #c08d94;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(205, 161, 167, 0.4);
+        }
+
+        .btn-files {
+            background: #efd8be;
+            color: #2d3436;
+        }
+
+        .btn-files:hover {
+            background: #e8c99e;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(239, 216, 190, 0.4);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        .confetti:nth-child(1) {
+            left: 10%;
+            animation-delay: 0s;
+            background: #28a745;
+        }
+
+        .confetti:nth-child(2) {
+            left: 20%;
+            animation-delay: 0.5s;
+            background: #b5c4e0;
+        }
+
+        .confetti:nth-child(3) {
+            left: 30%;
+            animation-delay: 1s;
+            background: #cda1a7;
+        }
+
+        .confetti:nth-child(4) {
+            left: 40%;
+            animation-delay: 1.5s;
+            background: #efd8be;
+        }
+
+        .confetti:nth-child(5) {
+            left: 50%;
+            animation-delay: 2s;
+            background: #28a745;
+        }
+
+        .confetti:nth-child(6) {
+            left: 60%;
+            animation-delay: 2.5s;
+            background: #b5c4e0;
+        }
+
+        .confetti:nth-child(7) {
+            left: 70%;
+            animation-delay: 0.3s;
+            background: #cda1a7;
+        }
+
+        .confetti:nth-child(8) {
+            left: 80%;
+            animation-delay: 0.8s;
+            background: #efd8be;
+        }
+
+        .confetti:nth-child(9) {
+            left: 90%;
+            animation-delay: 1.3s;
+            background: #28a745;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #636e72;
+            font-size: 0.9em;
+            border-top: 1px solid #f1f2f6;
+        }
+
+        .progress-indicator {
+            background: rgba(40, 167, 69, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9em;
+            color: #155724;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(181, 196, 224, 0.3);
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #28a745;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #636e72;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                max-width: none;
+            }
+            
+            .success-content {
+                padding: 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Fichier Uploader avec Succes !</h1>
-    <div class="upload-rediretion">
-        <button type="button" class="select-button" id="uploadButton">Upload</button>
-    </div>
-</body>
-<script>
-    document.addEventListener('DOMContentLoaded', function()
-    {
-        var uButton = document.getElementById('uploadButton');
-        uButton.addEventListener('click', function()
-        {
-        window.location.href = '/upload';
-        });
-    });
+    <!-- Confetti Animation -->
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
 
-</script>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Upload Réussi !</h1>
+            <p class="subtitle">Fichiers uploadés avec succès</p>
+        </div>
+        
+        <div class="success-content">
+            <span class="success-icon">✅</span>
+            
+            <div class="success-message">
+                <strong>🚀 Félicitations !</strong><br>
+                Votre fichier a été uploadé avec succès sur WebSquidoMax !
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="fileCount">1</span>
+                    <div class="stat-label">Fichier(s) uploadé(s)</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="uploadTime">—</span>
+                    <div class="stat-label">Temps d'upload</div>
+                </div>
+            </div>
+            
+            <div class="progress-indicator">
+                📊 Status : <strong>Upload terminé</strong><br>
+                📁 Emplacement : <code>/upload/uploaded/</code><br>
+                🕒 <span id="timestamp">—</span>
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                📄 Votre fichier est maintenant disponible dans le dossier d'upload !
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-upload" id="uploadMoreBtn">
+                    📤 Uploader d'autres fichiers
+                </button>
+                
+                <a href="/upload/uploaded" class="btn btn-files">
+                    📂 Voir tous les fichiers
+                </a>
+                
+                <a href="/" class="btn btn-home">
+                    🏠 Retour à l'accueil
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>WebSquidoMax - Upload Center 
+                <img src="/assets/sloth.png" alt="Sloth" style="width: 24px; height: 24px; vertical-align: middle;">
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mettre à jour le timestamp
+            const now = new Date();
+            const timestamp = now.toLocaleString('fr-FR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('timestamp').textContent = timestamp;
+            
+            // Simuler un temps d'upload aléatoire
+            const uploadTime = (Math.random() * 3 + 0.5).toFixed(1);
+            document.getElementById('uploadTime').textContent = uploadTime + 's';
+            
+            // Vérifier les paramètres URL pour plus d'infos
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileName = urlParams.get('file');
+            const fileSize = urlParams.get('size');
+            const fileCount = urlParams.get('count') || '1';
+            
+            // Mettre à jour les informations du fichier
+            if (fileName) {
+                document.getElementById('fileInfo').innerHTML = 
+                    `📄 <strong>${fileName}</strong><br>` +
+                    `📏 Taille : ${fileSize || 'Inconnue'}<br>` +
+                    `✅ Upload terminé avec succès !`;
+            }
+            
+            // Mettre à jour le compteur de fichiers
+            document.getElementById('fileCount').textContent = fileCount;
+            
+            // Animation de célébration après un délai
+            setTimeout(() => {
+                const successIcon = document.querySelector('.success-icon');
+                successIcon.style.animation = 'bounce 1s ease-in-out 3';
+            }, 1000);
+            
+            // Bouton pour uploader plus de fichiers
+            document.getElementById('uploadMoreBtn').addEventListener('click', function() {
+                window.location.href = '/upload';
+            });
+            
+            // Auto-redirection après 30 secondes (optionnel)
+            let countdown = 30;
+            const redirectNotice = document.createElement('div');
+            redirectNotice.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(40, 167, 69, 0.9);
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 0.9em;
+                z-index: 1000;
+                animation: slideInRight 0.5s ease-out;
+            `;
+            
+            function updateRedirectNotice() {
+                if (countdown > 0) {
+                    redirectNotice.textContent = `🔄 Redirection automatique dans ${countdown}s`;
+                    countdown--;
+                    setTimeout(updateRedirectNotice, 1000);
+                } else {
+                    redirectNotice.textContent = '🔄 Redirection...';
+                    setTimeout(() => {
+                        window.location.href = '/upload';
+                    }, 1000);
+                }
+            }
+            
+            // Afficher la notice après 5 secondes
+            setTimeout(() => {
+                document.body.appendChild(redirectNotice);
+                updateRedirectNotice();
+            }, 5000);
+            
+            // Cliquer sur la notice pour annuler la redirection
+            redirectNotice.addEventListener('click', function() {
+                this.remove();
+                countdown = 0;
+            });
+        });
+        
+        // Animation CSS pour la notice
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
 </html>

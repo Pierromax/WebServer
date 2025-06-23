@@ -3,89 +3,485 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload de fichier</title>
+    <title>Upload - WebSquidoMax</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .upload-container {
-            border: 2px dashed #ccc;
+
+        body {
+            font-family: "Nunito", sans-serif;
+            background: #8d6c9f;
+            min-height: 100vh;
             padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: #efd8be;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/sloth.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite;
+        }
+
+        .header::after {
+            content: "";
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite 1s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        h1 {
+            color: #2d3436;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #636e72;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        .upload-form {
+            padding: 40px;
+        }
+
+        .upload-container {
+            border: 3px dashed #b5c4e0;
+            border-radius: 15px;
+            padding: 40px;
             text-align: center;
             margin: 20px 0;
+            background: linear-gradient(135deg, rgba(181, 196, 224, 0.1) 0%, rgba(239, 216, 190, 0.1) 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+
+        .upload-container::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(181, 196, 224, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .upload-container:hover {
+            border-color: #a0b3d6;
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(181, 196, 224, 0.2);
+        }
+
+        .upload-container:hover::before {
+            opacity: 1;
+            animation: shine 2s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(200%) translateY(200%) rotate(45deg); }
+        }
+
         .file-input {
             display: none;
         }
+
         .select-button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
+            background: #b5c4e0;
+            color: #2d3436;
+            padding: 15px 30px;
             border: none;
+            border-radius: 12px;
             cursor: pointer;
-            margin-bottom: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: "Nunito", sans-serif;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .select-button:hover {
+            background: #a0b3d6;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(181, 196, 224, 0.4);
+        }
+
         .upload-button {
-            background-color: #2196F3;
-            color: white;
-            padding: 10px 20px;
+            background: #cda1a7;
+            color: #2d3436;
+            padding: 15px 30px;
             border: none;
+            border-radius: 12px;
             cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: "Nunito", sans-serif;
+            transition: all 0.3s ease;
+            display: none;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .upload-button:hover {
+            background: #c08d94;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(205, 161, 167, 0.4);
+        }
+
+        .file-info {
+            background: rgba(181, 196, 224, 0.2);
+            color: #2d3436;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 600;
+            border-left: 4px solid #b5c4e0;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #b5c4e0;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-text {
+            color: #636e72;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .links {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #f1f2f6;
+        }
+
+        .links a {
+            color: #b5c4e0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 15px;
+        }
+
+        .links a:hover {
+            color: #a0b3d6;
+            text-shadow: 0 2px 4px rgba(181, 196, 224, 0.3);
+        }
+
+        .file-preview {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
             display: none;
         }
-        .file-info {
-            margin-top: 10px;
-            font-size: 14px;
+
+        .error-message {
+            background: #cda1a7;
+            color: #2d3436;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #c08d94;
+            display: none;
         }
-        button:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading img {
+            width: 60px;
+            height: 60px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .file-restrictions {
+            background: rgba(239, 216, 190, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #636e72;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                max-width: none;
+            }
+            
+            .upload-form {
+                padding: 25px;
+            }
+            
+            .upload-container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Upload de fichier</h1>
-    <div class="upload-container">
-        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" id="fileInput" class="file-input">
-            <button type="button" class="select-button" id="selectButton">Sélectionner un fichier</button>
-            <div class="file-info" id="fileInfo">Aucun fichier sélectionné</div>
-            <button type="submit" class="upload-button" id="uploadButton">Uploader</button>
-        </form>
+    <div class="container">
+        <div class="header">
+            <h1>📤 Upload de fichiers</h1>
+            <p class="subtitle">WebSquidoMax Upload Center</p>
+        </div>
+        
+        <div class="upload-form">
+            <div id="error-message" class="error-message">
+                ❌ Une erreur est survenue lors de l'upload
+            </div>
+            
+            <div id="success-message" class="success-message">
+                ✅ Fichier uploadé avec succès !
+            </div>
+            
+            <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+                <div class="upload-container" id="uploadContainer">
+                    <span class="upload-icon">☁️</span>
+                    <div class="upload-text">
+                        <strong>Glissez vos fichiers ici</strong><br>
+                        ou cliquez pour sélectionner
+                    </div>
+                    
+                    <input type="file" name="file" id="fileInput" class="file-input" multiple>
+                    <button type="button" class="select-button" id="selectButton">
+                        📁 Sélectionner des fichiers
+                    </button>
+                    
+                    <div class="file-info" id="fileInfo">
+                        🦥 Aucun fichier sélectionné
+                    </div>
+                    
+                    <div class="file-preview" id="filePreview">
+                        📋 Aperçu des fichiers sélectionnés
+                    </div>
+                    
+                    <button type="submit" class="upload-button" id="uploadButton">
+                        🚀 Uploader les fichiers
+                    </button>
+                </div>
+            </form>
+            
+            <div class="loading" id="loading">
+                <img src="/assets/sloth.png" alt="Loading">
+                <p>Upload en cours... 🦥💨</p>
+            </div>
+            
+            <div class="file-restrictions">
+                <strong>📋 Restrictions :</strong><br>
+                • Taille max : 10MB par fichier<br>
+                • Formats acceptés : images, documents, archives<br>
+                • Évitez les fichiers avec des caractères spéciaux
+            </div>
+        </div>
+        
+        <div class="links">
+            <a href="/">🏠 Retour à l'accueil</a>
+            <a href="/upload/uploaded">📂 Voir les fichiers uploadés</a>
+        </div>
     </div>
 
     <script>
-        document.getElementById('selectButton').addEventListener('click', function() {
-            document.getElementById('fileInput').click();
-        });
-
-
-
-
-        document.getElementById('fileInput').addEventListener('change', function() {
-            const fileInput = document.getElementById('fileInput');
-            const fileInfo = document.getElementById('fileInfo');
-            const uploadButton = document.getElementById('uploadButton');
+        function showMessage(message, type = 'error') {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
             
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileInfo.textContent = `Fichier: ${file.name} (${formatFileSize(file.size)})`;
-                uploadButton.style.display = 'inline-block';
+            // Cacher tous les messages
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (type === 'success') {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
             } else {
-                fileInfo.textContent = 'Aucun fichier sélectionné';
-                uploadButton.style.display = 'none';
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
             }
-        });
+            
+            // Auto-hide après 5 secondes
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
 
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' bytes';
             else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             else return (bytes / 1048576).toFixed(1) + ' MB';
         }
+
+        function updateFileInfo(files) {
+            const fileInfo = document.getElementById('fileInfo');
+            const filePreview = document.getElementById('filePreview');
+            const uploadButton = document.getElementById('uploadButton');
+            
+            if (files.length > 0) {
+                let totalSize = 0;
+                let fileList = '';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    totalSize += file.size;
+                    fileList += `📄 ${file.name} (${formatFileSize(file.size)})<br>`;
+                }
+                
+                fileInfo.innerHTML = `🎯 ${files.length} fichier(s) sélectionné(s) - Total: ${formatFileSize(totalSize)}`;
+                filePreview.innerHTML = fileList;
+                filePreview.style.display = 'block';
+                uploadButton.style.display = 'inline-flex';
+                
+                // Vérifications
+                if (totalSize > 50 * 1024 * 1024) { // 50MB total
+                    showMessage('⚠️ Taille totale trop importante (max 50MB)', 'error');
+                    uploadButton.style.display = 'none';
+                }
+            } else {
+                fileInfo.innerHTML = '🦥 Aucun fichier sélectionné';
+                filePreview.style.display = 'none';
+                uploadButton.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('selectButton').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            updateFileInfo(this.files);
+        });
+
+        // Drag & Drop
+        const uploadContainer = document.getElementById('uploadContainer');
+
+        uploadContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#a0b3d6';
+            this.style.backgroundColor = 'rgba(181, 196, 224, 0.2)';
+        });
+
+        uploadContainer.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#b5c4e0';
+            this.style.backgroundColor = 'rgba(181, 196, 224, 0.1)';
+        });
+
+        uploadContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#b5c4e0';
+            this.style.backgroundColor = 'rgba(181, 196, 224, 0.1)';
+            
+            const files = e.dataTransfer.files;
+            document.getElementById('fileInput').files = files;
+            updateFileInfo(files);
+        });
+
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('fileInput');
+            
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                showMessage('📝 Veuillez sélectionner au moins un fichier', 'error');
+                return false;
+            }
+            
+            // Afficher le loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('uploadContainer').style.display = 'none';
+            
+            showMessage('🔄 Upload en cours...', 'success');
+        });
     </script>
 </body>
 </html>

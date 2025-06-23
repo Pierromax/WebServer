@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WebSquidoMax</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Nunito", sans-serif;
+            background: #8d6c9f;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: #efd8be;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/sloth.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite;
+        }
+
+        .header::after {
+            content: "";
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background-image: url('/assets/octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: twinkle 2s infinite 1s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        h1 {
+            color: #2d3436;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #636e72;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        .login-form {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3436;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #f1f2f6;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-family: "Nunito", sans-serif;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #fdfdfd;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #b5c4e0;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(181, 196, 224, 0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: #b5c4e0;
+            color: #2d3436;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: "Nunito", sans-serif;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            background: #a0b3d6;
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(181, 196, 224, 0.4);
+        }
+
+        .error {
+            background: #cda1a7;
+            color: #2d3436;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c08d94;
+            animation: slideIn 0.3s ease-out;
+            font-weight: 600;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+            animation: slideIn 0.3s ease-out;
+            font-weight: 600;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .links {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #f1f2f6;
+        }
+
+        .links a {
+            color: #b5c4e0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #a0b3d6;
+            text-shadow: 0 2px 4px rgba(181, 196, 224, 0.3);
+        }
+
+        .test-accounts {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #636e72;
+            background: rgba(181, 196, 224, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                max-width: none;
+            }
+            
+            .login-form {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 Connexion</h1>
+            <p class="subtitle">WebSquidoMax Login</p>
+        </div>
+        
+        <div class="login-form">
+            <div id="error-message" class="error" style="display: none;">
+                ❌ Identifiants incorrects. Veuillez réessayer.
+            </div>
+            
+            <form action="/login" method="POST">
+                <div class="form-group">
+                    <label for="username">👤 Nom d'utilisateur :</label>
+                    <input type="text" id="username" name="username" required 
+                           placeholder="Entrez votre nom d'utilisateur">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">🔐 Mot de passe :</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="Entrez votre mot de passe">
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    🚀 Se connecter
+                </button>
+            </form>
+        </div>
+        
+        <div class="links">
+            <a href="/">🏠 Retour à l'accueil</a>
+            
+            <div class="test-accounts">
+                <strong>🧪 Comptes de test :</strong><br>
+                admin/admin123 • user/password • webserv/42school
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showMessage(message, type = 'error') {
+            const messageDiv = document.getElementById('error-message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            
+            if (type === 'error') {
+                const form = document.querySelector('.container');
+                form.classList.add('shake');
+                setTimeout(() => form.classList.remove('shake'), 500);
+            }
+        }
+        
+        function hideMessage() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorType = urlParams.get('error');
+            const success = urlParams.get('success');
+            
+            if (success === 'logout') {
+                showMessage('👋 Vous avez été déconnecté avec succès.', 'success');
+            } else if (errorType) {
+                const messages = {
+                    'invalid': '❌ Identifiants incorrects. Veuillez réessayer.',
+                    'wrong_password': '🔑 Mot de passe incorrect. Vérifiez votre saisie.',
+                    'user_not_found': '👤 Ce nom d\'utilisateur n\'existe pas.',
+                    'empty_fields': '📝 Veuillez remplir tous les champs.',
+                    'server_error': '⚠️ Erreur serveur. Réessayez plus tard.',
+                    'session_expired': '⏰ Votre session a expiré. Reconnectez-vous.'
+                };
+                
+                const message = messages[errorType] || '❌ Erreur de connexion.';
+                showMessage(message, 'error');
+            }
+            
+            // Nettoyer l'URL après 3 secondes
+            if (errorType || success) {
+                setTimeout(() => {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 3000);
+            }
+        });
+        
+        // Validation en temps réel
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            if (password.length > 0 && password.length < 3) {
+                showMessage('🔑 Le mot de passe doit contenir au moins 3 caractères.', 'error');
+            } else if (password.length >= 3) {
+                hideMessage();
+            }
+        });
+        
+        // Validation avant envoi
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                e.preventDefault();
+                showMessage('📝 Veuillez remplir tous les champs.', 'error');
+                return false;
+            }
+            
+            if (password.length < 3) {
+                e.preventDefault();
+                showMessage('🔑 Le mot de passe doit contenir au moins 3 caractères.', 'error');
+                return false;
+            }
+            
+            // Afficher un message de chargement
+            showMessage('🔄 Connexion en cours...', 'success');
+            
+            return true;
+        });
+    </script>
+</body>
+</html>

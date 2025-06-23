@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de fichier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .file-input {
+            display: none;
+        }
+        .select-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .upload-button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload de fichier</h1>
+    <div class="upload-container">
+        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput" class="file-input">
+            <button type="button" class="select-button" id="selectButton">Sélectionner un fichier</button>
+            <div class="file-info" id="fileInfo">Aucun fichier sélectionné</div>
+            <button type="submit" class="upload-button" id="uploadButton">Uploader</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('selectButton').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadButton = document.getElementById('uploadButton');
+            
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileInfo.textContent = `Fichier: ${file.name} (${formatFileSize(file.size)})`;
+                uploadButton.style.display = 'inline-block';
+            } else {
+                fileInfo.textContent = 'Aucun fichier sélectionné';
+                uploadButton.style.display = 'none';
+            }
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+    </script>
+</body>
+</html>
