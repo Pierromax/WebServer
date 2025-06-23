@@ -15,8 +15,9 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
-Client::Client(int client_fd, Server* server) : fd(client_fd)
+Client::Client(int client_fd, Server* server, class Webserv* webserv) : fd(client_fd)
                                                 , _server(server)
+                                                , _webserv(webserv)
                                                 , request(NULL)
                                                 , response(NULL)
 {
@@ -50,6 +51,8 @@ void            Client::setState(ClientState newState) {state = newState;}
 
 Server* Client::getServer() const { return _server; }
 
+void Client::setServer(Server* server) { _server = server; }
+
 void    Client::prepareResponse()
 {
     if (this->response)
@@ -67,7 +70,17 @@ void    Client::prepareRequest()
             this->request->reset();
         this->request->ReadFromSocket();
         if (request->isComplete() || request->getStatusCode() == PAYLOAD_TOO_LARGE)
+        {
+            if (_webserv && !request->getHeader("Host").empty())
+            {
+                std::string hostHeader = request->getHeader("Host");
+                int port = ntohs(_server->getAddress().sin_port);
+                Server* bestServer = _webserv->findBestServer(port, hostHeader);
+                if (bestServer && bestServer != _server)
+                    setServer(bestServer);
+            }
             state = WRITING;
+        }
     }
 }
 

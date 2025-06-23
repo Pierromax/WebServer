@@ -127,6 +127,7 @@ struct ConfigNode
     size_t client_max_body_size;
     bool autoindex;
     std::map<std::string, std::string> cgiHandlers;
+    std::vector<std::pair<std::string, int> > listenPairs;
 
     ConfigNode(const std::string &t = "", const std::string &v = "", ConfigNode *p = NULL, std::size_t ln = 0)
         : type(t), value(v), parent(p), line(ln)
@@ -138,6 +139,7 @@ struct ConfigNode
             client_max_body_size = p->client_max_body_size;
             autoindex = p->autoindex;
             cgiHandlers = p->cgiHandlers;
+            listenPairs = p->listenPairs;
             for (int i = 0; i < METHOD_COUNT; ++i)
                 allowedMethods[i] = p->allowedMethods[i];
             isAuthRequired = p->isAuthRequired;
@@ -150,6 +152,22 @@ struct ConfigNode
             for (int i = 0; i < METHOD_COUNT; ++i)
                 allowedMethods[i] = true;
         }
+    }
+
+    ConfigNode(const ConfigNode &other)
+        : type(other.type), value(other.value), parent(other.parent), line(other.line)
+    {
+        directives = other.directives;
+        directiveLines = other.directiveLines;
+        client_max_body_size = other.client_max_body_size;
+        autoindex = other.autoindex;
+        cgiHandlers = other.cgiHandlers;
+        listenPairs = other.listenPairs;
+        isAuthRequired = other.isAuthRequired;
+        for (int i = 0; i < METHOD_COUNT; ++i)
+            allowedMethods[i] = other.allowedMethods[i];
+        for (size_t i = 0; i < other.children.size(); ++i)
+            children.push_back(new ConfigNode(*other.children[i]));
     }
 
     ~ConfigNode()
@@ -209,6 +227,7 @@ private:
     socklen_t adrLen;
     std::vector<pollfd> fds;
     std::map<int, Server*> servers;
+    std::vector<Server*> orderedServers;
     std::map<int, Client*> clients;
     ConfigNode *rootConfig;
 
@@ -268,6 +287,7 @@ public:
     void displayConfig(ConfigNode *node, int depth = 0);
 
     void setPollEvent(int fd, short events);
+    Server* findBestServer(int port, const std::string& hostHeader);
 };
 
 bool isPortAvailable(int port);

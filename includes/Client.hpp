@@ -42,7 +42,8 @@ class Client
     private:
         int         fd;
         sockaddr_in address;
-        Server*     _server; // Pointer to the server that accepted this client
+        Server*     _server;
+        class Webserv* _webserv;
         ClientState state;
         time_t      lastActivity;
 
@@ -53,11 +54,12 @@ class Client
         // Client();
         // Client(const Client &cpy);
         // Client &operator=(const Client &rhs);
-        Client(int clientFD, Server* server); // Updated constructor
+        Client(int clientFD, Server* server, class Webserv* webserv);
         ~Client();
 
         time_t      getLastActivity() const;
         Server*     getServer() const;
+        void        setServer(Server* server);
         ClientState getState() const;
         void        setState(ClientState newState);
         void        prepareRequest();

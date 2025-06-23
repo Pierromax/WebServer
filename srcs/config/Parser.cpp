@@ -284,7 +284,34 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
         if (currentNode->type != "server")
             throw ParsingError(key + " directive is not allowed here", tokens[index-1].filename, directiveLine);
         for (size_t i = 0; i < values.size(); ++i)
+        {
+            std::string host = "";
+            int port = 0;
+            size_t colonPos = values[i].find(':');
+            
+            if (colonPos != std::string::npos)
+            {
+                host = values[i].substr(0, colonPos);
+                std::string portStr = values[i].substr(colonPos + 1);
+                std::stringstream ss(portStr);
+                std::string remaining;
+                
+                if (!(ss >> port) || ss >> remaining)
+                    throw ParsingError("invalid port \"" + values[i] + "\" in directive \"listen\"", tokens[index-1].filename, directiveLine);
+            }
+            else
+            {
+                std::stringstream ss(values[i]);
+                std::string remaining;
+                
+                if (!(ss >> port) || ss >> remaining)
+                    throw ParsingError("invalid port \"" + values[i] + "\" in directive \"listen\"", tokens[index-1].filename, directiveLine);
+            }
+            if (port < 1024 || port > 65535)
+                throw ParsingError("port " + values[i] + " out of range (1024-65535) in directive \"listen\"", tokens[index-1].filename, directiveLine);
+            currentNode->listenPairs.push_back(std::make_pair(host, port));
             currentNode->directives[key].push_back(values[i]);
+        }
     }
     else if (key == "AUTH_REQUIRED")
     {
