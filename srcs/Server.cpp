@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 14:34:59 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 15:44:58 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,12 +135,6 @@ std::pair<std::string, sessionData>    Server::createSession(std::string usernam
 
 bool	Server::isActiveSession(std::string const &id)
 {
-
-	std::cout << "===check activeSessions map======" << std::endl;
-	std::map<std::string, sessionData>::iterator itt = activeSessions.begin();
-	for (; itt != activeSessions.end(); itt++)
-		std::cout << itt->first << " = " << itt->second.userName << std::endl;
-		
 	std::map<std::string, sessionData>::iterator it = activeSessions.find(id);
 	if (it == activeSessions.end())
 		return false;

@@ -67,9 +67,7 @@ void Response::handleGetRequest(const Request &req)
 }
 
 void Response::handleLogout(const Request &req)
-{
-    std::cout << "🚪 Demande de déconnexion" << std::endl;
-    
+{    
     std::string cookieHeader = req.getHeader("Cookie");
     if (!cookieHeader.empty()) 
     {

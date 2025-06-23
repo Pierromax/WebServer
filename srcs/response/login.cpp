@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 15:14:13 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 15:45:15 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,11 +82,6 @@ bool Response::checkLogin(const Request &req)
         return false;
     extractCookie(cookieHeader);
     
-    std::cout << "===check cookies map======" << std::endl;
-    std::map<std::string, std::string>::iterator itt = this->Cookies.begin();
-    for (; itt != Cookies.end(); itt++)
-        std::cout << itt->first << " = " << itt->second << std::endl;
-
     std::map<std::string, std::string>::iterator it = this->Cookies.find("session_id");
     if (it == this->Cookies.end())
         return false;
