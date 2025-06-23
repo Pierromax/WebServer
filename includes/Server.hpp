@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:28:37 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 13:45:51 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 16:57:30 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,13 +64,14 @@ class Server
 		std::pair<std::string, sessionData> createSession(std::string username);
 		bool	isActiveSession(std::string const &id);
 		void	deleteSession(std::string const &id);
-
+		bool	isLoginRequired(){return _authRequired;};
 	
 	private:
 		int fd;
 		sockaddr_in adress;
 		socklen_t adrLen;
-		ConfigNode* _configNode; // Store the config node used to create this server
+		ConfigNode* _configNode;
+		bool _authRequired;
 		std::map<std::string, sessionData> activeSessions;
 };
 std::string intToString(int value);

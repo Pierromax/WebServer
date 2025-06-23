@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 16:10:02 by cezou             #+#    #+#             */
-/*   Updated: 2025/06/15 16:50:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/23 17:04:50 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -271,7 +271,6 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
     }
     index++;
 
-    // Stocker le numéro de ligne de la directive
     currentNode->directiveLines[key] = directiveLine;
 
     if (key == "cgi")
@@ -283,9 +282,19 @@ bool Webserv::parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNo
     else if (key == "listen")
     {
         if (currentNode->type != "server")
-            throw ParsingError("\"listen\" directive is not allowed here", tokens[index-1].filename, directiveLine);
+            throw ParsingError(key + " directive is not allowed here", tokens[index-1].filename, directiveLine);
         for (size_t i = 0; i < values.size(); ++i)
             currentNode->directives[key].push_back(values[i]);
+    }
+    else if (key == "AUTH_REQUIRED")
+    {
+        if (currentNode->type == "server")
+            throw ParsingError(key + " directive is not allowed at root", tokens[index-1].filename, directiveLine);
+        if (values.size())
+            throw ParsingError("AUTH_REQUIRED don't need arguments", tokens[index-1].filename, directiveLine);
+        currentNode->isAuthRequired = true;
+
+
     }
     else if (key == "methods")
     {

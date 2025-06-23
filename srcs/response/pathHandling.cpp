@@ -22,8 +22,9 @@ std::string Response::getMimeType(const std::string& filePath) const
     if (dotPos != std::string::npos)
     {
         std::string ext = filePath.substr(dotPos);
-        if (mimeTypes.count(ext))
-            return mimeTypes[ext];
+        std::map<std::string, std::string>::iterator it = mimeTypes.find(ext);
+        if (it != mimeTypes.end())
+            return it->second;
     }
     return "application/octet-stream";
 }

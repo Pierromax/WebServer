@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 16:12:06 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/23 17:26:42 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,20 +20,21 @@ Response::Response() : status_code("200 OK"), content_type("text/html"), body(""
     _server = NULL;
 }
 
+
+bool Response::isLoginRequired(std::string req_path)
+{
+    ConfigNode *location = findBestLocation(req_path, _server);
+    return (location && location->isAuthRequired);
+}
+
 Response::Response(const Request &req, Server* server) : _server(server)
 {
     std::string method = req.getMethod();
     fd = req.getfd();
     status_code = req.getStatusCode();
     setConnectionType(req.getHeader("Connection"));
-
-    bool    isrequired;
-    if (req.getPath() == "/upload")
-        isrequired = true;
-    else
-        isrequired = false;
         
-    if (!checkLogin(req) && isrequired)
+    if (!checkLogin(req) && isLoginRequired(req.getPath()))
         redirectTo("/login");
     else if (method == "GET")
         handleGetRequest(req);
