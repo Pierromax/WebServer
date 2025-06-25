@@ -355,12 +355,6 @@
                 <img src="/assets/sloth.png" alt="Loading">
                 <p>Upload en cours... 🦥💨</p>
             </div>
-            
-            <div class="file-restrictions">
-                <strong>📋 Restrictions :</strong><br>
-                • Formats acceptés : images, documents, archives<br>
-                • Évitez les fichiers avec des caractères spéciaux
-            </div>
         </div>
         
         <div class="links">
@@ -370,28 +364,6 @@
     </div>
 
     <script>
-        function showMessage(message, type = 'error') {
-            const errorDiv = document.getElementById('error-message');
-            const successDiv = document.getElementById('success-message');
-            
-            // Cacher tous les messages
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-            
-            if (type === 'success') {
-                successDiv.textContent = message;
-                successDiv.style.display = 'block';
-            } else {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-            
-            // Auto-hide après 5 secondes
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-                successDiv.style.display = 'none';
-            }, 5000);
-        }
 
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' bytes';

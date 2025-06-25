@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 19:38:42 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:10:07 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,14 @@ std::string Response::build() const
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
         response << it->first << ": " << it->second << "\r\n";
     for (std::map<std::string, std::string>::const_iterator it = Cookies.begin(); it != Cookies.end(); ++it)
-        response << "Set-Cookie: " << it->first << "=" << it->second << "\r\n";
+    {
+        response << "Set-Cookie: " << it->first << "=" << it->second;
+        if (it->second.empty())
+            response << "; Max-Age=0\r\n";
+        else
+            response << "; Max-Age=3600\r\n";
+    }
+
     response << "Connection: " << getConnectionType() << "\r\n"; 
     response << "\r\n";
     response << body;
