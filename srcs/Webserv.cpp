@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:14:59 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:17:57 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,8 +196,6 @@ void Webserv::run()
             std::cerr << "Poll error: " << strerror(errno) << std::endl;
             break;
         }
-        if (!g_running)
-            break;
         cleanInvalidFileDescriptors();
         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); it++)
         {
