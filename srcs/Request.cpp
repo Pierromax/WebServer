@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:15:55 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:27:15 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,7 +193,7 @@ size_t Request::extractContentLength()
  */
 bool Request::checkContentLengthLimit(size_t contentLength)
 {
-    std::cout << _maxBodySize << std::endl;
+    d_cout << _maxBodySize << std::endl;
     if (contentLength > _maxBodySize)
     {
         d_cout << "Content-Length (" << contentLength << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;

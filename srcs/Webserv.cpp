@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:25:22 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:29:38 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -291,7 +291,7 @@ void Webserv::storeServers(std::string &filename)
  */
 void Webserv::launchServers()
 {
-    d_cout << "Lancement des serveurs..." << std::endl;
+    std::cout << "Lancement des serveurs..." << std::endl;
     
     for (std::map<int, Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         delete it->second;
@@ -324,7 +324,7 @@ void Webserv::launchServers()
                 fds.push_back(newfd);
                 servers[newfd.fd] = newServer;
                 orderedServers.push_back(newServer);
-                d_cout << "[DEBUG] Server added on fd = " << newfd.fd 
+                std::cout << "Server added on fd = " << newfd.fd 
                           << " (host:port " << host << ":" << port << ")" << std::endl;
             }
         }
