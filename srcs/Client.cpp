@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 16:10:34 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:10:52 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ void Client::setServer(Server* server) { _server = server; }
 void    Client::prepareResponse()
 {
     if (this->response)
-    delete(this->response);
+        delete(this->response);
     this->response = new Response(*request, getServer());
 }
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 20:13:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:05:38 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -298,6 +298,9 @@ private:
     void flushPendingToken(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
     void handleQuote(std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum, bool &inQuote);
     void handleSymbol(char c, std::string &pendingToken, std::vector<Token> &tokens, std::size_t lineNum);
+
+    void cleanShutdown();
+
 
 public:
     Webserv();
