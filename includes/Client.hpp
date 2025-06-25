@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:04:24 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:13:33 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,8 @@ class Client
         ClientState state;
         time_t      lastActivity;
 
-    public:
+        
+        public:
         Request     *request;
         Response    *response;
         
@@ -65,7 +66,7 @@ class Client
         void        prepareRequest();
         void        prepareResponse();
         void        sendResponse() const;
-        bool        isTimeout() const;
+        void        cleanClient();
 };
 
 

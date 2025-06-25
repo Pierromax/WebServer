@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:28 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:10:07 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:14:12 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,14 @@ Response::Response() : status_code("200 OK"), content_type("text/html"), body(""
     _server = NULL;
 }
 
-
 bool Response::isLoginRequired(std::string req_path)
 {
     ConfigNode *location = findBestLocation(req_path, _server);
     return (location && location->isAuthRequired);
 }
+
+Response::Response(Server* server) : _server(server)
+{}
 
 Response::Response(const Request &req, Server* server) : _server(server)
 {
@@ -119,7 +121,6 @@ std::string Response::build() const
         else
             response << "; Max-Age=3600\r\n";
     }
-
     response << "Connection: " << getConnectionType() << "\r\n"; 
     response << "\r\n";
     response << body;

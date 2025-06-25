@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:40 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/15 19:20:35 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 21:21:31 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ class Request
 
 
     public:
+        Request();
         Request(int clientFD, Server* server = NULL); // Ajout du paramètre Server*
         Request(const Request &cpy);
         Request &operator=(const Request &rhs);
@@ -79,6 +80,7 @@ class Request
         std::string getBody() const;
         std::string getHeader(const std::string &name) const;
         ssize_t     getBytesRead() const;
+        void        createShutdownRequest();
         bool        isComplete() const;
         void        ReadFromSocket();
         void        reset(); // Reset pour les connexions keep-alive

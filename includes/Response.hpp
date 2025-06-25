@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:37 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 17:13:35 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:02:01 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,8 +99,6 @@ class Response
         
         // Cookies Gestion
         void        extractCookie(const std::string &cookie);
-        void        setCookie(const std::string &key, const std::string &value);
-        void        setCookieHttp();
         void        deleteCookie();
         bool        checkDB(std::string path, std::string userName, std::string password);
         
@@ -114,18 +112,21 @@ class Response
         bool                                extractFileToSave(std::map<std::string, std::string> &headers, std::string &content, std::string location);
         bool                                saveFile(std::string &filename, std::string &body, std::string location);
         
-    public:
+        public:
         Response();
+        Response(Server* server);
         Response(const Request &req, Server* server);
         Response(const Response &cpy);
         Response &operator=(const Response &rhs);
         ~Response();
+        void    signalHandler();
         
         void        setStatusCode(const std::string &status);
         void        setContentType(const std::string &type);
         void        setBody(const std::string &body);
         void        setHeaders(const std::string &key, const std::string &value);
         void        setConnectionType(const std::string &type);
+        void        setCookie(const std::string &key, const std::string &value);
         std::string getConnectionType() const;
         std::string getbody() const;
         std::string build() const;

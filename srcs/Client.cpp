@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:23:48 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:25:16 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ void Client::setServer(Server* server) { _server = server; }
 void    Client::prepareResponse()
 {
     if (this->response)
-    delete(this->response);
+        delete(this->response);
     this->response = new Response(*request, getServer());
 }
 
