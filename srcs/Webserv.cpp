@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:30 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:13:11 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:14:59 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,7 +211,6 @@ void Webserv::run()
                 handleClients(*it);
         }
     }
-    cleanShutdown();
     d_cout << "Webserver shutting down" << std::endl;
 }
 

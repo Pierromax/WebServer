@@ -6,11 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-<<<<<<< HEAD
-/*   Updated: 2025/06/25 21:40:01 by ple-guya         ###   ########.fr       */
-=======
-/*   Updated: 2025/06/25 22:06:22 by cviegas          ###   ########.fr       */
->>>>>>> 7b0d968be32498b0c188c998b3d6ddda2af90ea8
+/*   Updated: 2025/06/25 22:15:55 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -233,7 +229,6 @@ bool Request::isRequestTooLong()
             return false;
         updateMaxBodySize(extractTempPath());
         size_t contentLength = extractContentLength();
-        std::cout << "contentLength = " << contentLength << std::endl;
         if (contentLength > 0)
         {
             return checkContentLengthLimit(contentLength);
