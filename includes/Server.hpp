@@ -28,7 +28,6 @@
 #include <iostream>
 #include <sstream>
 
-// Forward declaration
 struct ConfigNode;
 
 struct sessionData
@@ -62,7 +61,7 @@ class Server
 		size_t 		maxBodySize;
 		ConfigNode* getConfigNode() const;
 		bool matchesServerName(const std::string& hostHeader) const;
-		void addServerName(const std::string& name); // Getter for the config node
+		void addServerName(const std::string& name);
 
 		std::pair<std::string, sessionData> createSession(std::string username);
 		bool	isActiveSession(std::string const &id);
@@ -75,6 +74,7 @@ class Server
 		socklen_t adrLen;
 		ConfigNode* _configNode;
 		bool _authRequired;
+		bool _ownsConfigNode;
 		std::map<std::string, sessionData> activeSessions;
 };
 std::string intToString(int value);

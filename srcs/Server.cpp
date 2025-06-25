@@ -13,7 +13,7 @@
 #include "Server.hpp"
 #include "Webserv.hpp"
 
-Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), _configNode(NULL)
+Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), _configNode(NULL), _ownsConfigNode(false)
 {
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
@@ -44,6 +44,8 @@ Server &Server::operator=(const Server &other)
 {
 	if (this != &other)
 	{
+		if (_ownsConfigNode && _configNode)
+			delete _configNode;
 		fd = other.fd;
 		host = other.host;
 		port = other.port;
@@ -51,12 +53,13 @@ Server &Server::operator=(const Server &other)
 		isDefault = other.isDefault;
 		errorPages = other.errorPages;
 		maxBodySize = other.maxBodySize;
-		_configNode = other._configNode; // Copy config node pointer
+		_configNode = other._configNode;
+		_ownsConfigNode = false; // Copy doesn't own the config
 	}
 	return *this;
 }
 
-Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
+Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000), _ownsConfigNode(true)
 {
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
@@ -117,6 +120,8 @@ ConfigNode* Server::getConfigNode() const
 
 Server::~Server()
 {
+	close(fd);
+	delete _configNode;
 }
 
 /* ******************** */
