@@ -213,6 +213,53 @@ void Webserv::validateServerPorts(ConfigNode *serverNode, const std::string &fil
 }
 
 /**
+ * @brief Validates server listen/server_name combinations for duplicates
+ * @param serverNode Server node to validate
+ * @param filename Configuration filename (for error reporting)
+ * @param usedListenServerName Map to track duplicate (listen, server_name) combinations
+ */
+void Webserv::validateServerListenServerName(ConfigNode *serverNode, const std::string &filename, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName)
+{
+    std::map<std::string, std::vector<std::string> >::iterator listenIt = serverNode->directives.find("listen");
+    std::map<std::string, std::vector<std::string> >::iterator serverNameIt = serverNode->directives.find("server_name");
+    
+    // Get listen values (default to "80" if not present)
+    std::vector<std::string> listenValues;
+    if (listenIt != serverNode->directives.end() && !listenIt->second.empty())
+        listenValues = listenIt->second;
+    else
+        listenValues.push_back("80");
+    
+    // Get server_name values (default to "" if not present)
+    std::vector<std::string> serverNameValues;
+    if (serverNameIt != serverNode->directives.end() && !serverNameIt->second.empty())
+        serverNameValues = serverNameIt->second;
+    else
+        serverNameValues.push_back("");
+    
+    // Check each combination of (listen, server_name)
+    for (size_t i = 0; i < listenValues.size(); ++i)
+    {
+        for (size_t j = 0; j < serverNameValues.size(); ++j)
+        {
+            std::pair<std::string, std::string> combination = std::make_pair(listenValues[i], serverNameValues[j]);
+            std::map<std::pair<std::string, std::string>, size_t>::iterator it = usedListenServerName.find(combination);
+            
+            if (it != usedListenServerName.end())
+            {
+                std::string errorMsg = "duplicate server with listen \"" + listenValues[i] + "\"";
+                if (!serverNameValues[j].empty())
+                    errorMsg += " and server_name \"" + serverNameValues[j] + "\"";
+                throw ParsingError(errorMsg, filename, serverNode->line);
+            }
+            
+            usedListenServerName[combination] = serverNode->line;
+            d_cout << "Registered server: listen=" << listenValues[i] << ", server_name=" << serverNameValues[j] << std::endl;
+        }
+    }
+}
+
+/**
  * @brief Checks if a port is available for binding
  * @param port Port number to check
  * @return true if port is available, false otherwise

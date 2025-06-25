@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/21 03:15:00 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 20:13:53 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 18:47:19 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -268,7 +268,7 @@ private:
     ConfigNode* parseTokens(std::vector<Token> &tokens, const std::string &filename);
     void validateServers(ConfigNode *root, const std::string &filename);
     
-    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
+    void validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName);
     void validateCgiDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateMethodsDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
     void validateErrorPageDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line);
@@ -277,8 +277,9 @@ private:
     void validateAutoindexDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
     void validateRedirectDirective(const std::vector<std::string> &values, const std::string &filename, std::size_t line, ConfigNode *node);
     void validateDirectives(ConfigNode *node, const std::string &filename);
-    void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts);
+    void validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName);
     void validateServerPorts(ConfigNode *serverNode, const std::string &filename, std::map<int, size_t> &usedPorts);
+    void validateServerListenServerName(ConfigNode *serverNode, const std::string &filename, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName);
 
     ConfigNode *parseConfigBlock(std::vector<Token> &tokens, size_t &index, ConfigNode *parent);
     bool parseDirective(std::vector<Token> &tokens, size_t &index, ConfigNode *currentNode);

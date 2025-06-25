@@ -6,7 +6,7 @@
 /*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 19:04:33 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 20:15:36 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 22:06:22 by cviegas          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,6 +193,7 @@ size_t Request::extractContentLength()
  */
 bool Request::checkContentLengthLimit(size_t contentLength)
 {
+    std::cout << _maxBodySize << std::endl;
     if (contentLength > _maxBodySize)
     {
         d_cout << "Content-Length (" << contentLength << ") exceeds max body size (" << _maxBodySize << ")" << std::endl;
@@ -221,8 +222,6 @@ bool Request::checkCurrentBodySize()
  */
 bool Request::isRequestTooLong()
 {
-    d_cout << "Step " << _step << ": Checking request length." << std::endl;
-
     if (_step == 0)
     {
         _headerSize = findHeaderSize();
@@ -230,39 +229,47 @@ bool Request::isRequestTooLong()
             return false;
         updateMaxBodySize(extractTempPath());
         size_t contentLength = extractContentLength();
+        std::cout << "contentLength = " << contentLength << std::endl;
         if (contentLength > 0)
+        {
             return checkContentLengthLimit(contentLength);
+        }
+
     }
     else
+    {
         return checkCurrentBodySize();
-    
+    }
     return false;
 }
 
 
 void Request::ReadFromSocket()
 {
+    if (statuscode != "200 OK" && statuscode != PAYLOAD_TOO_LARGE)
+        return;
     char buffer[2048] = {0};
     ssize_t bytes_received = recv(this->fd, buffer, sizeof(buffer) - 1, 0);
-    
     if (bytes_received > 0)
     {
         _bytesRead += bytes_received;
-        this->raw_request.append(buffer, bytes_received);
-        if (isRequestTooLong())
+        if (statuscode != PAYLOAD_TOO_LARGE)
         {
-            std::cerr << "Request too long: " << _bytesRead << " bytes received, max allowed: " << _maxBodySize << " bytes." << std::endl;
-            statuscode = PAYLOAD_TOO_LARGE;
-             _step++;
-            parseRequest(this->raw_request);
-            return;
+            this->raw_request.append(buffer, bytes_received);
+            if (isRequestTooLong())
+            {
+                statuscode = PAYLOAD_TOO_LARGE;
+                _step++;
+                parseRequest(this->raw_request);
+                return;
+            }
+            _step++;
+            if (isComplete())
+                parseRequest(this->raw_request);
         }
-        _step++;
-        if (isComplete())
-            parseRequest(this->raw_request);
     }
     else if (bytes_received == 0)
-        statuscode = ""; // Indicate disconnect
+        statuscode = "";
     else
         statuscode = BAD_REQUEST;
 }
@@ -377,6 +384,9 @@ std::string trimString(const std::string &str, const std::string &charset)
 
 bool Request::isComplete() const
 {
+    if (!statuscode.empty() && statuscode != "200 OK" && statuscode != PAYLOAD_TOO_LARGE)
+        return true;
+
     size_t headerEnd = this->raw_request.find("\r\n\r\n");
     if (headerEnd == std::string::npos)
         return (false);
@@ -395,11 +405,13 @@ bool Request::isComplete() const
     
     iss >> value;
     if (value == 0)
-    {
-        d_cout << "value == 0" << std::endl;
         return true;
-    }
+    
+    if (statuscode == PAYLOAD_TOO_LARGE)
+        return (_bytesRead - _headerSize) >= value;
+    
     if (raw_request.length() - (headerEnd + 4) < value)
         return false;
     return true;
 }
+

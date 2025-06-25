@@ -358,7 +358,6 @@
             
             <div class="file-restrictions">
                 <strong>📋 Restrictions :</strong><br>
-                • Taille max : 10MB par fichier<br>
                 • Formats acceptés : images, documents, archives<br>
                 • Évitez les fichiers avec des caractères spéciaux
             </div>
@@ -420,11 +419,6 @@
                 filePreview.style.display = 'block';
                 uploadButton.style.display = 'inline-flex';
                 
-                // Vérifications
-                if (totalSize > 50 * 1024 * 1024) { // 50MB total
-                    showMessage('⚠️ Taille totale trop importante (max 50MB)', 'error');
-                    uploadButton.style.display = 'none';
-                }
             } else {
                 fileInfo.innerHTML = '🦥 Aucun fichier sélectionné';
                 filePreview.style.display = 'none';
