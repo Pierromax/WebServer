@@ -17,9 +17,10 @@ void Response::handlePostRequest(const Request &req)
     }
     if (req.getStatusCode() == PAYLOAD_TOO_LARGE)
     {
-        d_cout << "Payload too large for POST request" << std::endl;
+        d_cout << "Payload too large for POST request - loading 413 error page" << std::endl;
         status_code = PAYLOAD_TOO_LARGE;
         loadErrorPage("413", locationNode);
+        d_cout << "413 error page loaded, returning from handlePostRequest" << std::endl;
         return;
     }
 

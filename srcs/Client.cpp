@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:32:35 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 22:10:52 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:13:58 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,9 +67,17 @@ void    Client::prepareRequest()
     if (state == READING)
     {
         if (request->isComplete())
-            this->request->reset();
+        {
+            if (request->getStatusCode() == "200 OK")
+                this->request->reset();
+            else
+            {
+                state = WRITING;
+                return;
+            }
+        }
         this->request->ReadFromSocket();
-        if (request->isComplete() || request->getStatusCode() == PAYLOAD_TOO_LARGE)
+        if (request->isComplete())
         {
             if (_webserv && !request->getHeader("Host").empty())
             {
@@ -81,6 +89,7 @@ void    Client::prepareRequest()
             }
             state = WRITING;
         }
+
     }
 }
 

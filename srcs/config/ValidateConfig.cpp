@@ -18,16 +18,17 @@
  * @param filename Configuration filename (for error reporting)
  * @param depth Current depth in tree (0 for root)
  * @param usedPorts Map to track duplicate ports across servers
+ * @param usedListenServerName Map to track duplicate (listen, server_name) combinations
  * @throw std::runtime_error if configuration errors are detected
  */
-void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
+void Webserv::validateConfigTree(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName)
 {
     if (!node)
         return;
     if (depth > 1 && node->type == "server")
         throw ParsingError("\"server\" directive is not allowed here", filename, node->line);
     validateDirectives(node, filename);
-    validateChildNodes(node, filename, depth, usedPorts);
+    validateChildNodes(node, filename, depth, usedPorts, usedListenServerName);
 }
 
 /**
@@ -77,8 +78,9 @@ void Webserv::validateDirectives(ConfigNode *node, const std::string &filename)
  * @param filename Configuration filename (for error reporting) 
  * @param depth Current depth in tree
  * @param usedPorts Map to track duplicate ports across servers
+ * @param usedListenServerName Map to track duplicate (listen, server_name) combinations
  */
-void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts)
+void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, int depth, std::map<int, size_t> &usedPorts, std::map<std::pair<std::string, std::string>, size_t> &usedListenServerName)
 {
     std::map<std::string, size_t> locationPaths;
     
@@ -97,8 +99,11 @@ void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, 
             locationPaths[path] = child->line;
         }
         if (child->type == "server")
+        {
             validateServerPorts(child, filename, usedPorts);
-        validateConfigTree(child, filename, depth + 1, usedPorts);
+            validateServerListenServerName(child, filename, usedListenServerName);
+        }
+        validateConfigTree(child, filename, depth + 1, usedPorts, usedListenServerName);
     }
 }
 
@@ -110,7 +115,8 @@ void Webserv::validateChildNodes(ConfigNode *node, const std::string &filename, 
 void Webserv::validateServers(ConfigNode *root, const std::string &filename)
 {
     std::map<int, size_t> usedPorts;
-    validateConfigTree(root, filename, 0, usedPorts);
+    std::map<std::pair<std::string, std::string>, size_t> usedListenServerName;
+    validateConfigTree(root, filename, 0, usedPorts, usedListenServerName);
     displayConfig(root);
 }
 
