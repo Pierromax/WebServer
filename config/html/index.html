@@ -251,11 +251,20 @@
         .user-welcome {
             color: #2d3436;
             padding: 15px;
-            margin: 20px 40px;
             border-radius: 12px;
             text-align: center;
             font-weight: 600;
         }
+
+        .user-welcome-inline {
+    display: inline-block;
+    color: #2d3436;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 1.8em;
+    font-weight: 500;
+    margin-top: 8px;
+}
 
         @media (max-width: 768px) {
             .menu-grid {
@@ -280,9 +289,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 id="mainTitle">🌸 Bienvenue sur WebSquidoMax !</h1>
-            <div id="user-welcome" class="user-welcome" style="display: none;">
-                👋 Content de vous revoir !
+            <h1 id="mainTitle">Bienvenue sur WebSquidoMax !</h1>
+            <div id="user-welcome" class="user-welcome-inline" style="display: none;">
             </div>
         </div>
         
@@ -317,8 +325,11 @@
         </div>
         
         <div class="footer">
-            <p>WebSquidoMax - Done with lazyness
+            <p>by ple-guya </ple-guya>
                 <img src="/assets/sloth.png" alt="Sloth" style="width: 24px; height: 24px; vertical-align: middle;">
+                <br>
+                and cviegas 
+                <img src="/assets/octopus.png" alt="Squid" style="width: 24px; height: 24px; vertical-align: middle;">
             </p>
         </div>
     </div>
@@ -340,7 +351,7 @@
             
             if (username && username !== '') {
                 titleElement.textContent = `Bienvenue sur WebSquidoMax !`;
-                welcomeElement.textContent = `Content de vous revoir, ${username} !`;
+                welcomeElement.textContent = `Coucou ${username} !`;
                 welcomeElement.style.display = 'block';
             } else {
                 titleElement.textContent = 'Bienvenue sur WebSquidoMax !';
@@ -357,14 +368,12 @@
             const loginButton = document.getElementById('loginButton');
             
             if (username && username !== '') {
-                // Mode logout
                 authCard.className = 'menu-card logout-card';
                 authIcon.textContent = '🚪';
                 authTitle.textContent = 'Déconnexion';
                 authDescription.textContent = 'Vous êtes actuellement connecté. Cliquez pour vous déconnecter.';
                 loginButton.textContent = '👋 Se déconnecter';
             } else {
-                // Mode login
                 authCard.className = 'menu-card login-card';
                 authIcon.textContent = '🔑';
                 authTitle.textContent = 'Connexion';

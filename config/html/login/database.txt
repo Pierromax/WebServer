@@ -3,3 +3,7 @@ admin:admin123
 user:password
 test:test123
 webserv:42school
+damien:damien123
+cesaire:cesaire123
+nicolas:nicolas123
+henri:henri123

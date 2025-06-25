@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/20 22:43:31 by cviegas           #+#    #+#             */
-/*   Updated: 2025/06/23 20:15:36 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 17:17:16 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ Server::Server() : port(DEFAULT_PORT), isDefault(false), maxBodySize(15000000), 
 		throw std::runtime_error(std::string("failed bind server: ") + strerror(errno));
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("failed to get nonBlock socket");
-	if (listen(fd, 10) < 0)
+	if (listen(fd, 1024) < 0)
 		throw std::runtime_error("can't listen serveur");
 	d_cout << "Serveur en écoute sur le port " << DEFAULT_PORT << std::endl;
 }
@@ -104,7 +104,7 @@ Server::Server(ConfigNode *configNode) : isDefault(false), maxBodySize(15000000)
 		throw std::runtime_error(std::string("failed bind server: ") + strerror(errno));
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("failed to get nonBlock socket");
-	if (listen(fd, 10) < 0)
+	if (listen(fd, 1024) < 0)
 		throw std::runtime_error("can't listen serveur");
 	d_cout << "Serveur en écoute sur " << host << ":" << port << std::endl;
 }

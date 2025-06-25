@@ -21,9 +21,6 @@
             {{CONTENT}}
         </div>
         
-        <div class="footer">
-            <p>WebSquidoMax - Done with Laziness <img src="/assets/sloth.png" alt="Sloth" class="logo" style="width: 24px; height: 24px; vertical-align: middle;"></p>
-        </div>
     </div>
 
     <div class="kawaii-loading">
@@ -42,9 +39,7 @@
 
         function deleteFile(filename) {
             const messages = [
-                "Are you sure you want to delete this kawaii file? 🥺",
-                "This file will miss us... Confirm deletion? 😢",
-                "Really delete? The file will be very sad! 💔"
+                "Are you sure you want to delete this file?",
             ];
             
             const randomMessage = messages[Math.floor(Math.random() * messages.length)];
