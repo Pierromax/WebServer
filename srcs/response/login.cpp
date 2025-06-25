@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   login.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cviegas <cviegas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 15:14:45 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/23 16:38:12 by cviegas          ###   ########.fr       */
+/*   Updated: 2025/06/25 19:29:20 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,8 +125,8 @@ void     Response::extractCookie(const std::string &cookie)
 void    Response::deleteCookie()
 {
     Cookies.clear();
-    setCookie("session_id", "; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; HttpOnly");
-    setCookie("user", "; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; HttpOnly");
+    setCookie("session_id", "; Max-Age=0; path=/; HttpOnly");
+    setCookie("user", "; Max-Age=0; path=/; HttpOnly");
 }
 
 void    Response::setCookie(const std::string &key, const std::string &value)
