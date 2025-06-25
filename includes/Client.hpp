@@ -6,7 +6,7 @@
 /*   By: ple-guya <ple-guya@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 12:27:22 by ple-guya          #+#    #+#             */
-/*   Updated: 2025/06/25 21:43:58 by ple-guya         ###   ########.fr       */
+/*   Updated: 2025/06/25 22:12:12 by ple-guya         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,6 @@ class Client
         Client(int clientFD, Server* server, class Webserv* webserv);
         ~Client();
 
-        std::string createSimpleLogoutResponse();
         time_t      getLastActivity() const;
         Server*     getServer() const;
         void        setServer(Server* server);
